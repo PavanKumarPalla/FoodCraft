@@ -180,7 +180,7 @@ export default function Register() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.75rem',
-          margin: '0.5rem 0 1.5rem',
+          margin: '0.35rem 0 0.85rem',
         }}>
           <div style={{
             display: 'flex',

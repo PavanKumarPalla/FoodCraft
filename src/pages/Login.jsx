@@ -139,14 +139,14 @@ export default function Login() {
             <Utensils size={24} />
           </div>
           <h1 className="auth-title">
-            {isResetMode ? 'Reset Password' : 'Welcome Back to FoodCraft'}
+            {isResetMode ? 'Reset Password' : 'Sign In'}
           </h1>
           <p className="auth-subtitle">
             {isResetMode
               ? resetStep === 1
-                ? 'Enter your account email to receive a 6-digit password reset code'
-                : `Enter the 6-digit code sent to ${resetEmail} and your new password`
-              : 'Log in to view your tailored meal plans and saved recipes'}
+                ? 'Enter your account email to receive a 6-digit code'
+                : `Enter the code sent to ${resetEmail}`
+              : 'Welcome back to FoodCraft'}
           </p>
         </div>
 
@@ -156,15 +156,15 @@ export default function Login() {
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.4)',
             color: '#f87171',
-            padding: '0.75rem 1rem',
+            padding: '0.6rem 0.85rem',
             borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem',
-            fontSize: '0.9rem',
+            marginBottom: '0.75rem',
+            fontSize: '0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            <AlertCircle size={18} />
+            <AlertCircle size={17} />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -174,15 +174,15 @@ export default function Login() {
             background: 'rgba(16, 185, 129, 0.15)',
             border: '1px solid rgba(16, 185, 129, 0.4)',
             color: '#34d399',
-            padding: '0.75rem 1rem',
+            padding: '0.6rem 0.85rem',
             borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem',
-            fontSize: '0.9rem',
+            marginBottom: '0.75rem',
+            fontSize: '0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={17} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -193,13 +193,13 @@ export default function Login() {
             {/* Demo Fast Login Pill */}
             <div className="demo-login-box" onClick={handleDemoLogin} id="quick-demo-login-btn">
               <div className="demo-box-left">
-                <CheckCircle size={18} className="demo-check-icon" />
+                <CheckCircle size={17} className="demo-check-icon" />
                 <div>
                   <span className="demo-title">Fast Demo Access</span>
-                  <span className="demo-desc">Click here to log in immediately with student demo account</span>
+                  <span className="demo-desc">Instant 1-click demo login</span>
                 </div>
               </div>
-              <ArrowRight size={16} />
+              <ArrowRight size={15} />
             </div>
 
             <div className="auth-divider">
@@ -208,14 +208,14 @@ export default function Login() {
 
             <form className="auth-form" onSubmit={handleLogin}>
               <div className="form-group">
-                <label htmlFor="login-identifier">Email Address or Mobile Number</label>
+                <label htmlFor="login-identifier">Email or Mobile Number</label>
                 <div className="input-icon-wrapper">
-                  <Mail size={17} className="field-icon" />
+                  <Mail size={16} className="field-icon" />
                   <input
                     id="login-identifier"
                     type="text"
                     required
-                    placeholder="name@example.com or 9876543210"
+                    placeholder="name@example.com or phone"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -240,7 +240,7 @@ export default function Login() {
                   </button>
                 </div>
                 <div className="input-icon-wrapper">
-                  <Lock size={17} className="field-icon" />
+                  <Lock size={16} className="field-icon" />
                   <input
                     id="login-password"
                     type="password"
@@ -269,8 +269,8 @@ export default function Login() {
                 disabled={isSubmitting}
                 id="login-submit-btn"
               >
-                <span>{isSubmitting ? 'Authenticating...' : 'Sign In to Food Craft'}</span>
-                <ArrowRight size={18} />
+                <span>{isSubmitting ? 'Signing in...' : 'Sign In to FoodCraft'}</span>
+                <ArrowRight size={17} />
               </button>
             </form>
 

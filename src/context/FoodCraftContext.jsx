@@ -17,7 +17,18 @@ export function FoodCraftProvider({ children }) {
 
   const [userProfile, setUserProfile] = useState(() => {
     const saved = localStorage.getItem('foodcraft_profile');
-    return saved ? JSON.parse(saved) : INITIAL_USER_PROFILE;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.avatar && parsed.avatar.includes('unsplash.com')) {
+          parsed.avatar = '';
+        }
+        return parsed;
+      } catch {
+        return INITIAL_USER_PROFILE;
+      }
+    }
+    return INITIAL_USER_PROFILE;
   });
 
   const [mealPlan, setMealPlan] = useState(() => {
@@ -80,15 +91,21 @@ export function FoodCraftProvider({ children }) {
         .then(data => {
           if (data.success && data.user) {
             setCurrentUser(data.user);
+            const cleanAvatar = (data.user.avatar && !data.user.avatar.includes('unsplash.com'))
+              ? data.user.avatar 
+              : (prev.avatar && !prev.avatar.includes('unsplash.com')) 
+                ? prev.avatar 
+                : '';
+
             if (data.user.profile) {
               setUserProfile(prev => ({ 
                 ...prev, 
                 name: data.user.name,
-                avatar: data.user.avatar || prev.avatar,
+                avatar: cleanAvatar,
                 ...data.user.profile 
               }));
-            } else if (data.user.avatar) {
-              setUserProfile(prev => ({ ...prev, avatar: data.user.avatar }));
+            } else {
+              setUserProfile(prev => ({ ...prev, avatar: cleanAvatar }));
             }
             if (data.user.favorites && data.user.favorites.length > 0) {
               setFavorites(data.user.favorites);

@@ -71,7 +71,13 @@ export default function Navbar() {
           </Link>
 
           <Link to="/profile" className="profile-chip" id="nav-profile-link">
-            <img src={userProfile.avatar} alt={userProfile.name} className="profile-avatar" />
+            {userProfile.avatar && !userProfile.avatar.includes('unsplash.com') ? (
+              <img src={userProfile.avatar} alt={userProfile.name} className="profile-avatar" />
+            ) : (
+              <div className="profile-avatar-placeholder">
+                {(userProfile.name ? userProfile.name.charAt(0) : 'U').toUpperCase()}
+              </div>
+            )}
             <span className="profile-name">{userProfile.name.split(' ')[0]}</span>
           </Link>
         </div>

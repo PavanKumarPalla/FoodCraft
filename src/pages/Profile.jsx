@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2 
+  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Profile.css';
@@ -14,13 +14,25 @@ export default function Profile() {
 
   const [name, setName] = useState(userProfile.name);
   const [email, setEmail] = useState(userProfile.email);
-  const [avatar, setAvatar] = useState(userProfile.avatar);
+  // Sanitize initial avatar to exclude legacy unsplash images
+  const [avatar, setAvatar] = useState(() => {
+    return (userProfile.avatar && !userProfile.avatar.includes('unsplash.com')) 
+      ? userProfile.avatar 
+      : '';
+  });
   const [avatarMessage, setAvatarMessage] = useState('');
   const [calories, setCalories] = useState(userProfile.dailyCalorieTarget);
   const [proteinTarget, setProteinTarget] = useState(parseInt(userProfile.dailyProteinTarget) || 120);
   const [dietaryPreference, setDietaryPreference] = useState(userProfile.dietaryPreference);
   const [selectedCuisines, setSelectedCuisines] = useState(userProfile.cuisinePreferences || []);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Check whether user has a custom uploaded avatar
+  const hasCustomAvatar = Boolean(
+    (avatar && !avatar.includes('unsplash.com')) || 
+    (userProfile.avatar && !userProfile.avatar.includes('unsplash.com'))
+  );
+  const activeAvatar = hasCustomAvatar ? (avatar || userProfile.avatar) : null;
 
   // Handle Profile Photo Upload & Compression
   const handleAvatarFileChange = (e) => {
@@ -65,6 +77,15 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
+  // Remove photo handler
+  const handleRemoveAvatar = (e) => {
+    e.stopPropagation();
+    setAvatar('');
+    updateProfile({ avatar: '' });
+    setAvatarMessage('✓ Profile photo removed');
+    setTimeout(() => setAvatarMessage(''), 2500);
+  };
+
   // Health toggles
   const [lowSugar, setLowSugar] = useState(true);
   const [lowSalt, setLowSalt] = useState(false);
@@ -85,7 +106,7 @@ export default function Profile() {
     const updatedData = {
       name,
       email,
-      avatar,
+      avatar: activeAvatar || '',
       dailyCalorieTarget: calories,
       dailyProteinTarget: `${proteinTarget}g`,
       dietaryPreference,
@@ -113,12 +134,20 @@ export default function Profile() {
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
             title="Click to upload/change your profile picture"
           >
-            <img 
-              src={avatar || userProfile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"} 
-              alt={userProfile.name} 
-              className="profile-main-avatar" 
-            />
-            <div className="avatar-upload-badge">
+            {activeAvatar ? (
+              <img 
+                src={activeAvatar} 
+                alt={name || userProfile.name} 
+                className="profile-main-avatar" 
+              />
+            ) : (
+              <div className="profile-main-avatar profile-main-avatar-placeholder">
+                <span className="profile-placeholder-letter">
+                  {(name || userProfile.name || 'U').charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div className="avatar-upload-badge" title="Upload profile picture">
               <Camera size={14} />
             </div>
             <input 
@@ -136,6 +165,17 @@ export default function Profile() {
             <div className="profile-tags-strip">
               <span className="badge badge-match">FoodCraft Pro</span>
               <span className="badge badge-gym">Gym Enthusiast</span>
+              {activeAvatar && (
+                <button
+                  type="button"
+                  className="profile-remove-photo-chip"
+                  onClick={handleRemoveAvatar}
+                  title="Remove uploaded picture"
+                >
+                  <Trash2 size={12} />
+                  <span>Remove Photo</span>
+                </button>
+              )}
             </div>
             {avatarMessage && (
               <span style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>

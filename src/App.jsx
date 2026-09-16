@@ -23,12 +23,12 @@ function LayoutWrapper() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isAuthPage ? 'auth-layout' : ''}`}>
       {/* Top Navbar (hidden on auth pages like login and register) */}
       {!isAuthPage && <Navbar />}
 
       {/* Main Routed Page Content */}
-      <main className="main-content">
+      <main className={`main-content ${isAuthPage ? 'auth-main' : ''}`}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
