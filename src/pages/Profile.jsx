@@ -8,7 +8,7 @@ import { useFoodCraft } from '../context/FoodCraftContext';
 import './Profile.css';
 
 export default function Profile() {
-  const { userProfile, setUserProfile, updateProfile } = useFoodCraft();
+  const { userProfile, setUserProfile, updateProfile, logout } = useFoodCraft();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -120,7 +120,8 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (

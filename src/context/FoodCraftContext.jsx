@@ -195,8 +195,12 @@ export function FoodCraftProvider({ children }) {
   const logout = () => {
     setToken(null);
     setCurrentUser(null);
+    setUserProfile(INITIAL_USER_PROFILE);
+    setFavorites([]);
     localStorage.removeItem('foodcraft_token');
     localStorage.removeItem('foodcraft_user');
+    localStorage.removeItem('foodcraft_profile');
+    localStorage.removeItem('foodcraft_favorites');
   };
 
   // Toggle favorite (syncs to MongoDB if logged in)
@@ -314,7 +318,9 @@ export function FoodCraftProvider({ children }) {
       setActiveFilter,
       // Auth state & methods
       currentUser,
+      setCurrentUser,
       token,
+      setToken,
       authLoading,
       authError,
       register,

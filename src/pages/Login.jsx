@@ -25,7 +25,7 @@ export default function Login() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const navigate = useNavigate();
-  const { login } = useFoodCraft();
+  const { login, setToken, setCurrentUser, setUserProfile } = useFoodCraft();
 
   // Handle Standard Login
   const handleLogin = async (e) => {
@@ -38,7 +38,7 @@ export default function Login() {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } else {
       setErrorMessage(result.message || 'Invalid email or password.');
     }
@@ -49,9 +49,27 @@ export default function Login() {
     setErrorMessage('');
     setSuccessMessage('');
     setIsSubmitting(true);
-    await login({ email: 'demo@foodcraft.ai', password: 'password123' });
+    const result = await login({ email: 'demo@foodcraft.ai', password: 'password123' });
     setIsSubmitting(false);
-    navigate('/dashboard');
+    if (result && result.success) {
+      navigate('/dashboard', { replace: true });
+    } else {
+      // Fallback local session if backend demo account isn't initialized yet
+      const demoToken = 'foodcraft_demo_' + Date.now();
+      const demoUser = {
+        name: 'Demo Chef',
+        email: 'demo@foodcraft.ai',
+        phone: '9876543210',
+        profile: {
+          dietaryType: 'Flexible (Veg + Egg + Lean Meat)',
+          healthGoals: ['High Protein / Gym Muscle Gain']
+        }
+      };
+      setToken(demoToken);
+      setCurrentUser(demoUser);
+      setUserProfile(prev => ({ ...prev, name: demoUser.name, email: demoUser.email }));
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   // STEP 1 of Reset: Send Reset OTP to Email
