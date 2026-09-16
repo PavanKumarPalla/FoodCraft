@@ -93,11 +93,11 @@ export async function sendOtpEmail({ email, name, otp, purpose = 'register' }) {
             
             <div class="otp-box">
               <div class="otp-code">${otp}</div>
-              <div class="expiry-badge">⏱️ Valid for 10 minutes</div>
+              <div style="font-size: 13px; color: #10b981; font-weight: 600; margin-top: 10px;">✨ Active Verification Code</div>
             </div>
 
-            <p style="font-size: 13px; color: #64748b; margin-top: 16px;">
-              If you did not request this verification code, please ignore this email or contact our support team.
+            <p style="font-size: 13px; color: #94a3b8; margin-top: 16px;">
+              Enter this code in your Food Craft app. If you requested multiple codes, use this latest code.
             </p>
           </div>
           <div class="footer">

@@ -405,10 +405,13 @@ export default function Register() {
                 type="button"
                 className="btn-ghost"
                 style={{ fontSize: '0.82rem', padding: '0.25rem 0.5rem', color: '#10b981' }}
-                onClick={handleSendOtp}
+                onClick={(e) => {
+                  setOtp('');
+                  handleSendOtp(e);
+                }}
                 disabled={isLoading}
               >
-                Resend Code
+                {isLoading ? 'Sending...' : '↻ Send New Code'}
               </button>
             </div>
           </form>

@@ -24,7 +24,7 @@ const otpSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      expires: 600, // MongoDB TTL: automatically deleted after 10 minutes (600 seconds)
+      expires: 86400, // Replaced immediately whenever user requests another OTP
     },
   },
   {
