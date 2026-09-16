@@ -1,14 +1,14 @@
 // src/pages/Profile.jsx
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2 
+  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Profile.css';
 
 export default function Profile() {
-  const { userProfile, setUserProfile, updateProfile, logout } = useFoodCraft();
+  const { userProfile, setUserProfile, updateProfile, logout, token, currentUser } = useFoodCraft();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -121,8 +121,33 @@ export default function Profile() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
+
+  if (!token && !currentUser) {
+    return (
+      <div className="profile-page page-wrapper">
+        <div className="profile-hero-card glass-panel" style={{ textAlign: 'center', padding: '3.5rem 1.5rem', maxWidth: '520px', margin: '2rem auto' }}>
+          <div className="auth-logo-icon" style={{ margin: '0 auto 1.25rem', width: '52px', height: '52px' }}>
+            <User size={26} />
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.6rem' }}>You are Signed Out</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '1.75rem', lineHeight: 1.5 }}>
+            Sign in or create an account to view and customize your profile, set personalized nutrition targets, and manage your meal plans.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/login" className="btn-primary btn-glow" style={{ padding: '0.65rem 1.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <LogIn size={16} />
+              <span>Sign In to FoodCraft</span>
+            </Link>
+            <Link to="/" className="btn-secondary" style={{ padding: '0.65rem 1.5rem' }}>
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page page-wrapper">

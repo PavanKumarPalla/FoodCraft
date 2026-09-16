@@ -12,7 +12,7 @@ import FilterBar from '../components/FilterBar';
 import './Dashboard.css';
 
 export default function Dashboard() {
-  const { userProfile, recipes, mealPlan } = useFoodCraft();
+  const { userProfile, recipes, mealPlan, currentUser } = useFoodCraft();
   const [activeFilter, setActiveFilter] = useState('All');
 
   // Filter recipes based on quick filter
@@ -32,6 +32,12 @@ export default function Dashboard() {
 
   const todayMeals = mealPlan[0]?.meals || {};
 
+  const greetingName = currentUser?.name?.trim() 
+    ? currentUser.name.trim().split(' ')[0] 
+    : userProfile?.name?.trim() 
+      ? userProfile.name.trim().split(' ')[0] 
+      : 'Chef';
+
   return (
     <div className="dashboard-page page-wrapper">
       {/* Welcome Hero & Macros Strip */}
@@ -39,7 +45,7 @@ export default function Dashboard() {
         <div className="dash-hero-top">
           <div className="dash-user-greeting">
             <span className="greeting-sub">Welcome to your kitchen hub</span>
-            <h1 className="greeting-title">Hello, {userProfile.name.split(' ')[0]} 👋</h1>
+            <h1 className="greeting-title">Hello, {greetingName} 👋</h1>
             <p className="greeting-desc">
               Your fridge scan detected <strong>5 active ingredients</strong>. We found <strong>14 matching recipes</strong> with &gt;88% semantic similarity.
             </p>

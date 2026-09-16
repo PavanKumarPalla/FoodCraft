@@ -1,12 +1,12 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Heart, Search, Utensils, Calendar, Camera } from 'lucide-react';
+import { Heart, Search, Utensils, Calendar, Camera, LogIn } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { favorites, userProfile, searchQuery, setSearchQuery } = useFoodCraft();
+  const { favorites, userProfile, searchQuery, setSearchQuery, token, currentUser } = useFoodCraft();
   const navigate = useNavigate();
 
   const handleSearchSubmit = (e) => {
@@ -15,6 +15,11 @@ export default function Navbar() {
       navigate(`/recipes?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
+  const isLoggedIn = Boolean(token && currentUser);
+  const displayName = currentUser?.name || userProfile?.name || '';
+  const firstLetter = displayName.trim() ? displayName.trim().charAt(0).toUpperCase() : 'U';
+  const firstName = displayName.trim() ? displayName.trim().split(' ')[0] : 'Profile';
 
   return (
     <header className="navbar-header">
@@ -61,7 +66,7 @@ export default function Navbar() {
           />
         </form>
 
-        {/* Actions (Favorites & Profile) */}
+        {/* Actions (Favorites & Profile / Sign In) */}
         <div className="navbar-actions">
           <Link to="/favorites" className="action-btn favorites-btn" title="Saved Favorites" id="nav-favorites-link">
             <Heart size={20} className={favorites.length > 0 ? "text-heart-active" : ""} />
@@ -70,16 +75,23 @@ export default function Navbar() {
             )}
           </Link>
 
-          <Link to="/profile" className="profile-chip" id="nav-profile-link">
-            {userProfile.avatar && !userProfile.avatar.includes('unsplash.com') ? (
-              <img src={userProfile.avatar} alt={userProfile.name} className="profile-avatar" />
-            ) : (
-              <div className="profile-avatar-placeholder">
-                {(userProfile.name ? userProfile.name.charAt(0) : 'U').toUpperCase()}
-              </div>
-            )}
-            <span className="profile-name">{userProfile.name.split(' ')[0]}</span>
-          </Link>
+          {isLoggedIn ? (
+            <Link to="/profile" className="profile-chip" id="nav-profile-link" title="My Profile">
+              {userProfile.avatar && !userProfile.avatar.includes('unsplash.com') ? (
+                <img src={userProfile.avatar} alt={displayName} className="profile-avatar" />
+              ) : (
+                <div className="profile-avatar-placeholder">
+                  {firstLetter}
+                </div>
+              )}
+              <span className="profile-name">{firstName}</span>
+            </Link>
+          ) : (
+            <Link to="/login" className="nav-login-btn" id="nav-login-link" title="Sign In to FoodCraft">
+              <LogIn size={15} />
+              <span>Sign In</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

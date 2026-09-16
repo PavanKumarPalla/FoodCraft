@@ -16,6 +16,10 @@ export function FoodCraftProvider({ children }) {
   });
 
   const [userProfile, setUserProfile] = useState(() => {
+    const token = localStorage.getItem('foodcraft_token');
+    if (!token) {
+      return INITIAL_USER_PROFILE;
+    }
     const saved = localStorage.getItem('foodcraft_profile');
     if (saved) {
       try {

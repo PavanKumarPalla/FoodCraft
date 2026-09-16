@@ -457,8 +457,8 @@ export const WEEKLY_MEAL_PLAN = [
 ];
 
 export const INITIAL_USER_PROFILE = {
-  name: "Pavan Kumar",
-  email: "pavan.kumar@foodcraft.ai",
+  name: "",
+  email: "",
   avatar: "",
   dietaryPreference: "Flexible (Veg + Egg + Lean Meat)",
   cuisinePreferences: ["North Indian", "South Indian", "Mediterranean"],

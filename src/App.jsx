@@ -18,15 +18,6 @@ import Explore from './pages/Explore';
 import Favorites from './pages/Favorites';
 import Profile from './pages/Profile';
 
-// Protected route: Redirects to /login if user is not logged in (e.g. after signout & clicking Back)
-function ProtectedRoute({ children }) {
-  const { token } = useFoodCraft();
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-}
-
 // Public auth route: Redirects to /dashboard if user is already logged in
 function PublicAuthRoute({ children }) {
   const { token } = useFoodCraft();
@@ -51,15 +42,15 @@ function LayoutWrapper() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
           <Route path="/register" element={<PublicAuthRoute><Register /></PublicAuthRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/scan" element={<ProtectedRoute><ScanIngredients /></ProtectedRoute>} />
-          <Route path="/recipes" element={<ProtectedRoute><RecipeResults /></ProtectedRoute>} />
-          <Route path="/recipe/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
-          <Route path="/meal-plan" element={<ProtectedRoute><MealPlanner /></ProtectedRoute>} />
-          <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-          <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/scan" element={<ScanIngredients />} />
+          <Route path="/recipes" element={<RecipeResults />} />
+          <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route path="/meal-plan" element={<MealPlanner />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 
