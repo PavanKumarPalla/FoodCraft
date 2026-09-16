@@ -81,7 +81,14 @@ export function FoodCraftProvider({ children }) {
           if (data.success && data.user) {
             setCurrentUser(data.user);
             if (data.user.profile) {
-              setUserProfile(prev => ({ ...prev, ...data.user.profile }));
+              setUserProfile(prev => ({ 
+                ...prev, 
+                name: data.user.name,
+                avatar: data.user.avatar || prev.avatar,
+                ...data.user.profile 
+              }));
+            } else if (data.user.avatar) {
+              setUserProfile(prev => ({ ...prev, avatar: data.user.avatar }));
             }
             if (data.user.favorites && data.user.favorites.length > 0) {
               setFavorites(data.user.favorites);
@@ -201,20 +208,30 @@ export function FoodCraftProvider({ children }) {
 
   const isFavorite = (recipeId) => favorites.includes(recipeId);
 
-  // Update profile (syncs to MongoDB if logged in)
+  // Update profile & avatar (syncs to MongoDB if logged in)
   const updateProfile = async (newProfileData) => {
     setUserProfile(prev => ({ ...prev, ...newProfileData }));
 
     if (token) {
       try {
-        await fetch('/api/auth/profile', {
+        const { avatar, name, phone, ...profileFields } = newProfileData;
+        const res = await fetch('/api/auth/profile', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ profile: newProfileData })
+          body: JSON.stringify({ 
+            avatar,
+            name,
+            phone,
+            profile: profileFields 
+          })
         });
+        const data = await res.json();
+        if (data.success && data.user) {
+          setCurrentUser(data.user);
+        }
       } catch (err) {
         console.warn('Could not sync profile to MongoDB:', err);
       }

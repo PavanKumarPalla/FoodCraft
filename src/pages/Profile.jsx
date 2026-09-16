@@ -1,23 +1,69 @@
 // src/pages/Profile.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils
+  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Profile.css';
 
 export default function Profile() {
-  const { userProfile, setUserProfile } = useFoodCraft();
+  const { userProfile, setUserProfile, updateProfile } = useFoodCraft();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [name, setName] = useState(userProfile.name);
   const [email, setEmail] = useState(userProfile.email);
+  const [avatar, setAvatar] = useState(userProfile.avatar);
+  const [avatarMessage, setAvatarMessage] = useState('');
   const [calories, setCalories] = useState(userProfile.dailyCalorieTarget);
   const [proteinTarget, setProteinTarget] = useState(parseInt(userProfile.dailyProteinTarget) || 120);
   const [dietaryPreference, setDietaryPreference] = useState(userProfile.dietaryPreference);
   const [selectedCuisines, setSelectedCuisines] = useState(userProfile.cuisinePreferences || []);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Handle Profile Photo Upload & Compression
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Optimize & resize to max 320x320 for fast MongoDB storage
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 320;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setAvatar(resizedDataUrl);
+        updateProfile({ avatar: resizedDataUrl });
+        setAvatarMessage('✓ Photo updated and saved to database!');
+        setTimeout(() => setAvatarMessage(''), 3500);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Health toggles
   const [lowSugar, setLowSugar] = useState(true);
@@ -36,15 +82,17 @@ export default function Profile() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    setUserProfile(prev => ({
-      ...prev,
+    const updatedData = {
       name,
       email,
+      avatar,
       dailyCalorieTarget: calories,
       dailyProteinTarget: `${proteinTarget}g`,
       dietaryPreference,
       cuisinePreferences: selectedCuisines
-    }));
+    };
+
+    updateProfile(updatedData);
 
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
@@ -59,7 +107,29 @@ export default function Profile() {
       {/* Profile Header Card */}
       <div className="profile-hero-card glass-panel animate-fade-in">
         <div className="profile-user-left">
-          <img src={userProfile.avatar} alt={userProfile.name} className="profile-main-avatar" />
+          {/* Interactive Photo Upload Avatar */}
+          <div 
+            className="profile-avatar-container" 
+            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            title="Click to upload/change your profile picture"
+          >
+            <img 
+              src={avatar || userProfile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"} 
+              alt={userProfile.name} 
+              className="profile-main-avatar" 
+            />
+            <div className="avatar-upload-badge">
+              <Camera size={14} />
+            </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+              onChange={handleAvatarFileChange} 
+            />
+          </div>
+
           <div className="profile-info-text">
             <h1 className="profile-user-name">{name}</h1>
             <span className="profile-user-email">{email}</span>
@@ -67,6 +137,11 @@ export default function Profile() {
               <span className="badge badge-match">FoodCraft Pro</span>
               <span className="badge badge-gym">Gym Enthusiast</span>
             </div>
+            {avatarMessage && (
+              <span style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <CheckCircle2 size={13} /> {avatarMessage}
+              </span>
+            )}
           </div>
         </div>
 

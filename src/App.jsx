@@ -24,8 +24,8 @@ function LayoutWrapper() {
 
   return (
     <div className="app-container">
-      {/* Top Navbar */}
-      <Navbar />
+      {/* Top Navbar (hidden on auth pages like login and register) */}
+      {!isAuthPage && <Navbar />}
 
       {/* Main Routed Page Content */}
       <main className="main-content">

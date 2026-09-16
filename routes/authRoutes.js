@@ -284,6 +284,7 @@ router.post('/register-verified', async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        avatar: user.avatar || '',
         profile: user.profile,
         favorites: user.favorites,
         mealPlan: user.mealPlan,
@@ -356,6 +357,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        avatar: user.avatar || '',
         profile: user.profile,
         favorites: user.favorites,
         mealPlan: user.mealPlan,
@@ -536,7 +538,7 @@ router.get('/me', protect, async (req, res) => {
 // @access  Private
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { profile, name, phone } = req.body;
+    const { profile, name, phone, avatar } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -545,6 +547,7 @@ router.put('/profile', protect, async (req, res) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    if (avatar !== undefined) user.avatar = avatar;
     if (profile) {
       user.profile = { ...user.profile.toObject(), ...profile };
     }
@@ -553,12 +556,13 @@ router.put('/profile', protect, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Profile updated in MongoDB!',
+      message: 'Profile and photo updated in MongoDB!',
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
+        avatar: user.avatar,
         profile: user.profile,
         favorites: user.favorites,
         mealPlan: user.mealPlan,
