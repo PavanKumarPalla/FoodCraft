@@ -1,0 +1,266 @@
+/* src/pages/Dashboard.css */
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Dashboard Hero */
+.dashboard-hero {
+  padding: 1.75rem 1.5rem;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, rgba(22, 30, 46, 0.75) 0%, rgba(18, 25, 39, 0.85) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.dash-hero-top {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-hero-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.greeting-sub {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-secondary);
+}
+
+.greeting-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0.25rem 0 0.4rem;
+}
+
+.greeting-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  max-width: 580px;
+}
+
+.greeting-desc strong {
+  color: var(--text-main);
+}
+
+.hero-scan-cta {
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .hero-scan-cta {
+    align-self: center;
+  }
+}
+
+/* Macro Tracker Strip */
+.dash-macro-tracker {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 640px) {
+  .dash-macro-tracker {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.macro-card {
+  background: rgba(10, 14, 23, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.macro-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.macro-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.macro-icon-flame { color: #f59e0b; }
+.macro-icon-protein { color: #8b5cf6; }
+.macro-icon-sparkle { color: var(--primary); }
+
+.macro-values {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.macro-big {
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.macro-max {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1s ease-out;
+}
+
+.progress-flame {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.progress-protein {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+}
+
+.progress-match {
+  background: var(--primary-gradient);
+}
+
+/* Quick Actions Grid */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 680px) {
+  .quick-actions-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.action-tile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+}
+
+.action-tile-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-tile-text {
+  flex: 1;
+}
+
+.action-tile-text h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.15rem;
+}
+
+.action-tile-text p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.tile-arrow {
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.action-tile:hover .tile-arrow {
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+/* Today Meals Schedule */
+.today-slots-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .today-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Recipes Feed */
+.recipes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .recipes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .recipes-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .recipes-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.empty-state-box {
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  border-radius: var(--radius-xl);
+}
+
+.empty-icon {
+  color: var(--text-muted);
+}

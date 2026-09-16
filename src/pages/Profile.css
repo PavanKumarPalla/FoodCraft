@@ -1,0 +1,237 @@
+/* src/pages/Profile.css */
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Hero Card */
+.profile-hero-card {
+  padding: 1.75rem;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 680px) {
+  .profile-hero-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.profile-user-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.profile-main-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 3px solid var(--primary);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+.profile-user-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 0.15rem;
+}
+
+.profile-user-email {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.profile-tags-strip {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.logout-btn {
+  align-self: flex-start;
+}
+
+@media (min-width: 680px) {
+  .logout-btn {
+    align-self: center;
+  }
+}
+
+/* Settings Form */
+.profile-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-section {
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.section-head-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-head-title h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.section-desc-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: -0.5rem;
+}
+
+/* Sliders */
+.sliders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slider-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slider-label-row label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.slider-badge {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.custom-range-slider {
+  width: 100%;
+  accent-color: var(--primary);
+  height: 6px;
+  cursor: pointer;
+}
+
+.range-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Toggles */
+.toggles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(10, 14, 23, 0.45);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+.switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: 80%;
+}
+
+.switch-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.switch-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.switch-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Cuisines Grid */
+.cuisines-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cuisine-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.cuisine-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.cuisine-pill-btn.selected {
+  background: rgba(255, 107, 53, 0.2);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+/* Save Bar */
+.profile-save-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-profile-cta {
+  padding: 0.85rem 2rem;
+  font-size: 0.98rem;
+}
+
+@media (max-width: 600px) {
+  .save-profile-cta {
+    width: 100%;
+  }
+}

@@ -1,0 +1,61 @@
+/* src/pages/Explore.css */
+
+.explore-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.explore-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.explore-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary-light);
+  margin-bottom: 0.5rem;
+}
+
+.explore-title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.explore-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.explore-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 600px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

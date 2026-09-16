@@ -1,0 +1,398 @@
+/* src/pages/ScanIngredients.css */
+
+.scan-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.scan-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.scan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.35);
+  color: var(--primary-light);
+  margin-bottom: 0.75rem;
+}
+
+.scan-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.scan-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+/* Tabs */
+.scan-tabs-nav {
+  display: flex;
+  padding: 0.35rem;
+  border-radius: var(--radius-xl);
+  max-width: 540px;
+  margin: 0 auto;
+  gap: 0.35rem;
+}
+
+.scan-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.scan-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.scan-tab-btn.active {
+  background: var(--primary-gradient);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+/* Content Grid */
+.scan-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .scan-content-grid {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+/* Image Viewport & YOLO Overlay */
+.image-scan-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.image-viewport-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000000;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.viewport-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.3s ease;
+}
+
+.blur-scan {
+  filter: brightness(0.65) blur(1.5px);
+}
+
+/* Scanner laser line */
+.scanner-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  animation: laserScan 2s infinite alternate ease-in-out;
+}
+
+.laser-beam {
+  width: 100%;
+  height: 3px;
+  background: #ff6b35;
+  box-shadow: 0 0 15px 4px rgba(255, 107, 53, 0.9), 0 0 30px 10px rgba(255, 107, 53, 0.4);
+}
+
+@keyframes laserScan {
+  0% { transform: translateY(5%); }
+  100% { transform: translateY(92%); }
+}
+
+/* YOLOv8 Bounding Boxes */
+.yolo-bounding-box {
+  position: absolute;
+  border: 2px solid #ff6b35;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  animation: boxPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes boxPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.yolo-box-label {
+  position: absolute;
+  top: -24px;
+  left: -2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Upload Controls */
+.image-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.upload-file-btn {
+  cursor: pointer;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Manual Input */
+.manual-scan-card {
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.card-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.manual-input-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.manual-input-form input {
+  flex: 1;
+  height: 46px;
+  padding: 0 1rem;
+  background: var(--bg-glass-input);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.92rem;
+}
+
+.manual-input-form input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+}
+
+.quick-suggestions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.suggestions-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.suggestion-chip {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.suggestion-chip:hover {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--primary-light);
+  border-color: rgba(255, 107, 53, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Summary Basket */
+.basket-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.basket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.basket-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.basket-title-wrap h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.text-veg {
+  color: var(--veg-color);
+}
+
+.basket-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--veg-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.basket-instructions {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.ingredient-chips-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 80px;
+  padding: 0.85rem;
+  background: rgba(10, 14, 23, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.ingredient-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.35);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.chip-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.chip-remove-btn:hover {
+  color: #ef4444;
+}
+
+.no-ingredients-msg {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: auto;
+  text-align: center;
+}
+
+.clear-ingredients-link {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  align-self: flex-start;
+  transition: color var(--transition-fast);
+}
+
+.clear-ingredients-link:hover {
+  color: #ef4444;
+}
+
+.model-info-box {
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.model-info-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--primary-light);
+}
+
+.model-info-box p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.find-recipes-cta {
+  width: 100%;
+  padding: 0.95rem;
+  font-size: 1rem;
+}
