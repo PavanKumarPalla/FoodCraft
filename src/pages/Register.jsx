@@ -2,19 +2,20 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Utensils, Mail, Lock, User, ArrowRight, AlertCircle, 
-  CheckCircle2, ShieldCheck, RefreshCw, KeyRound 
+  Utensils, Mail, Lock, User, Phone, ArrowRight, AlertCircle, 
+  CheckCircle2, ShieldCheck, KeyRound 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
 export default function Register() {
-  // Step tracker: 1 = Email/Name, 2 = Verify OTP, 3 = Password section (unlocked ONLY after OTP verified)
+  // Step tracker: 1 = Details (Name, Email, Phone, Goal), 2 = Verify OTP, 3 = Password section (unlocked ONLY after OTP verified)
   const [step, setStep] = useState(1);
 
   // Form fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,20 +27,28 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { setUserProfile, setRecipes } = useFoodCraft();
+  const { setUserProfile } = useFoodCraft();
 
-  // STEP 1: Send OTP to User's Email
+  // STEP 1: Send OTP to User's Email (checks duplicate Email & Phone in MongoDB)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+
+    // Phone validation
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/send-register-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({ email, name, phone }),
       });
       const data = await res.json();
 
@@ -56,7 +65,7 @@ export default function Register() {
     }
   };
 
-  // STEP 2: Verify the OTP
+  // STEP 2: Verify the 6-digit OTP
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -75,7 +84,7 @@ export default function Register() {
         throw new Error(data.message || 'Invalid or expired OTP.');
       }
 
-      setSuccessMessage('Email verified! Now set your secure password.');
+      setSuccessMessage('✓ Email verified! Please create your password below to finish.');
       setStep(3); // Unlocks the password section
     } catch (err) {
       setErrorMessage(err.message);
@@ -84,7 +93,7 @@ export default function Register() {
     }
   };
 
-  // STEP 3: Complete Registration with Password & Save to MongoDB
+  // STEP 3: Complete Registration with Password & Save to MongoDB Atlas
   const handleCompleteRegistration = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -109,6 +118,7 @@ export default function Register() {
         body: JSON.stringify({
           name,
           email,
+          phone,
           otp,
           password,
           dietaryType: dietaryGoal.includes('Vegetarian') ? 'Veg' : 'All',
@@ -133,7 +143,7 @@ export default function Register() {
         }
       }
 
-      setSuccessMessage('🎉 Account created! A welcome email has been sent to your inbox.');
+      setSuccessMessage('🎉 Account successfully created! Check your email for a welcome message.');
 
       setTimeout(() => {
         navigate('/dashboard');
@@ -153,9 +163,9 @@ export default function Register() {
           <div className="auth-logo-icon">
             <Utensils size={24} />
           </div>
-          <h1 className="auth-title">Create Food Craft Account</h1>
+          <h1 className="auth-title">Join Food Craft</h1>
           <p className="auth-subtitle">
-            {step === 1 && 'Enter your details to receive a 6-digit email verification code'}
+            {step === 1 && 'Enter your details to receive an email verification code'}
             {step === 2 && `Enter the 6-digit code sent to ${email}`}
             {step === 3 && 'Email verified! Set a password to complete your account'}
           </p>
@@ -221,21 +231,22 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Alerts */}
+        {/* Global Feedback Alerts */}
         {errorMessage && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.4)',
             color: '#f87171',
-            padding: '0.75rem 1rem',
+            padding: '0.85rem 1rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1rem',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            alignItems: 'flex-start',
+            gap: '0.6rem',
+            lineHeight: 1.4
           }}>
-            <AlertCircle size={18} />
+            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -245,15 +256,16 @@ export default function Register() {
             background: 'rgba(16, 185, 129, 0.15)',
             border: '1px solid rgba(16, 185, 129, 0.4)',
             color: '#34d399',
-            padding: '0.75rem 1rem',
+            padding: '0.85rem 1rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1rem',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.6rem',
+            lineHeight: 1.4
           }}>
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -292,6 +304,24 @@ export default function Register() {
             </div>
 
             <div className="form-group">
+              <label htmlFor="reg-phone">Mobile Phone Number</label>
+              <div className="input-icon-wrapper">
+                <Phone size={17} className="field-icon" />
+                <input
+                  id="reg-phone"
+                  type="tel"
+                  required
+                  placeholder="+91 9876543210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                Used for instant phone login or password recovery
+              </span>
+            </div>
+
+            <div className="form-group">
               <label htmlFor="reg-goal">Primary Nutrition Goal</label>
               <select
                 id="reg-goal"
@@ -313,7 +343,7 @@ export default function Register() {
               disabled={isLoading}
               id="send-otp-btn"
             >
-              <span>{isLoading ? 'Sending OTP to Email...' : 'Send Verification Code'}</span>
+              <span>{isLoading ? 'Checking MongoDB & Sending OTP...' : 'Verify Email & Send Code'}</span>
               <ArrowRight size={18} />
             </button>
           </form>
@@ -366,7 +396,7 @@ export default function Register() {
                 style={{ fontSize: '0.82rem', padding: '0.25rem 0.5rem' }}
                 onClick={() => setStep(1)}
               >
-                ← Change Email
+                ← Edit Details
               </button>
               <button
                 type="button"
@@ -393,7 +423,7 @@ export default function Register() {
               fontSize: '0.85rem',
               color: '#a7f3d0'
             }}>
-              ✓ Email <strong>{email}</strong> verified successfully.
+              ✓ Email <strong>{email}</strong> & Phone <strong>{phone}</strong> verified.
             </div>
 
             <div className="form-group">

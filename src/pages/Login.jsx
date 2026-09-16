@@ -203,19 +203,19 @@ export default function Login() {
             </div>
 
             <div className="auth-divider">
-              <span>or log in with email</span>
+              <span>or sign in with email / phone</span>
             </div>
 
             <form className="auth-form" onSubmit={handleLogin}>
               <div className="form-group">
-                <label htmlFor="login-email">Email Address</label>
+                <label htmlFor="login-identifier">Email Address or Mobile Number</label>
                 <div className="input-icon-wrapper">
                   <Mail size={17} className="field-icon" />
                   <input
-                    id="login-email"
-                    type="email"
+                    id="login-identifier"
+                    type="text"
                     required
-                    placeholder="name@example.com"
+                    placeholder="name@example.com or 9876543210"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

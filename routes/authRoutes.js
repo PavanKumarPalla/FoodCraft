@@ -1,5 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { protect } from '../middleware/auth.js';
@@ -25,16 +26,22 @@ const generateNumericOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Helper to clean phone numbers (e.g. +91 9876543210 -> 9876543210 or formatted)
+const normalizePhone = (phone) => {
+  if (!phone) return '';
+  return phone.replace(/[\s\-\(\)]/g, '').trim();
+};
+
 // =========================================================================
-// 1. REGISTRATION WITH EMAIL OTP FLOW
+// 1. REGISTRATION WITH EMAIL OTP & PHONE DUPLICATE CHECK FLOW
 // =========================================================================
 
 // @route   POST /api/auth/send-register-otp
-// @desc    Step 1: Check if email exists, generate & email 6-digit OTP
+// @desc    Step 1: Check duplicate Email & Phone in MongoDB, send 6-digit OTP
 // @access  Public
 router.post('/send-register-otp', async (req, res) => {
   try {
-    const { email, name } = req.body;
+    const { email, name, phone } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -44,14 +51,45 @@ router.post('/send-register-otp', async (req, res) => {
     }
 
     const cleanEmail = email.toLowerCase().trim();
+    const cleanPhone = normalizePhone(phone);
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      return res.status(400).json({
+    // If MongoDB is still connecting or disconnected, return a clear 503 instead of a silent crash
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
         success: false,
-        message: 'An account with this email already exists. Please log in.',
+        message:
+          'Database connection is initializing. Please verify MONGODB_URI credentials in your Render settings.',
+        databaseStatus: 'disconnected',
       });
+    }
+
+    // 1. Check if Email already exists in MongoDB
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        field: 'email',
+        message: `An account with the email "${cleanEmail}" already exists. Please sign in instead.`,
+      });
+    }
+
+    // 2. Check if Phone Number already exists in MongoDB
+    if (cleanPhone) {
+      const existingPhone = await User.findOne({
+        $or: [
+          { phone: cleanPhone },
+          { phone: phone.trim() },
+          { phone: cleanPhone.slice(-10) }, // match last 10 digits
+        ],
+      });
+
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          field: 'phone',
+          message: `The phone number "${phone}" is already registered to another account. Please use a different number or sign in.`,
+        });
+      }
     }
 
     // Generate 6-digit OTP
@@ -71,23 +109,39 @@ router.post('/send-register-otp', async (req, res) => {
     console.log(`🔑 [Registration OTP] for ${cleanEmail}: ${otp}`);
 
     // Send email via Brevo
-    const emailResult = await sendOtpEmail({
-      email: cleanEmail,
-      name: name || 'Chef',
-      otp,
-      purpose: 'register',
-    });
+    let emailResult = { success: false };
+    try {
+      emailResult = await sendOtpEmail({
+        email: cleanEmail,
+        name: name || 'Chef',
+        otp,
+        purpose: 'register',
+      });
+    } catch (emailErr) {
+      console.error('Brevo send error:', emailErr.message);
+    }
+
+    // If Brevo failed (e.g. IP whitelist on Brevo), provide helpful message
+    if (!emailResult.success) {
+      console.warn(`⚠️ Brevo email was not delivered. Fallback verification code: ${otp}`);
+      return res.json({
+        success: true,
+        message: `Verification code generated! (Note: Check Brevo Authorised IPs settings if email is delayed. Demo code: ${otp})`,
+        demoOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+        emailSent: false,
+      });
+    }
 
     res.json({
       success: true,
       message: `A 6-digit verification code has been sent to ${cleanEmail}. Please check your inbox or spam folder.`,
-      emailSent: emailResult.success,
+      emailSent: true,
     });
   } catch (error) {
     console.error('send-register-otp error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to send verification code.',
+      message: error.message || 'Failed to process verification code.',
     });
   }
 });
@@ -118,7 +172,7 @@ router.post('/verify-register-otp', async (req, res) => {
     if (!otpRecord) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired verification code. Please request a new one.',
+        message: 'Invalid or expired verification code. Please check your code or request a new one.',
       });
     }
 
@@ -140,11 +194,11 @@ router.post('/verify-register-otp', async (req, res) => {
 });
 
 // @route   POST /api/auth/register-verified
-// @desc    Step 3: Save user in DB, send professional welcome email
+// @desc    Step 3: Save user in DB with Email & Phone, send welcome email
 // @access  Public
 router.post('/register-verified', async (req, res) => {
   try {
-    const { name, email, otp, password, dietaryType, healthGoals } = req.body;
+    const { name, email, phone, otp, password, dietaryType, healthGoals } = req.body;
 
     if (!name || !email || !password || !otp) {
       return res.status(400).json({
@@ -161,6 +215,7 @@ router.post('/register-verified', async (req, res) => {
     }
 
     const cleanEmail = email.toLowerCase().trim();
+    const cleanPhone = normalizePhone(phone);
     const cleanOtp = otp.toString().trim();
 
     // Verify OTP record exists and is verified
@@ -177,19 +232,32 @@ router.post('/register-verified', async (req, res) => {
       });
     }
 
-    // Double check email uniqueness
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      return res.status(400).json({
+    // Double check email and phone uniqueness in MongoDB
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
+      return res.status(409).json({
         success: false,
-        message: 'An account with this email already exists.',
+        message: `An account with this email "${cleanEmail}" already exists.`,
       });
+    }
+
+    if (cleanPhone) {
+      const existingPhone = await User.findOne({
+        $or: [{ phone: cleanPhone }, { phone: phone.trim() }],
+      });
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: `The phone number "${phone}" is already registered.`,
+        });
+      }
     }
 
     // Create user in MongoDB
     const user = await User.create({
       name,
       email: cleanEmail,
+      phone: cleanPhone || phone || 'Not provided',
       password,
       profile: {
         dietaryType: dietaryType || 'All',
@@ -215,6 +283,7 @@ router.post('/register-verified', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         profile: user.profile,
         favorites: user.favorites,
         mealPlan: user.mealPlan,
@@ -230,7 +299,79 @@ router.post('/register-verified', async (req, res) => {
 });
 
 // =========================================================================
-// 2. FORGOT / RESET PASSWORD WITH EMAIL OTP FLOW
+// 2. LOGIN WITH EITHER EMAIL OR PHONE NUMBER
+// =========================================================================
+
+// @route   POST /api/auth/login
+// @desc    Authenticate user via Email OR Phone + Password
+// @access  Public
+router.post('/login', async (req, res) => {
+  try {
+    const { email, identifier, password } = req.body;
+    const loginInput = (identifier || email || '').trim();
+
+    if (!loginInput || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your email/phone number and password.',
+      });
+    }
+
+    const cleanInput = loginInput.toLowerCase();
+    const cleanPhone = normalizePhone(loginInput);
+
+    // Find user by either email or phone number in MongoDB
+    const user = await User.findOne({
+      $or: [
+        { email: cleanInput },
+        { phone: loginInput },
+        { phone: cleanPhone },
+        { phone: cleanPhone.slice(-10) },
+      ],
+    }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'No account found with this email or phone number. Please check your credentials or register.',
+      });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect password. Please try again or click "Forgot password?".',
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Logged in successfully!',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profile: user.profile,
+        favorites: user.favorites,
+        mealPlan: user.mealPlan,
+      },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error during login',
+    });
+  }
+});
+
+// =========================================================================
+// 3. FORGOT / RESET PASSWORD WITH EMAIL OTP FLOW
 // =========================================================================
 
 // @route   POST /api/auth/send-reset-otp
@@ -253,7 +394,7 @@ router.post('/send-reset-otp', async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'No account found with this email address.',
+        message: `No account found with the email "${cleanEmail}". Please check the spelling or register a new account.`,
       });
     }
 
@@ -362,65 +503,8 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // =========================================================================
-// 3. STANDARD AUTH & USER DATA ROUTES
+// 4. USER PROFILE & PREFERENCES ROUTES
 // =========================================================================
-
-// @route   POST /api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide email and password.',
-      });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
-      '+password'
-    );
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
-    }
-
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
-    }
-
-    const token = generateToken(user._id);
-
-    res.json({
-      success: true,
-      message: 'Logged in successfully!',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profile: user.profile,
-        favorites: user.favorites,
-        mealPlan: user.mealPlan,
-      },
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error during login',
-    });
-  }
-});
 
 // @route   GET /api/auth/me
 // @desc    Get currently authenticated user data
@@ -437,7 +521,7 @@ router.get('/me', protect, async (req, res) => {
 // @access  Private
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { profile, name } = req.body;
+    const { profile, name, phone } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -445,6 +529,7 @@ router.put('/profile', protect, async (req, res) => {
     }
 
     if (name) user.name = name;
+    if (phone) user.phone = phone;
     if (profile) {
       user.profile = { ...user.profile.toObject(), ...profile };
     }
@@ -458,6 +543,7 @@ router.put('/profile', protect, async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         profile: user.profile,
         favorites: user.favorites,
         mealPlan: user.mealPlan,
