@@ -1,7 +1,13 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Otp from '../models/Otp.js';
 import { protect } from '../middleware/auth.js';
+import {
+  sendOtpEmail,
+  sendWelcomeEmail,
+  sendPasswordResetSuccessEmail,
+} from '../utils/emailService.js';
 
 const router = express.Router();
 
@@ -14,33 +20,176 @@ const generateToken = (id) => {
   );
 };
 
-// @route   POST /api/auth/register
-// @desc    Register a new user in MongoDB
-// @access  Public
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, dietaryType, healthGoals } = req.body;
+// Generate random 6-digit numeric OTP
+const generateNumericOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
-    if (!name || !email || !password) {
+// =========================================================================
+// 1. REGISTRATION WITH EMAIL OTP FLOW
+// =========================================================================
+
+// @route   POST /api/auth/send-register-otp
+// @desc    Step 1: Check if email exists, generate & email 6-digit OTP
+// @access  Public
+router.post('/send-register-otp', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, email, and password.',
+        message: 'Please provide a valid email address.',
       });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
+
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'A user with this email already exists.',
+        message: 'An account with this email already exists. Please log in.',
       });
     }
 
-    // Create user
+    // Generate 6-digit OTP
+    const otp = generateNumericOtp();
+
+    // Remove any previous registration OTPs for this email
+    await Otp.deleteMany({ email: cleanEmail, purpose: 'register' });
+
+    // Store new OTP in MongoDB (auto-expires in 10 minutes via TTL)
+    await Otp.create({
+      email: cleanEmail,
+      otp,
+      purpose: 'register',
+      verified: false,
+    });
+
+    console.log(`🔑 [Registration OTP] for ${cleanEmail}: ${otp}`);
+
+    // Send email via Brevo
+    const emailResult = await sendOtpEmail({
+      email: cleanEmail,
+      name: name || 'Chef',
+      otp,
+      purpose: 'register',
+    });
+
+    res.json({
+      success: true,
+      message: `A 6-digit verification code has been sent to ${cleanEmail}. Please check your inbox or spam folder.`,
+      emailSent: emailResult.success,
+    });
+  } catch (error) {
+    console.error('send-register-otp error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send verification code.',
+    });
+  }
+});
+
+// @route   POST /api/auth/verify-register-otp
+// @desc    Step 2: Check if OTP is correct before showing password section
+// @access  Public
+router.post('/verify-register-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and verification code.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanOtp = otp.toString().trim();
+
+    const otpRecord = await Otp.findOne({
+      email: cleanEmail,
+      otp: cleanOtp,
+      purpose: 'register',
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code. Please request a new one.',
+      });
+    }
+
+    // Mark as verified
+    otpRecord.verified = true;
+    await otpRecord.save();
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! You can now set your password.',
+    });
+  } catch (error) {
+    console.error('verify-register-otp error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify code.',
+    });
+  }
+});
+
+// @route   POST /api/auth/register-verified
+// @desc    Step 3: Save user in DB, send professional welcome email
+// @access  Public
+router.post('/register-verified', async (req, res) => {
+  try {
+    const { name, email, otp, password, dietaryType, healthGoals } = req.body;
+
+    if (!name || !email || !password || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide name, email, verified code, and password.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanOtp = otp.toString().trim();
+
+    // Verify OTP record exists and is verified
+    const otpRecord = await Otp.findOne({
+      email: cleanEmail,
+      otp: cleanOtp,
+      purpose: 'register',
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code not found or expired. Please verify your email again.',
+      });
+    }
+
+    // Double check email uniqueness
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this email already exists.',
+      });
+    }
+
+    // Create user in MongoDB
     const user = await User.create({
       name,
-      email,
+      email: cleanEmail,
       password,
       profile: {
         dietaryType: dietaryType || 'All',
@@ -48,11 +197,19 @@ router.post('/register', async (req, res) => {
       },
     });
 
+    // Delete used OTP
+    await Otp.deleteMany({ email: cleanEmail, purpose: 'register' });
+
+    // Send professional Welcome Email via Brevo
+    sendWelcomeEmail({ email: cleanEmail, name }).catch((err) =>
+      console.warn('Welcome email background send error:', err)
+    );
+
     const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully in MongoDB!',
+      message: 'Account created successfully in MongoDB! Welcome to Food Craft.',
       token,
       user: {
         id: user._id,
@@ -64,13 +221,149 @@ router.post('/register', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('register-verified error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error during registration',
+      message: error.message || 'Server error during account creation.',
     });
   }
 });
+
+// =========================================================================
+// 2. FORGOT / RESET PASSWORD WITH EMAIL OTP FLOW
+// =========================================================================
+
+// @route   POST /api/auth/send-reset-otp
+// @desc    Generate and send 6-digit password reset OTP
+// @access  Public
+router.post('/send-reset-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your account email address.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address.',
+      });
+    }
+
+    const otp = generateNumericOtp();
+
+    // Clean old reset OTPs
+    await Otp.deleteMany({ email: cleanEmail, purpose: 'reset-password' });
+
+    // Save reset OTP
+    await Otp.create({
+      email: cleanEmail,
+      otp,
+      purpose: 'reset-password',
+      verified: false,
+    });
+
+    console.log(`🔑 [Password Reset OTP] for ${cleanEmail}: ${otp}`);
+
+    // Send reset OTP email via Brevo
+    await sendOtpEmail({
+      email: cleanEmail,
+      name: user.name,
+      otp,
+      purpose: 'reset-password',
+    });
+
+    res.json({
+      success: true,
+      message: `A 6-digit password reset code has been sent to ${cleanEmail}.`,
+    });
+  } catch (error) {
+    console.error('send-reset-otp error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send reset code.',
+    });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Verify reset OTP and update password in MongoDB
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email, verification code, and your new password.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanOtp = otp.toString().trim();
+
+    // Verify OTP
+    const otpRecord = await Otp.findOne({
+      email: cleanEmail,
+      otp: cleanOtp,
+      purpose: 'reset-password',
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset code. Please request a new one.',
+      });
+    }
+
+    // Find user and update password
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    user.password = newPassword; // Triggers bcrypt hashing pre-save
+    await user.save();
+
+    // Delete used OTP
+    await Otp.deleteMany({ email: cleanEmail, purpose: 'reset-password' });
+
+    // Send confirmation email
+    sendPasswordResetSuccessEmail({ email: cleanEmail, name: user.name }).catch((err) =>
+      console.warn('Password reset confirmation email error:', err)
+    );
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully! You can now sign in with your new password.',
+    });
+  } catch (error) {
+    console.error('reset-password error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reset password.',
+    });
+  }
+});
+
+// =========================================================================
+// 3. STANDARD AUTH & USER DATA ROUTES
+// =========================================================================
 
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token
@@ -86,8 +379,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Find user and include password field for validation
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
       '+password'
     );
 
@@ -98,7 +390,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Validate password
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -223,21 +514,6 @@ router.put('/mealplan', protect, async (req, res) => {
       success: true,
       message: 'Meal plan synchronized with MongoDB!',
       mealPlan: user.mealPlan,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// @route   GET /api/auth/stats
-// @desc    Get total users count (Public metric)
-// @access  Public
-router.get('/stats', async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments();
-    res.json({
-      success: true,
-      totalUsers,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
