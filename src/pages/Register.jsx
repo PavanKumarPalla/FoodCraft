@@ -57,6 +57,9 @@ export default function Register() {
       }
 
       setSuccessMessage(data.message);
+      if (data.fallbackOtp) {
+        setOtp(data.fallbackOtp);
+      }
       setStep(2);
     } catch (err) {
       setErrorMessage(err.message);

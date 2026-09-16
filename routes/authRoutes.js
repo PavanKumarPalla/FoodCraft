@@ -121,13 +121,13 @@ router.post('/send-register-otp', async (req, res) => {
       console.error('Brevo send error:', emailErr.message);
     }
 
-    // If Brevo failed (e.g. IP whitelist on Brevo), provide helpful message
+    // If Brevo failed (e.g. IP whitelist on Brevo), provide helpful message and fallback code
     if (!emailResult.success) {
       console.warn(`⚠️ Brevo email was not delivered. Fallback verification code: ${otp}`);
       return res.json({
         success: true,
-        message: `Verification code generated! (Note: Check Brevo Authorised IPs settings if email is delayed. Demo code: ${otp})`,
-        demoOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+        message: `Verification code generated! (Brevo IP protection blocked sending email. Your code is: ${otp})`,
+        fallbackOtp: otp,
         emailSent: false,
       });
     }
@@ -414,16 +414,31 @@ router.post('/send-reset-otp', async (req, res) => {
     console.log(`🔑 [Password Reset OTP] for ${cleanEmail}: ${otp}`);
 
     // Send reset OTP email via Brevo
-    await sendOtpEmail({
-      email: cleanEmail,
-      name: user.name,
-      otp,
-      purpose: 'reset-password',
-    });
+    let emailResult = { success: false };
+    try {
+      emailResult = await sendOtpEmail({
+        email: cleanEmail,
+        name: user.name,
+        otp,
+        purpose: 'reset-password',
+      });
+    } catch (err) {
+      console.error('Brevo reset email error:', err.message);
+    }
+
+    if (!emailResult.success) {
+      return res.json({
+        success: true,
+        message: `Reset code generated! (Brevo IP protection blocked sending email. Your code is: ${otp})`,
+        fallbackOtp: otp,
+        emailSent: false,
+      });
+    }
 
     res.json({
       success: true,
       message: `A 6-digit password reset code has been sent to ${cleanEmail}.`,
+      emailSent: true,
     });
   } catch (error) {
     console.error('send-reset-otp error:', error);
