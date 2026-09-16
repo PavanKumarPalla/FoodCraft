@@ -12,7 +12,7 @@ export function FoodCraftProvider({ children }) {
 
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('foodcraft_favorites');
-    return saved ? JSON.parse(saved) : ["rcp-1", "rcp-3", "rcp-7"];
+    return saved ? JSON.parse(saved) : ['rcp-1', 'rcp-3', 'rcp-7'];
   });
 
   const [userProfile, setUserProfile] = useState(() => {
@@ -26,12 +26,22 @@ export function FoodCraftProvider({ children }) {
   });
 
   const [scannedIngredients, setScannedIngredients] = useState([
-    "Tomatoes", "Eggs", "Bell Peppers", "Garlic", "Paneer"
+    'Tomatoes', 'Eggs', 'Bell Peppers', 'Garlic', 'Paneer'
   ]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
+  // Auth & MongoDB User State
+  const [token, setToken] = useState(() => localStorage.getItem('foodcraft_token') || null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('foodcraft_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
+  // Sync to local storage
   useEffect(() => {
     localStorage.setItem('foodcraft_favorites', JSON.stringify(favorites));
   }, [favorites]);
@@ -44,15 +54,188 @@ export function FoodCraftProvider({ children }) {
     localStorage.setItem('foodcraft_mealplan', JSON.stringify(mealPlan));
   }, [mealPlan]);
 
-  const toggleFavorite = (recipeId) => {
-    setFavorites(prev => 
-      prev.includes(recipeId) 
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('foodcraft_token', token);
+    } else {
+      localStorage.removeItem('foodcraft_token');
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('foodcraft_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('foodcraft_user');
+    }
+  }, [currentUser]);
+
+  // Load authenticated user profile from MongoDB on mount
+  useEffect(() => {
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user) {
+            setCurrentUser(data.user);
+            if (data.user.profile) {
+              setUserProfile(prev => ({ ...prev, ...data.user.profile }));
+            }
+            if (data.user.favorites && data.user.favorites.length > 0) {
+              setFavorites(data.user.favorites);
+            }
+            if (data.user.mealPlan && Object.keys(data.user.mealPlan).length > 0) {
+              setMealPlan(data.user.mealPlan);
+            }
+          } else {
+            // Token expired or invalid
+            setToken(null);
+            setCurrentUser(null);
+          }
+        })
+        .catch(() => {
+          // Offline or local mock mode
+        });
+    }
+  }, [token]);
+
+  // Register with MongoDB
+  const register = async ({ name, email, password, dietaryType, healthGoals }) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, dietaryType, healthGoals }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+      setToken(data.token);
+      setCurrentUser(data.user);
+      if (data.user.profile) {
+        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
+      }
+      setAuthLoading(false);
+      return { success: true, message: data.message };
+    } catch (err) {
+      setAuthLoading(false);
+      setAuthError(err.message);
+      return { success: false, message: err.message };
+    }
+  };
+
+  // Login with MongoDB
+  const login = async ({ email, password }) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+      setToken(data.token);
+      setCurrentUser(data.user);
+      if (data.user.profile) {
+        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
+      }
+      if (data.user.favorites) {
+        setFavorites(data.user.favorites);
+      }
+      if (data.user.mealPlan && Object.keys(data.user.mealPlan).length > 0) {
+        setMealPlan(data.user.mealPlan);
+      }
+      setAuthLoading(false);
+      return { success: true, message: data.message };
+    } catch (err) {
+      setAuthLoading(false);
+      setAuthError(err.message);
+      return { success: false, message: err.message };
+    }
+  };
+
+  // Logout
+  const logout = () => {
+    setToken(null);
+    setCurrentUser(null);
+    localStorage.removeItem('foodcraft_token');
+    localStorage.removeItem('foodcraft_user');
+  };
+
+  // Toggle favorite (syncs to MongoDB if logged in)
+  const toggleFavorite = async (recipeId) => {
+    setFavorites(prev =>
+      prev.includes(recipeId)
         ? prev.filter(id => id !== recipeId)
         : [...prev, recipeId]
     );
+
+    if (token) {
+      try {
+        await fetch('/api/auth/favorites/toggle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ recipeId })
+        });
+      } catch (err) {
+        console.warn('Could not sync favorite to MongoDB:', err);
+      }
+    }
   };
 
   const isFavorite = (recipeId) => favorites.includes(recipeId);
+
+  // Update profile (syncs to MongoDB if logged in)
+  const updateProfile = async (newProfileData) => {
+    setUserProfile(prev => ({ ...prev, ...newProfileData }));
+
+    if (token) {
+      try {
+        await fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ profile: newProfileData })
+        });
+      } catch (err) {
+        console.warn('Could not sync profile to MongoDB:', err);
+      }
+    }
+  };
+
+  // Save customized meal plan to MongoDB
+  const saveMealPlan = async (newPlan) => {
+    setMealPlan(newPlan);
+
+    if (token) {
+      try {
+        await fetch('/api/auth/mealplan', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ mealPlan: newPlan })
+        });
+      } catch (err) {
+        console.warn('Could not sync meal plan to MongoDB:', err);
+      }
+    }
+  };
 
   const addScannedIngredient = (item) => {
     const trimmed = item.trim();
@@ -78,8 +261,10 @@ export function FoodCraftProvider({ children }) {
       toggleFavorite,
       userProfile,
       setUserProfile,
+      updateProfile,
       mealPlan,
       setMealPlan,
+      saveMealPlan,
       scannedIngredients,
       setScannedIngredients,
       addScannedIngredient,
@@ -88,7 +273,15 @@ export function FoodCraftProvider({ children }) {
       searchQuery,
       setSearchQuery,
       activeFilter,
-      setActiveFilter
+      setActiveFilter,
+      // Auth state & methods
+      currentUser,
+      token,
+      authLoading,
+      authError,
+      register,
+      login,
+      logout,
     }}>
       {children}
     </FoodCraftContext.Provider>

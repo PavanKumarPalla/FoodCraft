@@ -1,7 +1,8 @@
 // src/pages/Register.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Utensils, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Utensils, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
 export default function Register() {
@@ -9,16 +10,31 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [dietaryGoal, setDietaryGoal] = useState('High Protein / Gym Muscle Gain');
+  const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { register } = useFoodCraft();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    const result = await register({
+      name,
+      email,
+      password,
+      dietaryType: dietaryGoal.includes('Vegetarian') ? 'Veg' : 'All',
+      healthGoals: [dietaryGoal],
+    });
+
+    setIsSubmitting(false);
+
+    if (result.success) {
       navigate('/dashboard');
-    }, 450);
+    } else {
+      setErrorMessage(result.message || 'Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -29,8 +45,26 @@ export default function Register() {
             <Utensils size={24} />
           </div>
           <h1 className="auth-title">Join Food Craft</h1>
-          <p className="auth-subtitle">Personalized meal planning and AI recipe match for your lifestyle</p>
+          <p className="auth-subtitle">Personalized meal planning and AI recipe match saved to MongoDB</p>
         </div>
+
+        {errorMessage && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            color: '#f87171',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1rem',
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <AlertCircle size={18} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleRegister}>
           <div className="form-group">
@@ -71,7 +105,8 @@ export default function Register() {
                 id="reg-password"
                 type="password"
                 required
-                placeholder="At least 8 characters"
+                minLength={6}
+                placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -100,7 +135,7 @@ export default function Register() {
             disabled={isSubmitting}
             id="register-submit-btn"
           >
-            <span>{isSubmitting ? 'Creating Profile...' : 'Complete Registration'}</span>
+            <span>{isSubmitting ? 'Registering on MongoDB...' : 'Complete Registration'}</span>
             <ArrowRight size={18} />
           </button>
         </form>

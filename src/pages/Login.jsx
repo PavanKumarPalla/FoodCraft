@@ -1,31 +1,41 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Utensils, Mail, Lock, ArrowRight, CheckCircle } from 'lucide-react';
+import { Utensils, Mail, Lock, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
 export default function Login() {
-  const [email, setEmail] = useState('pavan.kumar@foodcraft.ai');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useFoodCraft();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    const result = await login({ email, password });
+    setIsSubmitting(false);
+
+    if (result.success) {
       navigate('/dashboard');
-    }, 450);
+    } else {
+      setErrorMessage(result.message || 'Invalid email or password.');
+    }
   };
 
-  const handleDemoLogin = () => {
+  const handleDemoLogin = async () => {
+    setErrorMessage('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      navigate('/dashboard');
-    }, 300);
+    // Try demo login via backend or fallback to local demo
+    const result = await login({ email: 'demo@foodcraft.ai', password: 'password123' });
+    setIsSubmitting(false);
+    navigate('/dashboard');
   };
 
   return (
@@ -56,6 +66,24 @@ export default function Login() {
           <span>or log in with email</span>
         </div>
 
+        {errorMessage && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            color: '#f87171',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1rem',
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <AlertCircle size={18} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {/* Form */}
         <form className="auth-form" onSubmit={handleLogin}>
           <div className="form-group">
@@ -76,7 +104,7 @@ export default function Login() {
           <div className="form-group">
             <div className="form-label-between">
               <label htmlFor="login-password">Password</label>
-              <a href="#forgot" className="forgot-password-link">Forgot password?</a>
+              <span className="forgot-password-link">Forgot password?</span>
             </div>
             <div className="input-icon-wrapper">
               <Lock size={17} className="field-icon" />
@@ -108,7 +136,7 @@ export default function Login() {
             disabled={isSubmitting}
             id="login-submit-btn"
           >
-            <span>{isSubmitting ? 'Authenticating...' : 'Sign In to Food Craft'}</span>
+            <span>{isSubmitting ? 'Authenticating with MongoDB...' : 'Sign In to Food Craft'}</span>
             <ArrowRight size={18} />
           </button>
         </form>
