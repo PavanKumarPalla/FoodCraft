@@ -8,8 +8,8 @@ import {
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
-// Google Client ID — replace with your own from Google Cloud Console
-const GOOGLE_CLIENT_ID = '844429909498-0v8q2pkmij5h45b3pqnpnfnb4h9aq4hg.apps.googleusercontent.com';
+// Google Client ID from Google Cloud Console
+const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '916846769559-1phshi0i2s2u4h6f3lejq5ntibc07ecs.apps.googleusercontent.com';
 
 export default function Login() {
   const [email, setEmail] = useState('');
