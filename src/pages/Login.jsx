@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Utensils, Mail, Lock, ArrowRight, CheckCircle, 
+  Utensils, Mail, Lock, ArrowRight, 
   AlertCircle, KeyRound, ShieldCheck, CheckCircle2 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
@@ -172,34 +172,6 @@ export default function Login() {
     }
   };
 
-  // Handle Fast Demo Login
-  const handleDemoLogin = async () => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setIsSubmitting(true);
-    const result = await login({ email: 'demo@foodcraft.ai', password: 'password123' });
-    setIsSubmitting(false);
-    if (result && result.success) {
-      navigate('/dashboard', { replace: true });
-    } else {
-      // Fallback local session if backend demo account isn't initialized yet
-      const demoToken = 'foodcraft_demo_' + Date.now();
-      const demoUser = {
-        name: 'Demo Chef',
-        email: 'demo@foodcraft.ai',
-        phone: '9876543210',
-        profile: {
-          dietaryType: 'Flexible (Veg + Egg + Lean Meat)',
-          healthGoals: ['High Protein / Gym Muscle Gain']
-        }
-      };
-      setToken(demoToken);
-      setCurrentUser(demoUser);
-      setUserProfile(prev => ({ ...prev, name: demoUser.name, email: demoUser.email }));
-      navigate('/dashboard', { replace: true });
-    }
-  };
-
   // STEP 1 of Reset: Send Reset OTP to Email
   const handleSendResetOtp = async (e) => {
     e.preventDefault();
@@ -336,18 +308,6 @@ export default function Login() {
         {/* ================= NORMAL LOGIN VIEW ================= */}
         {!isResetMode && (
           <>
-            {/* Demo Fast Login Pill */}
-            <div className="demo-login-box" onClick={handleDemoLogin} id="quick-demo-login-btn">
-              <div className="demo-box-left">
-                <CheckCircle size={17} className="demo-check-icon" />
-                <div>
-                  <span className="demo-title">Fast Demo Access</span>
-                  <span className="demo-desc">Instant 1-click demo login</span>
-                </div>
-              </div>
-              <ArrowRight size={15} />
-            </div>
-
             {/* Google Sign-In Button (Clean & Professional, No Email Exposed) */}
             <div className="google-signin-section">
               <button

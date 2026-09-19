@@ -89,51 +89,6 @@ body:has(.auth-layout) {
   line-height: 1.35;
 }
 
-/* Demo box */
-.demo-login-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: clamp(0.35rem, 1vh, 0.55rem) clamp(0.6rem, 1.5vw, 0.85rem);
-  border-radius: var(--radius-md);
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  margin-bottom: clamp(0.4rem, 1.2vh, 0.7rem);
-}
-
-.demo-login-box:hover {
-  background: rgba(16, 185, 129, 0.2);
-  transform: translateY(-1px);
-}
-
-.demo-box-left {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.demo-check-icon {
-  color: var(--veg-color);
-  flex-shrink: 0;
-}
-
-.demo-title {
-  display: block;
-  font-size: clamp(0.78rem, 1.5vh, 0.84rem);
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.2;
-}
-
-.demo-desc {
-  display: block;
-  font-size: clamp(0.68rem, 1.3vh, 0.74rem);
-  color: var(--text-secondary);
-  line-height: 1.2;
-}
-
 .auth-divider {
   display: flex;
   align-items: center;
@@ -368,10 +323,6 @@ body:has(.auth-layout) {
     font-size: 1.15rem;
   }
   .auth-header {
-    margin-bottom: 0.35rem;
-  }
-  .demo-login-box {
-    padding: 0.3rem 0.6rem;
     margin-bottom: 0.35rem;
   }
   .auth-divider {
