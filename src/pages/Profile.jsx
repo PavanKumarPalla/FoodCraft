@@ -5,6 +5,7 @@ import {
   Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
+import ImageAdjustModal from '../components/ImageAdjustModal';
 import './Profile.css';
 
 export default function Profile() {
@@ -34,47 +35,40 @@ export default function Profile() {
   );
   const activeAvatar = hasCustomAvatar ? (avatar || userProfile.avatar) : null;
 
-  // Handle Profile Photo Upload & Compression
+  // Image Adjust Modal States
+  const [adjustModalOpen, setAdjustModalOpen] = useState(false);
+  const [selectedRawImage, setSelectedRawImage] = useState(null);
+
+  // Handle Profile Photo Selection & Open Professional Adjust Modal
   const handleAvatarFileChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
+    // Reset input value so selecting the same file again triggers onChange
+    e.target.value = '';
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Optimize & resize to max 320x320 for fast MongoDB storage
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 320;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width;
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height;
-            height = MAX_SIZE;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setAvatar(resizedDataUrl);
-        updateProfile({ avatar: resizedDataUrl });
-        setAvatarMessage('✓ Photo updated and saved to database!');
-        setTimeout(() => setAvatarMessage(''), 3500);
-      };
-      img.src = event.target.result;
+      setSelectedRawImage(event.target.result);
+      setAdjustModalOpen(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Handle Apply from Image Adjust Modal
+  const handleApplyCroppedAvatar = (croppedDataUrl) => {
+    setAdjustModalOpen(false);
+    setSelectedRawImage(null);
+    setAvatar(croppedDataUrl);
+    updateProfile({ avatar: croppedDataUrl });
+    setAvatarMessage('✓ Profile photo updated and saved to database!');
+    setTimeout(() => setAvatarMessage(''), 3500);
+  };
+
+  // Handle Cancel from Image Adjust Modal
+  const handleCancelAdjust = () => {
+    setAdjustModalOpen(false);
+    setSelectedRawImage(null);
   };
 
   // Remove photo handler
@@ -408,6 +402,14 @@ export default function Profile() {
           </button>
         </div>
       </form>
+
+      {/* Professional Image Adjust & Crop Modal */}
+      <ImageAdjustModal
+        isOpen={adjustModalOpen}
+        imageSrc={selectedRawImage}
+        onCancel={handleCancelAdjust}
+        onApply={handleApplyCroppedAvatar}
+      />
     </div>
   );
 }
