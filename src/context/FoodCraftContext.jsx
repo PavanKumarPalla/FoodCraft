@@ -195,6 +195,48 @@ export function FoodCraftProvider({ children }) {
     }
   };
 
+  // Google Sign-In with MongoDB
+  const googleLogin = async (credential) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Google sign-in failed');
+      }
+
+      if (data.newUser) {
+        // User not in DB → return info so Login page can redirect to Register
+        setAuthLoading(false);
+        return { success: true, newUser: true, googleUser: data.googleUser, message: data.message };
+      }
+
+      // Existing user → login directly
+      setToken(data.token);
+      setCurrentUser(data.user);
+      if (data.user.profile) {
+        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
+      }
+      if (data.user.favorites) {
+        setFavorites(data.user.favorites);
+      }
+      if (data.user.mealPlan && Object.keys(data.user.mealPlan).length > 0) {
+        setMealPlan(data.user.mealPlan);
+      }
+      setAuthLoading(false);
+      return { success: true, newUser: false, message: data.message };
+    } catch (err) {
+      setAuthLoading(false);
+      setAuthError(err.message);
+      return { success: false, message: err.message };
+    }
+  };
+
   // Logout
   const logout = () => {
     setToken(null);
@@ -330,6 +372,7 @@ export function FoodCraftProvider({ children }) {
       register,
       login,
       logout,
+      googleLogin,
     }}>
       {children}
     </FoodCraftContext.Provider>

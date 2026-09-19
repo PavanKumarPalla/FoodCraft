@@ -1,6 +1,6 @@
 // src/pages/Register.jsx
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Utensils, Mail, Lock, User, Phone, ArrowRight, AlertCircle, 
   CheckCircle2, ShieldCheck, KeyRound 
@@ -9,12 +9,18 @@ import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
 export default function Register() {
-  // Step tracker: 1 = Details (Name, Email, Phone, Goal), 2 = Verify OTP, 3 = Password section (unlocked ONLY after OTP verified)
-  const [step, setStep] = useState(1);
+  const location = useLocation();
+  const googleState = location.state;
+  const isFromGoogle = googleState?.fromGoogle && googleState?.googleUser;
+  const googleUser = googleState?.googleUser || {};
 
-  // Form fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  // Step tracker: 1 = Details (Name, Email, Phone, Goal), 2 = Verify OTP, 3 = Password section (unlocked ONLY after OTP verified)
+  // For Google users, start at step 3 directly (email verified by Google)
+  const [step, setStep] = useState(isFromGoogle ? 3 : 1);
+
+  // Form fields — pre-fill from Google if available
+  const [name, setName] = useState(isFromGoogle ? googleUser.name || '' : '');
+  const [email, setEmail] = useState(isFromGoogle ? googleUser.email || '' : '');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +29,9 @@ export default function Register() {
 
   // Status & Feedback
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(
+    isFromGoogle ? '✓ Email verified via Google. Complete your profile below!' : ''
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -115,18 +123,33 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register-verified', {
+      // Use different endpoint for Google users (no OTP needed) vs regular users
+      const endpoint = isFromGoogle ? '/api/auth/register-google' : '/api/auth/register-verified';
+      const bodyData = isFromGoogle
+        ? {
+            name,
+            email,
+            phone,
+            password,
+            googleId: googleUser.googleId || '',
+            avatar: googleUser.avatar || '',
+            dietaryType: dietaryGoal.includes('Vegetarian') ? 'Veg' : 'All',
+            healthGoals: [dietaryGoal],
+          }
+        : {
+            name,
+            email,
+            phone,
+            otp,
+            password,
+            dietaryType: dietaryGoal.includes('Vegetarian') ? 'Veg' : 'All',
+            healthGoals: [dietaryGoal],
+          };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          otp,
-          password,
-          dietaryType: dietaryGoal.includes('Vegetarian') ? 'Veg' : 'All',
-          healthGoals: [dietaryGoal],
-        }),
+        body: JSON.stringify(bodyData),
       });
 
       const data = await res.json();
@@ -168,71 +191,98 @@ export default function Register() {
           </div>
           <h1 className="auth-title">Join Food Craft</h1>
           <p className="auth-subtitle">
-            {step === 1 && 'Enter your details to receive an email verification code'}
-            {step === 2 && `Enter the 6-digit code sent to ${email}`}
-            {step === 3 && 'Email verified! Set a password to complete your account'}
+            {isFromGoogle && step === 3 && 'Complete your Google account setup'}
+            {!isFromGoogle && step === 1 && 'Enter your details to receive an email verification code'}
+            {!isFromGoogle && step === 2 && `Enter the 6-digit code sent to ${email}`}
+            {!isFromGoogle && step === 3 && 'Email verified! Set a password to complete your account'}
           </p>
         </div>
 
         {/* Step Progress Indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.75rem',
-          margin: '0.35rem 0 0.85rem',
-        }}>
+        {isFromGoogle ? (
+          /* Google flow: simplified 2-step */
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.82rem',
-            color: step >= 1 ? '#10b981' : '#64748b',
-            fontWeight: 600
+            justifyContent: 'center',
+            gap: '0.75rem',
+            margin: '0.35rem 0 0.85rem',
           }}>
-            <span style={{
-              width: '24px', height: '24px', borderRadius: '50%',
-              background: step >= 1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-              border: `1px solid ${step >= 1 ? '#10b981' : '#64748b'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>1</span>
-            Details
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.82rem', color: '#4285F4', fontWeight: 600
+            }}>
+              <span style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: 'rgba(66, 133, 244, 0.2)',
+                border: '1px solid #4285F4',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>✓</span>
+              Google
+            </div>
+            <div style={{ width: '20px', height: '1px', background: '#4285F4' }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.82rem', color: '#10b981', fontWeight: 600
+            }}>
+              <span style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.2)',
+                border: '1px solid #10b981',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>2</span>
+              Complete Profile
+            </div>
           </div>
-          <div style={{ width: '20px', height: '1px', background: step >= 2 ? '#10b981' : '#334155' }} />
+        ) : (
+          /* Regular OTP flow: 3-step */
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.82rem',
-            color: step >= 2 ? '#10b981' : '#64748b',
-            fontWeight: 600
+            justifyContent: 'center',
+            gap: '0.75rem',
+            margin: '0.35rem 0 0.85rem',
           }}>
-            <span style={{
-              width: '24px', height: '24px', borderRadius: '50%',
-              background: step >= 2 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-              border: `1px solid ${step >= 2 ? '#10b981' : '#64748b'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>2</span>
-            Verify OTP
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.82rem', color: step >= 1 ? '#10b981' : '#64748b', fontWeight: 600
+            }}>
+              <span style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: step >= 1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                border: `1px solid ${step >= 1 ? '#10b981' : '#64748b'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>1</span>
+              Details
+            </div>
+            <div style={{ width: '20px', height: '1px', background: step >= 2 ? '#10b981' : '#334155' }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.82rem', color: step >= 2 ? '#10b981' : '#64748b', fontWeight: 600
+            }}>
+              <span style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: step >= 2 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                border: `1px solid ${step >= 2 ? '#10b981' : '#64748b'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>2</span>
+              Verify OTP
+            </div>
+            <div style={{ width: '20px', height: '1px', background: step >= 3 ? '#10b981' : '#334155' }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.82rem', color: step >= 3 ? '#10b981' : '#64748b', fontWeight: 600
+            }}>
+              <span style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: step >= 3 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                border: `1px solid ${step >= 3 ? '#10b981' : '#64748b'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>3</span>
+              Password
+            </div>
           </div>
-          <div style={{ width: '20px', height: '1px', background: step >= 3 ? '#10b981' : '#334155' }} />
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.82rem',
-            color: step >= 3 ? '#10b981' : '#64748b',
-            fontWeight: 600
-          }}>
-            <span style={{
-              width: '24px', height: '24px', borderRadius: '50%',
-              background: step >= 3 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-              border: `1px solid ${step >= 3 ? '#10b981' : '#64748b'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>3</span>
-            Password
-          </div>
-        </div>
+        )}
 
         {/* Global Feedback Alerts */}
         {errorMessage && (
@@ -417,20 +467,70 @@ export default function Register() {
           </form>
         )}
 
-        {/* STEP 3: Password Section (Unlocked ONLY after successful OTP verification) */}
+        {/* STEP 3: Password Section (Unlocked ONLY after successful OTP verification or Google Sign-In) */}
         {step === 3 && (
           <form className="auth-form" onSubmit={handleCompleteRegistration}>
             <div style={{
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              background: isFromGoogle ? 'rgba(66, 133, 244, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+              border: `1px solid ${isFromGoogle ? 'rgba(66, 133, 244, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
               borderRadius: 'var(--radius-md)',
               padding: '0.75rem 1rem',
-              marginBottom: '1rem',
+              marginBottom: '0.75rem',
               fontSize: '0.85rem',
-              color: '#a7f3d0'
+              color: isFromGoogle ? '#93c5fd' : '#a7f3d0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              ✓ Email <strong>{email}</strong> & Phone <strong>{phone}</strong> verified.
+              {isFromGoogle ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  <span>Signed in as <strong>{email}</strong> via Google</span>
+                </>
+              ) : (
+                <span>✓ Email <strong>{email}</strong> & Phone <strong>{phone}</strong> verified.</span>
+              )}
             </div>
+
+            {/* Google users need to provide phone and dietary goal since they skipped Step 1 */}
+            {isFromGoogle && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="reg-google-phone">Mobile Phone Number</label>
+                  <div className="input-icon-wrapper">
+                    <Phone size={17} className="field-icon" />
+                    <input
+                      id="reg-google-phone"
+                      type="tel"
+                      placeholder="+91 9876543210 (optional)"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="reg-google-goal">Primary Nutrition Goal</label>
+                  <select
+                    id="reg-google-goal"
+                    value={dietaryGoal}
+                    onChange={(e) => setDietaryGoal(e.target.value)}
+                    className="auth-select"
+                  >
+                    <option value="High Protein / Gym Muscle Gain">💪 High Protein / Gym Muscle Gain</option>
+                    <option value="Vegetarian Healthy Eating">🥗 Pure Vegetarian Healthy Diet</option>
+                    <option value="Low Sugar / Glycemic Control">🍬 Low Sugar / Diabetic Friendly</option>
+                    <option value="Low Salt / Cardio Health">🧂 Low Salt / Cardio Health</option>
+                    <option value="Quick 20-min Budget Bachelor Meals">⏱️ Quick Budget / Student Meals</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <div className="form-group">
               <label htmlFor="reg-password">Create Password</label>

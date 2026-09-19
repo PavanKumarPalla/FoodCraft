@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Utensils, Mail, Lock, ArrowRight, CheckCircle, 
@@ -8,6 +8,9 @@ import {
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
+// Google Client ID — replace with your own from Google Cloud Console
+const GOOGLE_CLIENT_ID = '844429909498-0v8q2pkmij5h45b3pqnpnfnb4h9aq4hg.apps.googleusercontent.com';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +18,7 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Password Reset Modal / Mode State
   const [isResetMode, setIsResetMode] = useState(false);
@@ -25,7 +29,84 @@ export default function Login() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const navigate = useNavigate();
-  const { login, setToken, setCurrentUser, setUserProfile } = useFoodCraft();
+  const { login, googleLogin, setToken, setCurrentUser, setUserProfile } = useFoodCraft();
+  const googleBtnRef = useRef(null);
+
+  // Google Sign-In callback
+  const handleGoogleCallback = useCallback(async (response) => {
+    if (!response.credential) {
+      setErrorMessage('Google sign-in was cancelled or failed.');
+      return;
+    }
+
+    setGoogleLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    const result = await googleLogin(response.credential);
+    setGoogleLoading(false);
+
+    if (!result.success) {
+      setErrorMessage(result.message || 'Google sign-in failed.');
+      return;
+    }
+
+    if (result.newUser) {
+      // User not in DB → redirect to register with Google info
+      setSuccessMessage('Redirecting to create your account...');
+      setTimeout(() => {
+        navigate('/register', {
+          state: {
+            fromGoogle: true,
+            googleUser: result.googleUser,
+          },
+        });
+      }, 800);
+    } else {
+      // Existing user → logged in
+      navigate('/dashboard', { replace: true });
+    }
+  }, [googleLogin, navigate]);
+
+  // Initialize Google Sign-In button
+  useEffect(() => {
+    if (isResetMode) return;
+
+    const initGoogle = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        // We use a custom button, so we call prompt() on click
+        // But also render invisible button as fallback
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          type: 'standard',
+          theme: 'filled_black',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          width: 380,
+        });
+      }
+    };
+
+    // Google GIS script may not be loaded yet
+    if (window.google?.accounts?.id) {
+      initGoogle();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          initGoogle();
+          clearInterval(checkInterval);
+        }
+      }, 200);
+      return () => clearInterval(checkInterval);
+    }
+  }, [isResetMode, handleGoogleCallback]);
 
   // Handle Standard Login
   const handleLogin = async (e) => {
@@ -218,6 +299,19 @@ export default function Login() {
                 </div>
               </div>
               <ArrowRight size={15} />
+            </div>
+
+            {/* Google Sign-In Section */}
+            <div className="google-signin-section">
+              <div className="google-btn-wrapper" ref={googleBtnRef} id="google-signin-btn">
+                {/* Google GIS renders its button here */}
+              </div>
+              {googleLoading && (
+                <div className="google-loading-overlay">
+                  <div className="google-spinner"></div>
+                  <span>Verifying Google account...</span>
+                </div>
+              )}
             </div>
 
             <div className="auth-divider">

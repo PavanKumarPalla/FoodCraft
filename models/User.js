@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, 'Please provide a phone number'],
+      default: '',
       trim: true,
       index: true,
     },
@@ -30,9 +30,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    googleId: {
+      type: String,
+      default: '',
+      sparse: true,
+    },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
       minlength: 6,
       select: false, // Do not return password by default in queries
     },

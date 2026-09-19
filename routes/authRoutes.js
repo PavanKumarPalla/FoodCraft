@@ -373,6 +373,193 @@ router.post('/login', async (req, res) => {
 });
 
 // =========================================================================
+// 2b. GOOGLE SIGN-IN: Verify Google credential & check DB
+// =========================================================================
+
+// @route   POST /api/auth/google
+// @desc    Verify Google ID token, check if user exists in MongoDB. If yes → login. If no → return newUser flag.
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google credential token is required.',
+      });
+    }
+
+    // Decode the Google JWT token (header.payload.signature)
+    // The payload contains: sub (Google ID), email, name, picture, email_verified
+    const parts = credential.split('.');
+    if (parts.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Google credential format.',
+      });
+    }
+
+    let payload;
+    try {
+      // Base64url decode the payload
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+    } catch (decodeErr) {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to decode Google credential.',
+      });
+    }
+
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+
+    if (!email || !email_verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google account email is not verified.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if user exists in MongoDB by email
+    const existingUser = await User.findOne({ email: cleanEmail });
+
+    if (existingUser) {
+      // User exists → update googleId if not set, then login
+      if (!existingUser.googleId) {
+        existingUser.googleId = googleId;
+        if (picture && !existingUser.avatar) {
+          existingUser.avatar = picture;
+        }
+        await existingUser.save();
+      }
+
+      const token = generateToken(existingUser._id);
+
+      return res.json({
+        success: true,
+        newUser: false,
+        message: 'Signed in with Google successfully!',
+        token,
+        user: {
+          id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          avatar: existingUser.avatar || picture || '',
+          profile: existingUser.profile,
+          favorites: existingUser.favorites,
+          mealPlan: existingUser.mealPlan,
+        },
+      });
+    }
+
+    // User does NOT exist → return newUser flag with Google info so frontend redirects to register
+    return res.json({
+      success: true,
+      newUser: true,
+      message: 'No account found with this Google email. Please complete registration.',
+      googleUser: {
+        googleId,
+        email: cleanEmail,
+        name: name || '',
+        avatar: picture || '',
+      },
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error during Google authentication.',
+    });
+  }
+});
+
+// =========================================================================
+// 2c. GOOGLE USER REGISTRATION: Create account for Google-authenticated users
+// =========================================================================
+
+// @route   POST /api/auth/register-google
+// @desc    Create new user account for a Google-verified user (no OTP needed)
+// @access  Public
+router.post('/register-google', async (req, res) => {
+  try {
+    const { name, email, phone, password, googleId, avatar, dietaryType, healthGoals } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide name, email, and password.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanPhone = normalizePhone(phone);
+
+    // Double check email uniqueness
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        message: `An account with this email "${cleanEmail}" already exists. Please sign in instead.`,
+      });
+    }
+
+    // Create user in MongoDB with Google info
+    const user = await User.create({
+      name,
+      email: cleanEmail,
+      phone: cleanPhone || phone || '',
+      password,
+      googleId: googleId || '',
+      avatar: avatar || '',
+      profile: {
+        dietaryType: dietaryType || 'All',
+        healthGoals: healthGoals || ['High Protein', 'Balanced Nutrition'],
+      },
+    });
+
+    // Send professional Welcome Email via Brevo
+    sendWelcomeEmail({ email: cleanEmail, name }).catch((err) =>
+      console.warn('Welcome email background send error:', err)
+    );
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Google account registered successfully! Welcome to Food Craft.',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar || '',
+        profile: user.profile,
+        favorites: user.favorites,
+        mealPlan: user.mealPlan,
+      },
+    });
+  } catch (error) {
+    console.error('register-google error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error during Google registration.',
+    });
+  }
+});
+
+// =========================================================================
 // 3. FORGOT / RESET PASSWORD WITH EMAIL OTP FLOW
 // =========================================================================
 
