@@ -13,7 +13,9 @@ export default function Profile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [name, setName] = useState(() => currentUser?.name || userProfile.name || '');
+  const initialName = currentUser?.name || userProfile.name || '';
+  const [name, setName] = useState(initialName);
+  const isNameInitializedRef = useRef(Boolean(initialName));
   const [nameError, setNameError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -21,12 +23,14 @@ export default function Profile() {
   // Fixed Gmail address: strictly read-only and uneditable
   const fixedEmail = currentUser?.email || userProfile.email || '';
 
-  // Synchronize name if userProfile/currentUser finishes loading asynchronously
+  // Synchronize name ONLY ONCE when userProfile/currentUser loads asynchronously
+  // Never re-populate if the user intentionally deletes or backspaces all characters
   useEffect(() => {
-    if (!name && (currentUser?.name || userProfile.name)) {
+    if (!isNameInitializedRef.current && (currentUser?.name || userProfile.name)) {
       setName(currentUser?.name || userProfile.name || '');
+      isNameInitializedRef.current = true;
     }
-  }, [currentUser?.name, userProfile.name, name]);
+  }, [currentUser?.name, userProfile.name]);
 
   // Sanitize initial avatar to exclude legacy unsplash images
   const [avatar, setAvatar] = useState(() => {
