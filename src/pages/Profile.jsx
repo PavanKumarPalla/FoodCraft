@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn, Lock, Mail, AlertCircle 
+  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn, AlertCircle 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import ImageAdjustModal from '../components/ImageAdjustModal';
@@ -227,15 +227,7 @@ export default function Profile() {
 
           <div className="profile-info-text">
             <h1 className="profile-user-name">{name || userProfile.name || currentUser?.name || 'Chef'}</h1>
-            <div className="profile-email-badge-row">
-              <span className="profile-user-email">
-                <Mail size={13} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle', opacity: 0.8 }} />
-                {fixedEmail || 'No email registered'}
-              </span>
-              <span className="profile-fixed-pill" title="Registered Gmail is permanent">
-                <Lock size={10} /> Fixed Gmail
-              </span>
-            </div>
+            <span className="profile-user-email">{fixedEmail}</span>
             <div className="profile-tags-strip">
               <span className="badge badge-match">FoodCraft Pro</span>
               <span className="badge badge-gym">Gym Enthusiast</span>
@@ -276,26 +268,13 @@ export default function Profile() {
         <section className="profile-section glass-panel">
           <div className="section-head-title">
             <Utensils size={20} className="text-primary" />
-            <div>
-              <h2>Account Details</h2>
-              <span className="section-desc-note" style={{ margin: 0 }}>
-                You have permission to edit your name. Registered Gmail is permanently fixed.
-              </span>
-            </div>
+            <h2>Account Details</h2>
           </div>
 
           <div className="profile-fields-grid">
-            {/* Display Name - Editable */}
+            {/* Display Name */}
             <div className="form-group">
-              <div className="form-label-row">
-                <label htmlFor="profile-name-input" className="profile-field-label">
-                  <User size={15} className="label-icon text-primary" />
-                  <span>Display Name</span>
-                </label>
-                <span className="field-badge field-badge-editable" title="You can change your name anytime">
-                  <Check size={11} /> Editable
-                </span>
-              </div>
+              <label htmlFor="profile-name-input">Display Name</label>
               <input 
                 id="profile-name-input" 
                 type="text" 
@@ -304,52 +283,29 @@ export default function Profile() {
                   setName(e.target.value);
                   if (nameError) setNameError('');
                 }} 
-                className={`auth-select profile-editable-input ${nameError ? 'input-error' : ''}`}
-                placeholder="Enter your display name"
+                className="auth-select"
+                placeholder="Display Name"
                 maxLength={60}
                 required
               />
-              {nameError ? (
+              {nameError && (
                 <span className="field-error-text">
                   <AlertCircle size={13} /> {nameError}
-                </span>
-              ) : (
-                <span className="field-hint">
-                  You have full permission to update your name. It will reflect across your recipes and dashboard.
                 </span>
               )}
             </div>
 
-            {/* Registered Gmail - Fixed / Read Only */}
+            {/* Email Address */}
             <div className="form-group">
-              <div className="form-label-row">
-                <label htmlFor="profile-email-input" className="profile-field-label">
-                  <Mail size={15} className="label-icon text-muted" />
-                  <span>Account Gmail (Fixed)</span>
-                </label>
-                <span className="field-badge field-badge-fixed" title="This email cannot be edited">
-                  <Lock size={11} /> Fixed & Verified
-                </span>
-              </div>
-              <div className="fixed-input-wrapper">
-                <input 
-                  id="profile-email-input" 
-                  type="email" 
-                  value={fixedEmail} 
-                  readOnly 
-                  disabled
-                  className="auth-select profile-fixed-input"
-                  title="Your registered Gmail address is fixed and cannot be edited."
-                  tabIndex={-1}
-                />
-                <div className="fixed-input-lock-tag" title="Account email is locked">
-                  <Lock size={13} />
-                  <span>Fixed</span>
-                </div>
-              </div>
-              <span className="field-hint field-hint-locked">
-                🔒 Registered Gmail is permanent and cannot be edited. No option to edit email is permitted.
-              </span>
+              <label htmlFor="profile-email-input">Email Address</label>
+              <input 
+                id="profile-email-input" 
+                type="email" 
+                value={fixedEmail} 
+                readOnly 
+                disabled
+                className="auth-select profile-fixed-input"
+              />
             </div>
           </div>
 
