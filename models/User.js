@@ -22,9 +22,10 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      default: '',
       trim: true,
-      index: true,
+      unique: true,
+      sparse: true,
+      set: (val) => (!val || val.trim() === '' || val === 'Not provided' ? undefined : val.trim()),
     },
     avatar: {
       type: String,

@@ -120,6 +120,14 @@ export default function Register() {
       return;
     }
 
+    if (isFromGoogle && phone && phone.trim()) {
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      if (cleanPhone.length < 10) {
+        setErrorMessage('Please enter a valid 10-digit mobile phone number.');
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {

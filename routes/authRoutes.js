@@ -32,6 +32,36 @@ const normalizePhone = (phone) => {
   return phone.replace(/[\s\-\(\)]/g, '').trim();
 };
 
+// Helper to find a user by various phone number formats (raw, clean, last 10 digits, +91)
+const findUserByPhone = async (phoneInput, excludeUserId = null) => {
+  if (!phoneInput) return null;
+  const cleanPhone = normalizePhone(phoneInput);
+  if (!cleanPhone) return null;
+
+  const digitsOnly = cleanPhone.replace(/\D/g, '');
+  const phoneQueries = [
+    { phone: phoneInput.trim() },
+    { phone: cleanPhone },
+  ];
+
+  if (digitsOnly.length >= 10) {
+    const last10 = digitsOnly.slice(-10);
+    phoneQueries.push(
+      { phone: last10 },
+      { phone: `+91${last10}` },
+      { phone: `+91 ${last10}` },
+      { phone: digitsOnly }
+    );
+  }
+
+  const query = { $or: phoneQueries };
+  if (excludeUserId) {
+    query._id = { $ne: excludeUserId };
+  }
+
+  return await User.findOne(query);
+};
+
 // =========================================================================
 // 1. REGISTRATION WITH EMAIL OTP & PHONE DUPLICATE CHECK FLOW
 // =========================================================================
@@ -75,14 +105,7 @@ router.post('/send-register-otp', async (req, res) => {
 
     // 2. Check if Phone Number already exists in MongoDB
     if (cleanPhone) {
-      const existingPhone = await User.findOne({
-        $or: [
-          { phone: cleanPhone },
-          { phone: phone.trim() },
-          { phone: cleanPhone.slice(-10) }, // match last 10 digits
-        ],
-      });
-
+      const existingPhone = await findUserByPhone(phone);
       if (existingPhone) {
         return res.status(409).json({
           success: false,
@@ -242,13 +265,11 @@ router.post('/register-verified', async (req, res) => {
     }
 
     if (cleanPhone) {
-      const existingPhone = await User.findOne({
-        $or: [{ phone: cleanPhone }, { phone: phone.trim() }],
-      });
+      const existingPhone = await findUserByPhone(phone);
       if (existingPhone) {
         return res.status(409).json({
           success: false,
-          message: `The phone number "${phone}" is already registered.`,
+          message: `The phone number "${phone}" is already registered. Please sign in instead.`,
         });
       }
     }
@@ -257,7 +278,7 @@ router.post('/register-verified', async (req, res) => {
     const user = await User.create({
       name,
       email: cleanEmail,
-      phone: cleanPhone || phone || 'Not provided',
+      phone: cleanPhone || undefined,
       password,
       profile: {
         dietaryType: dietaryType || 'All',
@@ -304,7 +325,7 @@ router.post('/register-verified', async (req, res) => {
 // =========================================================================
 
 // @route   POST /api/auth/login
-// @desc    Authenticate user via Email OR Phone + Password
+// @desc    Authenticate user via Email OR Phone Number + Password
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
@@ -314,22 +335,28 @@ router.post('/login', async (req, res) => {
     if (!loginInput || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide your email/phone number and password.',
+        message: 'Please provide your email address or phone number, and password.',
       });
     }
 
     const cleanInput = loginInput.toLowerCase();
-    const cleanPhone = normalizePhone(loginInput);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanInput);
 
-    // Find user by either email or phone number in MongoDB
-    const user = await User.findOne({
-      $or: [
-        { email: cleanInput },
-        { phone: loginInput },
-        { phone: cleanPhone },
-        { phone: cleanPhone.slice(-10) },
-      ],
-    }).select('+password');
+    let user = null;
+
+    if (isEmail) {
+      // 1. Try finding by email
+      user = await User.findOne({ email: cleanInput }).select('+password');
+    } else {
+      // 2. Try finding by phone number (supports local, national, and +91 formats)
+      const foundByPhone = await findUserByPhone(loginInput);
+      if (foundByPhone) {
+        user = await User.findById(foundByPhone._id).select('+password');
+      } else {
+        // Fallback search in case user email was non-standard
+        user = await User.findOne({ email: cleanInput }).select('+password');
+      }
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -524,11 +551,22 @@ router.post('/register-google', async (req, res) => {
       });
     }
 
+    // Double check phone uniqueness
+    if (cleanPhone) {
+      const existingPhone = await findUserByPhone(phone);
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: `The phone number "${phone}" is already registered to another account. Please use a different phone number.`,
+        });
+      }
+    }
+
     // Create user in MongoDB with Google info
     const user = await User.create({
       name,
       email: cleanEmail,
-      phone: cleanPhone || phone || '',
+      phone: cleanPhone || undefined,
       password,
       googleId: googleId || '',
       avatar: avatar || '',
@@ -578,24 +616,30 @@ router.post('/register-google', async (req, res) => {
 // @access  Public
 router.post('/send-reset-otp', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, identifier } = req.body;
+    const loginInput = (identifier || email || '').trim();
 
-    if (!email) {
+    if (!loginInput) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide your account email address.',
+        message: 'Please provide your account email address or registered phone number.',
       });
     }
 
-    const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail });
+    const cleanInput = loginInput.toLowerCase();
+    let user = await User.findOne({ email: cleanInput });
+    if (!user) {
+      user = await findUserByPhone(loginInput);
+    }
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: `No account found with the email "${cleanEmail}". Please check the spelling or register a new account.`,
+        message: `No account found with "${loginInput}". Please check the spelling or register a new account.`,
       });
     }
+
+    const cleanEmail = user.email;
 
     const otp = generateNumericOtp();
 
@@ -743,7 +787,21 @@ router.put('/profile', protect, async (req, res) => {
     }
 
     if (name) user.name = name;
-    if (phone) user.phone = phone;
+    if (phone !== undefined) {
+      const cleanPhone = normalizePhone(phone);
+      if (cleanPhone) {
+        const existingPhone = await findUserByPhone(phone, user._id);
+        if (existingPhone) {
+          return res.status(409).json({
+            success: false,
+            message: `The phone number "${phone}" is already registered to another account.`,
+          });
+        }
+        user.phone = cleanPhone;
+      } else {
+        user.phone = undefined;
+      }
+    }
     if (avatar !== undefined) user.avatar = avatar;
     if (profile) {
       user.profile = { ...user.profile.toObject(), ...profile };
