@@ -381,43 +381,53 @@ router.post('/login', async (req, res) => {
 // @access  Public
 router.post('/google', async (req, res) => {
   try {
-    const { credential } = req.body;
+    const { credential, email: bodyEmail, name: bodyName, googleId: bodyGoogleId, avatar: bodyAvatar } = req.body;
 
-    if (!credential) {
+    let googleId, email, name, picture;
+
+    if (credential) {
+      // Decode the Google JWT token (header.payload.signature)
+      // The payload contains: sub (Google ID), email, name, picture, email_verified
+      const parts = credential.split('.');
+      if (parts.length !== 3) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Google credential format.',
+        });
+      }
+
+      let payload;
+      try {
+        // Base64url decode the payload
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+      } catch (decodeErr) {
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to decode Google credential.',
+        });
+      }
+
+      googleId = payload.sub;
+      email = payload.email;
+      name = payload.name;
+      picture = payload.picture;
+
+      if (!email || !payload.email_verified) {
+        return res.status(400).json({
+          success: false,
+          message: 'Google account email is not verified.',
+        });
+      }
+    } else if (bodyEmail) {
+      googleId = bodyGoogleId || '';
+      email = bodyEmail;
+      name = bodyName || '';
+      picture = bodyAvatar || '';
+    } else {
       return res.status(400).json({
         success: false,
-        message: 'Google credential token is required.',
-      });
-    }
-
-    // Decode the Google JWT token (header.payload.signature)
-    // The payload contains: sub (Google ID), email, name, picture, email_verified
-    const parts = credential.split('.');
-    if (parts.length !== 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Google credential format.',
-      });
-    }
-
-    let payload;
-    try {
-      // Base64url decode the payload
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
-    } catch (decodeErr) {
-      return res.status(400).json({
-        success: false,
-        message: 'Failed to decode Google credential.',
-      });
-    }
-
-    const { sub: googleId, email, name, picture, email_verified } = payload;
-
-    if (!email || !email_verified) {
-      return res.status(400).json({
-        success: false,
-        message: 'Google account email is not verified.',
+        message: 'Google credential or profile information is required.',
       });
     }
 

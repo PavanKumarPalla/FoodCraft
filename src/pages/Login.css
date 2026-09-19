@@ -158,53 +158,59 @@ body:has(.auth-layout) {
 
 /* Google Sign-In */
 .google-signin-section {
+  width: 100%;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   margin-bottom: clamp(0.35rem, 1vh, 0.6rem);
 }
 
-.google-btn-wrapper {
+.custom-google-btn {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  height: clamp(38px, 4.8vh, 42px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-md);
-  overflow: hidden;
-  min-height: 42px;
-}
-
-/* Override Google button iframe to fill width */
-.google-btn-wrapper > div {
-  width: 100% !important;
-}
-
-.google-btn-wrapper iframe {
-  border-radius: var(--radius-md) !important;
-}
-
-.google-loading-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(11, 15, 23, 0.88);
-  backdrop-filter: blur(6px);
-  border-radius: var(--radius-md);
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: clamp(0.82rem, 1.6vh, 0.88rem);
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  color: #94a3b8;
-  z-index: 10;
+  gap: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  backdrop-filter: blur(8px);
+}
+
+.custom-google-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.custom-google-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.custom-google-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  flex-shrink: 0;
 }
 
 .google-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(148, 163, 184, 0.3);
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-top-color: #60a5fa;
   border-radius: 50%;
   animation: google-spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes google-spin {

@@ -196,14 +196,18 @@ export function FoodCraftProvider({ children }) {
   };
 
   // Google Sign-In with MongoDB
-  const googleLogin = async (credential) => {
+  const googleLogin = async (payloadOrCredential) => {
     setAuthLoading(true);
     setAuthError(null);
     try {
+      const payload = typeof payloadOrCredential === 'string'
+        ? { credential: payloadOrCredential }
+        : payloadOrCredential;
+
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
