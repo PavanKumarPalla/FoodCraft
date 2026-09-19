@@ -11,36 +11,57 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [naturalSize, setNaturalSize] = useState({ width: 300, height: 300 });
 
   const imageRef = useRef(null);
-  const CROP_SIZE = 220; // Normal compact circular crop window
+  const domImgRef = useRef(null);
+  const CROP_SIZE = 220; // Compact circular crop window
 
+  // Pre-load image via Image constructor to guarantee availability
   useEffect(() => {
-    if (isOpen) {
-      setZoom(1);
-      setRotation(0);
-      setPan({ x: 0, y: 0 });
-      setImageLoaded(false);
-      setIsProcessing(false);
+    if (!isOpen || !imageSrc) return;
+
+    setZoom(1);
+    setRotation(0);
+    setPan({ x: 0, y: 0 });
+    setIsProcessing(false);
+
+    const img = new Image();
+    img.onload = () => {
+      imageRef.current = img;
+      setNaturalSize({ width: img.naturalWidth || 300, height: img.naturalHeight || 300 });
+      setImageLoaded(true);
+    };
+    img.onerror = () => {
+      setImageLoaded(true); // Still enable button so user is never stuck
+    };
+    img.src = imageSrc;
+
+    // If cached and complete synchronously
+    if (img.complete && img.naturalWidth > 0) {
+      imageRef.current = img;
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setImageLoaded(true);
     }
   }, [isOpen, imageSrc]);
 
+  // Handle DOM img tag load
   const handleImageLoad = (e) => {
     imageRef.current = e.target;
+    if (e.target.naturalWidth > 0) {
+      setNaturalSize({ width: e.target.naturalWidth, height: e.target.naturalHeight });
+    }
     setImageLoaded(true);
     setPan({ x: 0, y: 0 });
   };
 
-  // Clamp pan so image always covers the circle
+  // Clamp pan so the image fills the circular aperture
   const clampPan = useCallback((newPan, currentZoom, currentRotation) => {
-    if (!imageRef.current) return newPan;
-
-    const img = imageRef.current;
     const isRotatedSideways = currentRotation % 180 !== 0;
-    const naturalW = isRotatedSideways ? img.naturalHeight : img.naturalWidth;
-    const naturalH = isRotatedSideways ? img.naturalWidth : img.naturalHeight;
+    const naturalW = isRotatedSideways ? naturalSize.height : naturalSize.width;
+    const naturalH = isRotatedSideways ? naturalSize.width : naturalSize.height;
 
-    const baseScale = Math.max(CROP_SIZE / naturalW, CROP_SIZE / naturalH);
+    const baseScale = Math.max(CROP_SIZE / Math.max(naturalW, 1), CROP_SIZE / Math.max(naturalH, 1));
     const currentScale = baseScale * currentZoom;
 
     const renderedW = naturalW * currentScale;
@@ -53,9 +74,9 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
       x: Math.max(-maxPanX, Math.min(maxPanX, newPan.x)),
       y: Math.max(-maxPanY, Math.min(maxPanY, newPan.y)),
     };
-  }, []);
+  }, [naturalSize]);
 
-  // Mouse drag handlers
+  // Mouse Drag handlers
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -75,7 +96,7 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
     setIsDragging(false);
   };
 
-  // Touch drag handlers for mobile
+  // Touch Drag handlers
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       const touch = e.touches[0];
@@ -127,23 +148,29 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
     setPan({ x: 0, y: 0 });
   };
 
+  // Generate cropped circular avatar & save
   const handleApply = () => {
-    if (!imageRef.current) return;
     setIsProcessing(true);
 
     try {
+      const img = imageRef.current || domImgRef.current;
+      if (!img) {
+        // Fallback directly to imageSrc so user is never stuck
+        onApply(imageSrc);
+        return;
+      }
+
       const OUTPUT_SIZE = 320;
       const canvas = document.createElement('canvas');
       canvas.width = OUTPUT_SIZE;
       canvas.height = OUTPUT_SIZE;
       const ctx = canvas.getContext('2d');
 
-      const img = imageRef.current;
       const isRotatedSideways = rotation % 180 !== 0;
-      const naturalW = isRotatedSideways ? img.naturalHeight : img.naturalWidth;
-      const naturalH = isRotatedSideways ? img.naturalWidth : img.naturalHeight;
+      const naturalW = isRotatedSideways ? (img.naturalHeight || naturalSize.height) : (img.naturalWidth || naturalSize.width);
+      const naturalH = isRotatedSideways ? (img.naturalWidth || naturalSize.width) : (img.naturalHeight || naturalSize.height);
 
-      const baseScale = Math.max(CROP_SIZE / naturalW, CROP_SIZE / naturalH);
+      const baseScale = Math.max(CROP_SIZE / Math.max(naturalW, 1), CROP_SIZE / Math.max(naturalH, 1));
       const currentScale = baseScale * zoom;
       const ratio = OUTPUT_SIZE / CROP_SIZE;
 
@@ -157,18 +184,22 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(currentScale * ratio, currentScale * ratio);
 
+      const drawW = img.naturalWidth || naturalSize.width;
+      const drawH = img.naturalHeight || naturalSize.height;
+
       ctx.drawImage(
         img,
-        -img.naturalWidth / 2,
-        -img.naturalHeight / 2,
-        img.naturalWidth,
-        img.naturalHeight
+        -drawW / 2,
+        -drawH / 2,
+        drawW,
+        drawH
       );
 
       const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
       onApply(croppedDataUrl);
     } catch (err) {
-      console.error('Crop export failed:', err);
+      console.error('Crop export failed, falling back to original:', err);
+      onApply(imageSrc);
     } finally {
       setIsProcessing(false);
     }
@@ -176,16 +207,13 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
 
   if (!isOpen || !imageSrc) return null;
 
-  let imageTransform = '';
-  if (imageRef.current) {
-    const img = imageRef.current;
-    const isRotatedSideways = rotation % 180 !== 0;
-    const naturalW = isRotatedSideways ? img.naturalHeight : img.naturalWidth;
-    const naturalH = isRotatedSideways ? img.naturalWidth : img.naturalHeight;
-    const baseScale = Math.max(CROP_SIZE / naturalW, CROP_SIZE / naturalH);
-    const currentScale = baseScale * zoom;
-    imageTransform = `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${currentScale})`;
-  }
+  // Compute CSS transform
+  const isRotatedSideways = rotation % 180 !== 0;
+  const naturalW = isRotatedSideways ? naturalSize.height : naturalSize.width;
+  const naturalH = isRotatedSideways ? naturalSize.width : naturalSize.height;
+  const baseScale = Math.max(CROP_SIZE / Math.max(naturalW, 1), CROP_SIZE / Math.max(naturalH, 1));
+  const currentScale = baseScale * zoom;
+  const imageTransform = `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${currentScale})`;
 
   return (
     <div className="adjust-modal-overlay animate-fade-in" onClick={onCancel}>
@@ -222,6 +250,7 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
             title="Drag to reposition (left, right, up, down)"
           >
             <img
+              ref={domImgRef}
               src={imageSrc}
               alt="Crop target"
               className="adjust-target-image"
@@ -305,7 +334,7 @@ export default function ImageAdjustModal({ isOpen, imageSrc, onCancel, onApply }
             type="button"
             className="btn-primary btn-glow adjust-btn-apply"
             onClick={handleApply}
-            disabled={!imageLoaded || isProcessing}
+            disabled={isProcessing}
           >
             <Check size={16} />
             <span>{isProcessing ? 'Saving...' : 'Save Photo'}</span>

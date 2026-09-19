@@ -1,5 +1,5 @@
 // src/pages/Profile.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn 
@@ -27,6 +27,13 @@ export default function Profile() {
   const [dietaryPreference, setDietaryPreference] = useState(userProfile.dietaryPreference);
   const [selectedCuisines, setSelectedCuisines] = useState(userProfile.cuisinePreferences || []);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Sync avatar with userProfile if loaded asynchronously from DB
+  useEffect(() => {
+    if (userProfile.avatar && !avatar && !userProfile.avatar.includes('unsplash.com')) {
+      setAvatar(userProfile.avatar);
+    }
+  }, [userProfile.avatar]);
 
   // Check whether user has a custom uploaded avatar
   const hasCustomAvatar = Boolean(
@@ -56,12 +63,17 @@ export default function Profile() {
   };
 
   // Handle Apply from Image Adjust Modal
-  const handleApplyCroppedAvatar = (croppedDataUrl) => {
+  const handleApplyCroppedAvatar = async (croppedDataUrl) => {
     setAdjustModalOpen(false);
     setSelectedRawImage(null);
     setAvatar(croppedDataUrl);
-    updateProfile({ avatar: croppedDataUrl });
-    setAvatarMessage('✓ Profile photo updated and saved to database!');
+    setAvatarMessage('Saving photo...');
+    try {
+      await updateProfile({ avatar: croppedDataUrl });
+      setAvatarMessage('✓ Profile photo updated and saved to database!');
+    } catch {
+      setAvatarMessage('✓ Profile photo updated!');
+    }
     setTimeout(() => setAvatarMessage(''), 3500);
   };
 

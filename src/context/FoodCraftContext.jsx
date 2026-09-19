@@ -95,11 +95,8 @@ export function FoodCraftProvider({ children }) {
         .then(data => {
           if (data.success && data.user) {
             setCurrentUser(data.user);
-            const cleanAvatar = (data.user.avatar && !data.user.avatar.includes('unsplash.com'))
-              ? data.user.avatar 
-              : (prev.avatar && !prev.avatar.includes('unsplash.com')) 
-                ? prev.avatar 
-                : '';
+            const rawAvatar = data.user.avatar || '';
+            const cleanAvatar = (!rawAvatar.includes('unsplash.com')) ? rawAvatar : '';
 
             if (data.user.profile) {
               setUserProfile(prev => ({ 

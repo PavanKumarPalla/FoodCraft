@@ -803,8 +803,11 @@ router.put('/profile', protect, async (req, res) => {
       }
     }
     if (avatar !== undefined) user.avatar = avatar;
-    if (profile) {
-      user.profile = { ...user.profile.toObject(), ...profile };
+    if (profile && typeof profile === 'object') {
+      const existing = user.profile && typeof user.profile.toObject === 'function' 
+        ? user.profile.toObject() 
+        : (user.profile || {});
+      user.profile = { ...existing, ...profile };
     }
 
     await user.save();
