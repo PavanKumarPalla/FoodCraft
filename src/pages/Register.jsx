@@ -166,22 +166,16 @@ export default function Register() {
         throw new Error(data.message || 'Registration failed.');
       }
 
-      // Save token and user
-      if (data.token) {
-        localStorage.setItem('foodcraft_token', data.token);
-      }
-      if (data.user) {
-        localStorage.setItem('foodcraft_user', JSON.stringify(data.user));
-        if (data.user.profile) {
-          setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
-        }
-      }
-
-      setSuccessMessage('🎉 Account successfully created! Check your email for a welcome message.');
+      setSuccessMessage('🎉 Account created successfully! Redirecting to login page...');
 
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+        navigate('/login', {
+          state: {
+            registeredEmail: email,
+            message: '🎉 Account created successfully! Please sign in with your credentials.',
+          },
+        });
+      }, 1000);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {

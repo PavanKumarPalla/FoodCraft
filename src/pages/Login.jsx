@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Utensils, Mail, Lock, ArrowRight, 
   AlertCircle, KeyRound, ShieldCheck, CheckCircle2 
@@ -12,11 +12,12 @@ import './Login.css';
 const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '916846769559-1phshi0i2s2u4h6f3lejq5ntibc07ecs.apps.googleusercontent.com';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.registeredEmail || '');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
