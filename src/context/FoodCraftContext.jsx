@@ -17,6 +17,15 @@ export function FoodCraftProvider({ children }) {
 
   const [userProfile, setUserProfile] = useState(() => {
     const token = localStorage.getItem('foodcraft_token');
+    const savedUser = localStorage.getItem('foodcraft_user');
+    let userObj = null;
+    if (savedUser) {
+      try {
+        userObj = JSON.parse(savedUser);
+      } catch {
+        userObj = null;
+      }
+    }
     if (!token) {
       return INITIAL_USER_PROFILE;
     }
@@ -27,12 +36,16 @@ export function FoodCraftProvider({ children }) {
         if (parsed.avatar && parsed.avatar.includes('unsplash.com')) {
           parsed.avatar = '';
         }
+        if (userObj) {
+          parsed.name = parsed.name || userObj.name || '';
+          parsed.email = userObj.email || parsed.email || '';
+        }
         return parsed;
       } catch {
-        return INITIAL_USER_PROFILE;
+        return userObj ? { ...INITIAL_USER_PROFILE, name: userObj.name || '', email: userObj.email || '' } : INITIAL_USER_PROFILE;
       }
     }
-    return INITIAL_USER_PROFILE;
+    return userObj ? { ...INITIAL_USER_PROFILE, name: userObj.name || '', email: userObj.email || '' } : INITIAL_USER_PROFILE;
   });
 
   const [mealPlan, setMealPlan] = useState(() => {
@@ -102,11 +115,17 @@ export function FoodCraftProvider({ children }) {
               setUserProfile(prev => ({ 
                 ...prev, 
                 name: data.user.name,
+                email: data.user.email,
                 avatar: cleanAvatar,
                 ...data.user.profile 
               }));
             } else {
-              setUserProfile(prev => ({ ...prev, avatar: cleanAvatar }));
+              setUserProfile(prev => ({ 
+                ...prev, 
+                name: data.user.name,
+                email: data.user.email,
+                avatar: cleanAvatar 
+              }));
             }
             if (data.user.favorites && data.user.favorites.length > 0) {
               setFavorites(data.user.favorites);
@@ -142,9 +161,12 @@ export function FoodCraftProvider({ children }) {
       }
       setToken(data.token);
       setCurrentUser(data.user);
-      if (data.user.profile) {
-        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
-      }
+      setUserProfile(prev => ({ 
+        ...prev, 
+        name: data.user.name, 
+        email: data.user.email, 
+        ...(data.user.profile || {}) 
+      }));
       setAuthLoading(false);
       return { success: true, message: data.message };
     } catch (err) {
@@ -174,9 +196,12 @@ export function FoodCraftProvider({ children }) {
       }
       setToken(data.token);
       setCurrentUser(data.user);
-      if (data.user.profile) {
-        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
-      }
+      setUserProfile(prev => ({ 
+        ...prev, 
+        name: data.user.name, 
+        email: data.user.email, 
+        ...(data.user.profile || {}) 
+      }));
       if (data.user.favorites) {
         setFavorites(data.user.favorites);
       }
@@ -220,9 +245,12 @@ export function FoodCraftProvider({ children }) {
       // Existing user → login directly
       setToken(data.token);
       setCurrentUser(data.user);
-      if (data.user.profile) {
-        setUserProfile(prev => ({ ...prev, name: data.user.name, ...data.user.profile }));
-      }
+      setUserProfile(prev => ({ 
+        ...prev, 
+        name: data.user.name, 
+        email: data.user.email, 
+        ...(data.user.profile || {}) 
+      }));
       if (data.user.favorites) {
         setFavorites(data.user.favorites);
       }
@@ -299,6 +327,14 @@ export function FoodCraftProvider({ children }) {
         const data = await res.json();
         if (data.success && data.user) {
           setCurrentUser(data.user);
+          setUserProfile(prev => ({
+            ...prev,
+            name: data.user.name,
+            email: data.user.email,
+            avatar: (!data.user.avatar || data.user.avatar.includes('unsplash.com')) ? prev.avatar : data.user.avatar,
+            ...(data.user.profile || {})
+          }));
+          return { success: true, user: data.user };
         }
       } catch (err) {
         console.warn('Could not sync profile to MongoDB:', err);

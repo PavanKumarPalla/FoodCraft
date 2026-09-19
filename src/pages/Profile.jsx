@@ -2,19 +2,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn 
+  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn, Lock, Mail, AlertCircle 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import ImageAdjustModal from '../components/ImageAdjustModal';
 import './Profile.css';
 
 export default function Profile() {
-  const { userProfile, setUserProfile, updateProfile, logout, token, currentUser } = useFoodCraft();
+  const { userProfile, updateProfile, logout, token, currentUser } = useFoodCraft();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [name, setName] = useState(userProfile.name);
-  const [email, setEmail] = useState(userProfile.email);
+  const [name, setName] = useState(() => currentUser?.name || userProfile.name || '');
+  const [nameError, setNameError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  // Fixed Gmail address: strictly read-only and uneditable
+  const fixedEmail = currentUser?.email || userProfile.email || '';
+
+  // Synchronize name if userProfile/currentUser finishes loading asynchronously
+  useEffect(() => {
+    if (!name && (currentUser?.name || userProfile.name)) {
+      setName(currentUser?.name || userProfile.name || '');
+    }
+  }, [currentUser?.name, userProfile.name, name]);
+
   // Sanitize initial avatar to exclude legacy unsplash images
   const [avatar, setAvatar] = useState(() => {
     return (userProfile.avatar && !userProfile.avatar.includes('unsplash.com')) 
@@ -33,7 +46,7 @@ export default function Profile() {
     if (userProfile.avatar && !avatar && !userProfile.avatar.includes('unsplash.com')) {
       setAvatar(userProfile.avatar);
     }
-  }, [userProfile.avatar]);
+  }, [userProfile.avatar, avatar]);
 
   // Check whether user has a custom uploaded avatar
   const hasCustomAvatar = Boolean(
@@ -107,22 +120,43 @@ export default function Profile() {
     );
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    const updatedData = {
-      name,
-      email,
-      avatar: activeAvatar || '',
-      dailyCalorieTarget: calories,
-      dailyProteinTarget: `${proteinTarget}g`,
-      dietaryPreference,
-      cuisinePreferences: selectedCuisines
-    };
+    const cleanName = name.trim();
+    if (!cleanName) {
+      setNameError('Please enter a valid display name.');
+      return;
+    }
 
-    updateProfile(updatedData);
+    setIsSaving(true);
+    setNameError('');
+    setSaveMessage('');
 
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
+    try {
+      const updatedData = {
+        name: cleanName,
+        avatar: activeAvatar || '',
+        dailyCalorieTarget: calories,
+        dailyProteinTarget: `${proteinTarget}g`,
+        dietaryPreference,
+        cuisinePreferences: selectedCuisines
+      };
+
+      await updateProfile(updatedData);
+
+      setSavedSuccess(true);
+      setSaveMessage('Profile changes saved successfully!');
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setSaveMessage('');
+      }, 3500);
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      setSaveMessage('Failed to save profile changes. Please try again.');
+      setTimeout(() => setSaveMessage(''), 3500);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -192,8 +226,16 @@ export default function Profile() {
           </div>
 
           <div className="profile-info-text">
-            <h1 className="profile-user-name">{name}</h1>
-            <span className="profile-user-email">{email}</span>
+            <h1 className="profile-user-name">{name || userProfile.name || currentUser?.name || 'Chef'}</h1>
+            <div className="profile-email-badge-row">
+              <span className="profile-user-email">
+                <Mail size={13} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle', opacity: 0.8 }} />
+                {fixedEmail || 'No email registered'}
+              </span>
+              <span className="profile-fixed-pill" title="Registered Gmail is permanent">
+                <Lock size={10} /> Fixed Gmail
+              </span>
+            </div>
             <div className="profile-tags-strip">
               <span className="badge badge-match">FoodCraft Pro</span>
               <span className="badge badge-gym">Gym Enthusiast</span>
@@ -234,29 +276,81 @@ export default function Profile() {
         <section className="profile-section glass-panel">
           <div className="section-head-title">
             <Utensils size={20} className="text-primary" />
-            <h2>Account Details</h2>
+            <div>
+              <h2>Account Details</h2>
+              <span className="section-desc-note" style={{ margin: 0 }}>
+                You have permission to edit your name. Registered Gmail is permanently fixed.
+              </span>
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="profile-name-input">Display Name</label>
-            <input 
-              id="profile-name-input" 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              className="auth-select"
-            />
-          </div>
+          <div className="profile-fields-grid">
+            {/* Display Name - Editable */}
+            <div className="form-group">
+              <div className="form-label-row">
+                <label htmlFor="profile-name-input" className="profile-field-label">
+                  <User size={15} className="label-icon text-primary" />
+                  <span>Display Name</span>
+                </label>
+                <span className="field-badge field-badge-editable" title="You can change your name anytime">
+                  <Check size={11} /> Editable
+                </span>
+              </div>
+              <input 
+                id="profile-name-input" 
+                type="text" 
+                value={name} 
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError('');
+                }} 
+                className={`auth-select profile-editable-input ${nameError ? 'input-error' : ''}`}
+                placeholder="Enter your display name"
+                maxLength={60}
+                required
+              />
+              {nameError ? (
+                <span className="field-error-text">
+                  <AlertCircle size={13} /> {nameError}
+                </span>
+              ) : (
+                <span className="field-hint">
+                  You have full permission to update your name. It will reflect across your recipes and dashboard.
+                </span>
+              )}
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="profile-email-input">Email Address</label>
-            <input 
-              id="profile-email-input" 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              className="auth-select"
-            />
+            {/* Registered Gmail - Fixed / Read Only */}
+            <div className="form-group">
+              <div className="form-label-row">
+                <label htmlFor="profile-email-input" className="profile-field-label">
+                  <Mail size={15} className="label-icon text-muted" />
+                  <span>Account Gmail (Fixed)</span>
+                </label>
+                <span className="field-badge field-badge-fixed" title="This email cannot be edited">
+                  <Lock size={11} /> Fixed & Verified
+                </span>
+              </div>
+              <div className="fixed-input-wrapper">
+                <input 
+                  id="profile-email-input" 
+                  type="email" 
+                  value={fixedEmail} 
+                  readOnly 
+                  disabled
+                  className="auth-select profile-fixed-input"
+                  title="Your registered Gmail address is fixed and cannot be edited."
+                  tabIndex={-1}
+                />
+                <div className="fixed-input-lock-tag" title="Account email is locked">
+                  <Lock size={13} />
+                  <span>Fixed</span>
+                </div>
+              </div>
+              <span className="field-hint field-hint-locked">
+                🔒 Registered Gmail is permanent and cannot be edited. No option to edit email is permitted.
+              </span>
+            </div>
           </div>
 
           <div className="form-group">
@@ -404,13 +498,20 @@ export default function Profile() {
 
         {/* Save Bar */}
         <div className="profile-save-bar">
+          {saveMessage && (
+            <div className={`profile-save-status ${savedSuccess ? 'status-success' : 'status-error'}`}>
+              {savedSuccess ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{saveMessage}</span>
+            </div>
+          )}
           <button 
             type="submit" 
             className="btn-primary btn-glow save-profile-cta"
             id="save-profile-btn"
+            disabled={isSaving}
           >
             <Check size={18} />
-            <span>{savedSuccess ? 'Changes Saved Successfully! ✓' : 'Save Preferences'}</span>
+            <span>{isSaving ? 'Saving Changes...' : (savedSuccess ? 'Changes Saved! ✓' : 'Save Profile Changes')}</span>
           </button>
         </div>
       </form>
