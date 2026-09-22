@@ -9,7 +9,7 @@ import { useFoodCraft } from '../context/FoodCraftContext';
 import './Login.css';
 
 // Google Client ID from Google Cloud Console
-const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '916846769559-1phshi0i2s2u4h6f3lejq5ntibc07ecs.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '914916759276-lqll3n5of8gtiful14c8qup6vvefl09l.apps.googleusercontent.com';
 
 export default function Login() {
   const location = useLocation();
@@ -486,7 +486,7 @@ export default function Login() {
                     />
                   </div>
                   <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
-                    Check your email inbox for the reset code sent from <strong>pavanpalla1916@gmail.com</strong>
+                    Check your email inbox for the reset code sent from <strong>foodcraft975@gmail.com</strong>
                   </span>
                 </div>
 

@@ -5,7 +5,7 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 export async function sendEmail({ toEmail, toName, subject, htmlContent }) {
   const apiKey = process.env.BREVO_API_KEY;
-  const senderEmail = process.env.SENDER_EMAIL || 'pavanpalla1916@gmail.com';
+  const senderEmail = process.env.SENDER_EMAIL || 'foodcraft975@gmail.com';
   const senderName = process.env.SENDER_NAME || 'Food Craft';
 
   if (!apiKey) {
@@ -179,16 +179,16 @@ export async function sendWelcomeEmail({ email, name }) {
               </div>
             </div>
 
-            <a href="https://foodcraft-gnlz.onrender.com/dashboard" class="cta-btn">
+            <a href="https://foodcraft-e9ga.onrender.com/dashboard" class="cta-btn">
               🚀 Start Exploring Your Recipes
             </a>
 
             <p style="font-size: 13px; color: #64748b; text-align: center; margin-top: 20px;">
-              Need help or have questions? Simply reply directly to this email at <a href="mailto:pavanpalla1916@gmail.com" style="color: #10b981;">pavanpalla1916@gmail.com</a>.
+              Need help or have questions? Simply reply directly to this email at <a href="mailto:foodcraft975@gmail.com" style="color: #10b981;">foodcraft975@gmail.com</a>.
             </p>
           </div>
           <div class="footer">
-            Crafted with ❤️ by Food Craft • <a href="https://foodcraft-gnlz.onrender.com" style="color: #10b981; text-decoration: none;">Open App</a>
+            Crafted with ❤️ by Food Craft • <a href="https://foodcraft-e9ga.onrender.com" style="color: #10b981; text-decoration: none;">Open App</a>
           </div>
         </div>
       </body>
@@ -227,7 +227,7 @@ export async function sendPasswordResetSuccessEmail({ email, name }) {
           <div class="content">
             <p>Hello <strong>${name || 'Chef'}</strong>,</p>
             <p>Your Food Craft account password was successfully updated. You can now log in using your new credentials.</p>
-            <p style="color: #ef4444; font-size: 13px;">If you did not make this change, please contact support immediately at pavanpalla1916@gmail.com.</p>
+            <p style="color: #ef4444; font-size: 13px;">If you did not make this change, please contact support immediately at foodcraft975@gmail.com.</p>
           </div>
           <div class="footer">Food Craft AI Support</div>
         </div>

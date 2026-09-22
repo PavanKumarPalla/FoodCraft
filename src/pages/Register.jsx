@@ -430,7 +430,7 @@ export default function Register() {
                 />
               </div>
               <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
-                Check your inbox or spam for an email from <strong>pavanpalla1916@gmail.com</strong>
+                Check your inbox or spam for an email from <strong>foodcraft975@gmail.com</strong>
               </span>
             </div>
 
