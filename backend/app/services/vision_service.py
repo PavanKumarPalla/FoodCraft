@@ -86,6 +86,7 @@ def detect_ingredients(
 
     model = _load_model()
     image = _decode_image(image_base64)
+    img_w, img_h = image.size
 
     # Run inference
     results = model.predict(
@@ -93,6 +94,11 @@ def detect_ingredients(
         conf=confidence_threshold,
         verbose=False,
     )
+
+    BOX_COLORS = [
+        "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4",
+        "#ec4899", "#3b82f6", "#14b8a6", "#f97316", "#84cc16",
+    ]
 
     detections = []
     seen_names = set()
@@ -104,13 +110,30 @@ def detect_ingredients(
         for box in boxes:
             cls_id = int(box.cls[0])
             conf = float(box.conf[0])
-            name = model.names.get(cls_id, f"class_{cls_id}").lower().strip()
+            name = model.names.get(cls_id, f"class_{cls_id}").strip().title()
             coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
+            x1, y1, x2, y2 = coords
+
+            # Compute percentage coordinates relative to image dimensions
+            x_pct = round((max(0.0, x1) / img_w) * 100, 2) if img_w > 0 else 0.0
+            y_pct = round((max(0.0, y1) / img_h) * 100, 2) if img_h > 0 else 0.0
+            w_pct = round((max(0.0, x2 - x1) / img_w) * 100, 2) if img_w > 0 else 0.0
+            h_pct = round((max(0.0, y2 - y1) / img_h) * 100, 2) if img_h > 0 else 0.0
+
+            color = BOX_COLORS[len(detections) % len(BOX_COLORS)]
 
             detections.append({
                 "name": name,
-                "confidence": round(conf, 4),
-                "bbox": [round(c, 1) for c in coords],
+                "confidence": f"{round(conf * 100, 1)}%",
+                "confidence_raw": round(conf, 4),
+                "color": color,
+                "box": {
+                    "x": x_pct,
+                    "y": y_pct,
+                    "w": w_pct,
+                    "h": h_pct,
+                },
+                "bbox_pixels": [round(c, 1) for c in coords],
             })
             seen_names.add(name)
 

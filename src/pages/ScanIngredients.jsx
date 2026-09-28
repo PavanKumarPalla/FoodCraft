@@ -1,12 +1,11 @@
 // src/pages/ScanIngredients.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, Upload, Plus, X, CheckCircle2, 
-  Cpu, ArrowRight, RefreshCw
+  Cpu, ArrowRight, RefreshCw, AlertCircle, Sparkles
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
-import { MOCK_DETECTED_INGREDIENTS } from '../data/mockData';
 import './ScanIngredients.css';
 
 export default function ScanIngredients() {
@@ -20,12 +19,38 @@ export default function ScanIngredients() {
   const [activeTab, setActiveTab] = useState('image'); // 'image' | 'text'
   const [manualInput, setManualInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const [hasScanned, setHasScanned] = useState(true);
+  const [hasScanned, setHasScanned] = useState(false);
+  const [detectedBoxes, setDetectedBoxes] = useState([]);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [backendError, setBackendError] = useState(null);
+  const [backendOnline, setBackendOnline] = useState(null);
   const [sampleImage, setSampleImage] = useState(
     'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=1000&q=80'
   );
 
-  const navigate = useNavigate();
+  const checkBackendHealth = async () => {
+    try {
+      let res;
+      try {
+        res = await fetch('/api/recipes/health');
+      } catch {
+        res = await fetch('http://localhost:8000/api/recipes/health');
+      }
+      if (res && res.ok) {
+        setBackendOnline(true);
+        setBackendError(null);
+      } else {
+        setBackendOnline(false);
+      }
+    } catch {
+      setBackendOnline(false);
+    }
+  };
+
+  // Check AI Backend Health on mount
+  useEffect(() => {
+    checkBackendHealth();
+  }, []);
 
   const handleManualAdd = (e) => {
     e.preventDefault();
@@ -35,24 +60,81 @@ export default function ScanIngredients() {
     }
   };
 
-  const handleSimulateScan = () => {
+  // Real YOLOv8 AI inference call
+  const runYoloDetection = async (base64Image) => {
     setIsScanning(true);
-    setTimeout(() => {
+    setBackendError(null);
+    setStatusMessage('Analyzing photo with YOLOv8 food detection model...');
+
+    try {
+      let res;
+      const payload = { image: base64Image, confidence: 0.25 };
+
+      try {
+        res = await fetch('/api/detect-ingredients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch {
+        // Fallback to direct localhost:8000
+        res = await fetch('http://localhost:8000/api/detect-ingredients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (!res.ok) {
+        throw new Error(`AI Backend returned HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
       setIsScanning(false);
       setHasScanned(true);
-      // Auto populate detected items
-      MOCK_DETECTED_INGREDIENTS.forEach(item => {
-        addScannedIngredient(item.name);
-      });
-    }, 1200);
+      setBackendOnline(true);
+
+      if (data.detected_ingredients && data.detected_ingredients.length > 0) {
+        setDetectedBoxes(data.detected_ingredients);
+        
+        // Populate the detected ingredients basket
+        data.unique_ingredients.forEach(item => {
+          addScannedIngredient(item);
+        });
+
+        setStatusMessage(`Recognized ${data.count} ingredient${data.count > 1 ? 's' : ''} with ${data.model}`);
+      } else {
+        setDetectedBoxes([]);
+        setStatusMessage('No recognized food items detected. Try another photo or add manually below.');
+      }
+    } catch (err) {
+      console.warn('Real-time YOLOv8 backend error:', err);
+      setIsScanning(false);
+      setHasScanned(true);
+      setDetectedBoxes([]);
+      setBackendOnline(false);
+      setBackendError(
+        'FastAPI AI Backend is offline. Start it with "python backend/run.py" to enable live YOLOv8 computer vision detection.'
+      );
+    }
   };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setSampleImage(url);
-      handleSimulateScan();
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Data = event.target.result;
+        setSampleImage(base64Data);
+        runYoloDetection(base64Data);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleReScan = () => {
+    if (sampleImage) {
+      runYoloDetection(sampleImage);
     }
   };
 
@@ -74,8 +156,22 @@ export default function ScanIngredients() {
         </div>
         <h1 className="scan-title">Smart Ingredient Recognition</h1>
         <p className="scan-desc">
-          Capture a photo of your fridge or pantry to automatically detect food items, or enter what you have manually.
+          Capture or upload a photo of your groceries to automatically detect food items, or enter what you have manually.
         </p>
+
+        {/* Backend status indicator */}
+        <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.82rem' }}>
+          <span style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: backendOnline ? '#10b981' : '#f59e0b',
+            display: 'inline-block'
+          }}></span>
+          <span style={{ color: 'var(--text-secondary)' }}>
+            AI Backend: {backendOnline ? <strong style={{ color: '#10b981' }}>Online (FastAPI :8000)</strong> : <strong style={{ color: '#f59e0b' }}>Waiting for "python backend/run.py"</strong>}
+          </span>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -120,8 +216,8 @@ export default function ScanIngredients() {
                   </div>
                 )}
 
-                {/* YOLOv8 Detected Bounding Boxes */}
-                {hasScanned && !isScanning && MOCK_DETECTED_INGREDIENTS.map((item, idx) => (
+                {/* Real YOLOv8 Detected Bounding Boxes */}
+                {hasScanned && !isScanning && detectedBoxes.map((item, idx) => (
                   <div
                     key={idx}
                     className="yolo-bounding-box"
@@ -130,18 +226,43 @@ export default function ScanIngredients() {
                       top: `${item.box.y}%`,
                       width: `${item.box.w}%`,
                       height: `${item.box.h}%`,
-                      borderColor: item.color
+                      borderColor: item.color || '#10b981'
                     }}
                   >
                     <span 
                       className="yolo-box-label"
-                      style={{ backgroundColor: item.color }}
+                      style={{ backgroundColor: item.color || '#10b981' }}
                     >
                       {item.name} ({item.confidence})
                     </span>
                   </div>
                 ))}
               </div>
+
+              {/* Status & Feedback */}
+              {statusMessage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                  <Sparkles size={16} style={{ color: 'var(--primary-color)' }} />
+                  <span>{statusMessage}</span>
+                </div>
+              )}
+
+              {backendError && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#ef4444',
+                  fontSize: '0.85rem'
+                }}>
+                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                  <span>{backendError}</span>
+                </div>
+              )}
 
               {/* Upload Controls */}
               <div className="image-actions-bar">
@@ -159,7 +280,7 @@ export default function ScanIngredients() {
                 <button
                   type="button"
                   className="btn-primary btn-glow"
-                  onClick={handleSimulateScan}
+                  onClick={handleReScan}
                   disabled={isScanning}
                   id="re-scan-yolo-btn"
                 >

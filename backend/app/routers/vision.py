@@ -36,10 +36,20 @@ class DetectRequest(BaseModel):
     model_config = {"json_schema_extra": {"examples": [{"image": "data:image/jpeg;base64,/9j/4AAQ..."}]}}
 
 
+class BoxCoords(BaseModel):
+    x: float = Field(..., description="Left offset in percentage of image width")
+    y: float = Field(..., description="Top offset in percentage of image height")
+    w: float = Field(..., description="Box width in percentage of image width")
+    h: float = Field(..., description="Box height in percentage of image height")
+
+
 class DetectionItem(BaseModel):
     name: str
-    confidence: float
-    bbox: list[float]
+    confidence: str
+    confidence_raw: float
+    color: str = "#10b981"
+    box: BoxCoords
+    bbox_pixels: list[float] = Field(default_factory=list)
 
 
 class DetectResponse(BaseModel):
@@ -48,6 +58,7 @@ class DetectResponse(BaseModel):
     unique_ingredients: list[str]
     count: int
     model: str
+    message: str | None = None
 
 
 # ── Endpoint ─────────────────────────────────────────────────
