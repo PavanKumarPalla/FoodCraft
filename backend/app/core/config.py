@@ -6,7 +6,16 @@ All values can be overridden via environment variables or a .env file.
 """
 
 from pathlib import Path
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    try:
+        from pydantic import BaseModel as BaseSettings
+    except ImportError:
+        class BaseSettings:
+            def __init__(self, **kwargs):
+                for k, v in kwargs.items():
+                    setattr(self, k, v)
 
 
 # ── Path Constants ───────────────────────────────────────────
@@ -41,8 +50,8 @@ class Settings(BaseSettings):
     FAISS_TOP_K: int = 20
 
     # ── Hugging Face Dataset ─────────────────────────────────
-    HF_DATASET_REPO: str = "FoodCraft/foodcraft-recipes"
-    HF_DATASET_FILENAME: str = "Cleaned_dataset.csv"
+    HF_DATASET_REPO: str = "Default-Box/recipe_nlg-trim"
+    HF_DATASET_FILENAME: str = "train.csv"
     HF_TOKEN: str = ""
 
     # ── Index Build Settings ─────────────────────────────────

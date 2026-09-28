@@ -3,32 +3,30 @@ Food Craft AI — Retrieval Service (SBERT + FAISS)
 ──────────────────────────────────────────────────
 Builds and queries a vector search index over the RecipeNLG dataset
 for semantic ingredient-to-recipe matching.
-
-Architecture:
-    1. Load the recipe dataset from Hugging Face Hub (or local cache).
-    2. Encode the NER (ingredient tag) column with all-MiniLM-L6-v2.
-    3. Store vectors in a FAISS IndexFlatIP (cosine similarity via L2 normalization).
-    4. On query: encode user ingredient list → retrieve Top-K nearest recipes.
-    5. Persist the index + metadata to disk for instant server restarts.
 """
+
+from __future__ import annotations
 
 import ast
 import json
 import logging
 from pathlib import Path
 
-import faiss
+try:
+    import faiss
+except ImportError:
+    faiss = None
+
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings, INDEX_DIR
 
 logger = logging.getLogger(__name__)
 
 # ── Module-level singletons ──────────────────────────────────
-_sbert_model: SentenceTransformer | None = None
-_faiss_index: faiss.IndexFlatIP | None = None
+_sbert_model = None
+_faiss_index = None
 _recipe_metadata: pd.DataFrame | None = None
 
 
@@ -36,10 +34,11 @@ _recipe_metadata: pd.DataFrame | None = None
 # Model & Data Loading
 # ─────────────────────────────────────────────────────────────
 
-def _get_sbert() -> SentenceTransformer:
+def _get_sbert():
     """Load the SBERT model (lazy singleton)."""
     global _sbert_model
     if _sbert_model is None:
+        from sentence_transformers import SentenceTransformer
         logger.info("Loading SBERT model: %s ...", settings.SBERT_MODEL_NAME)
         _sbert_model = SentenceTransformer(settings.SBERT_MODEL_NAME)
         logger.info("SBERT model loaded. Embedding dimension: %d", _sbert_model.get_sentence_embedding_dimension())
@@ -79,7 +78,10 @@ def load_dataset_from_hf() -> pd.DataFrame:
     )
 
     logger.info("Dataset downloaded to cache: %s", local_path)
-    df = pd.read_csv(local_path)
+    try:
+        df = pd.read_csv(local_path, on_bad_lines="skip")
+    except Exception:
+        df = pd.read_csv(local_path, engine="python", on_bad_lines="skip")
     logger.info("Dataset loaded: %d rows, columns: %s", len(df), list(df.columns))
     return df
 
