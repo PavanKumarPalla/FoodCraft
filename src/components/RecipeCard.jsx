@@ -1,14 +1,17 @@
 // src/components/RecipeCard.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Flame, Star, Heart, Dumbbell, Zap } from 'lucide-react';
+import { Clock, Flame, Star, Heart, Dumbbell, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
+import { matchRecipeIngredients } from '../utils/ingredientMatcher';
 import './RecipeCard.css';
 
 export default function RecipeCard({ recipe }) {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite } = useFoodCraft();
+  const { scannedIngredients, isFavorite, toggleFavorite } = useFoodCraft();
   const favorite = isFavorite(recipe.id);
+
+  const matchData = matchRecipeIngredients(recipe.ingredients, scannedIngredients);
 
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
@@ -21,78 +24,100 @@ export default function RecipeCard({ recipe }) {
 
   return (
     <article 
-      className="recipe-card glass-panel" 
+      className="recipe-card text-first-card glass-panel" 
       onClick={handleCardClick}
       id={`recipe-card-${recipe.id}`}
     >
-      {/* Image Thumbnail & Badges */}
-      <div className="recipe-image-container">
-        <img 
-          src={recipe.image} 
-          alt={recipe.title} 
-          className="recipe-image" 
-          loading="lazy" 
-        />
-        <div className="image-overlay-gradient"></div>
-
-        {/* Top Badges */}
-        <div className="card-top-badges">
-          <div className="diet-badge-wrapper">
-            {recipe.dietType === 'veg' && (
-              <span className="badge badge-veg">
-                <span className="dot-veg"></span> Veg
-              </span>
-            )}
-            {recipe.dietType === 'non-veg' && (
-              <span className="badge badge-nonveg">
-                <span className="dot-nonveg"></span> Non-Veg
-              </span>
-            )}
-            {recipe.dietType === 'egg' && (
-              <span className="badge badge-match">
-                🥚 Egg
-              </span>
-            )}
-          </div>
-
-          <button 
-            type="button"
-            className={`card-favorite-btn ${favorite ? 'active' : ''}`}
-            onClick={handleFavoriteClick}
-            aria-label={favorite ? "Remove from favorites" : "Save to favorites"}
-            id={`fav-btn-${recipe.id}`}
-          >
-            <Heart size={18} fill={favorite ? "#ef4444" : "none"} color={favorite ? "#ef4444" : "#ffffff"} />
-          </button>
+      {/* Top Header Row: Diet Type, Cuisine & Favorite */}
+      <div className="card-top-bar">
+        <div className="card-pill-group">
+          {recipe.dietType === 'veg' && (
+            <span className="badge badge-veg">
+              <span className="dot-veg"></span> Veg
+            </span>
+          )}
+          {recipe.dietType === 'non-veg' && (
+            <span className="badge badge-nonveg">
+              <span className="dot-nonveg"></span> Non-Veg
+            </span>
+          )}
+          {recipe.dietType === 'egg' && (
+            <span className="badge badge-match">
+              🥚 Egg
+            </span>
+          )}
+          <span className="card-cuisine-tag">{recipe.cuisine}</span>
         </div>
 
-        {/* Bottom Image Overlay: Match Score & Rating */}
-        <div className="card-image-bottom">
-          <span className="match-pill">
-            <Zap size={13} />
-            <span>{recipe.matchScore}% Match</span>
-          </span>
-          <span className="rating-pill">
-            <Star size={13} fill="#f59e0b" color="#f59e0b" />
-            <span>{recipe.rating}</span>
-          </span>
-        </div>
+        <button 
+          type="button"
+          className={`card-favorite-btn ${favorite ? 'active' : ''}`}
+          onClick={handleFavoriteClick}
+          aria-label={favorite ? "Remove from favorites" : "Save to favorites"}
+          id={`fav-btn-${recipe.id}`}
+        >
+          <Heart size={18} fill={favorite ? "#ef4444" : "none"} color={favorite ? "#ef4444" : "var(--text-secondary)"} />
+        </button>
       </div>
 
-      {/* Card Body */}
-      <div className="recipe-card-content">
-        <div className="recipe-meta-sub">
-          <span className="recipe-cuisine">{recipe.cuisine}</span>
-          <span className="dot-separator">•</span>
-          <span className="recipe-meal-type">{recipe.mealType}</span>
-        </div>
-
+      {/* Main Recipe Title & Description */}
+      <div className="card-title-section">
         <h3 className="recipe-title">{recipe.title}</h3>
-        <p className="recipe-description">{recipe.description}</p>
+        {recipe.description && (
+          <p className="recipe-description">{recipe.description}</p>
+        )}
+      </div>
 
-        {/* Health / Gym / Restriction Tags */}
+      {/* Ingredients Breakdown: Have vs Missing */}
+      <div className="card-ingredients-breakdown">
+        {scannedIngredients.length > 0 ? (
+          <>
+            {/* Ingredients You Have */}
+            <div className="ing-status-row have-row">
+              <div className="ing-status-label">
+                <CheckCircle2 size={14} className="text-veg" />
+                <span>You Have ({matchData.have.length}):</span>
+              </div>
+              <div className="ing-mini-tags">
+                {matchData.have.length > 0 ? (
+                  matchData.have.map((h, i) => (
+                    <span key={i} className="mini-tag tag-have">{h.name}</span>
+                  ))
+                ) : (
+                  <span className="mini-tag tag-muted">None from selected</span>
+                )}
+              </div>
+            </div>
+
+            {/* Ingredients You Need To Have (Missing) */}
+            <div className="ing-status-row missing-row">
+              <div className="ing-status-label">
+                <AlertTriangle size={14} className="text-warning" />
+                <span>You Have To Have These Also ({matchData.missing.length}):</span>
+              </div>
+              <div className="ing-mini-tags">
+                {matchData.missing.slice(0, 5).map((m, i) => (
+                  <span key={i} className="mini-tag tag-missing">{m.name}</span>
+                ))}
+                {matchData.missing.length > 5 && (
+                  <span className="mini-tag tag-more">+{matchData.missing.length - 5} more</span>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="ing-status-row">
+            <span className="total-ingredients-note">
+              📋 Requires <strong>{recipe.ingredients.length} ingredients</strong>
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Health / Gym / Feature Tags */}
+      {recipe.healthTags && recipe.healthTags.length > 0 && (
         <div className="recipe-tags-list">
-          {recipe.healthTags.slice(0, 2).map((tag, idx) => (
+          {recipe.healthTags.slice(0, 3).map((tag, idx) => (
             <span 
               key={idx} 
               className={`tag-pill ${tag.includes('Protein') || tag.includes('Gym') ? 'tag-gym' : tag.includes('Sugar') ? 'tag-lowsugar' : 'tag-neutral'}`}
@@ -102,23 +127,37 @@ export default function RecipeCard({ recipe }) {
             </span>
           ))}
         </div>
+      )}
 
-        {/* Footer Metrics */}
-        <div className="recipe-card-footer">
+      {/* Footer Metrics & CTA */}
+      <div className="recipe-card-footer">
+        <div className="footer-metrics-group">
           <div className="metric-item" title="Cooking Time">
             <Clock size={14} className="metric-icon" />
             <span>{recipe.time}m</span>
           </div>
           <div className="metric-item" title="Calories">
-            <Flame size={14} className="metric-icon" />
+            <Flame size={14} className="metric-icon text-flame" />
             <span>{recipe.calories} kcal</span>
           </div>
-          <div className="metric-item highlight-protein" title="Protein Content">
-            <span className="protein-label">P:</span>
-            <span>{recipe.protein}</span>
+          {recipe.protein && (
+            <div className="metric-item highlight-protein" title="Protein Content">
+              <span className="protein-label">P:</span>
+              <span>{recipe.protein}</span>
+            </div>
+          )}
+          <div className="metric-item" title="Rating">
+            <Star size={13} fill="#f59e0b" color="#f59e0b" />
+            <span>{recipe.rating || 4.8}</span>
           </div>
         </div>
+
+        <span className="card-cta-link">
+          <span>View Missing & Steps</span>
+          <ArrowRight size={14} />
+        </span>
       </div>
+
     </article>
   );
 }

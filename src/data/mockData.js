@@ -243,6 +243,7 @@ export const INITIAL_RECIPES = [
     ingredients: [
       { name: "Basmati Rice (Long Grain)", amount: "2 cups, soaked", available: true },
       { name: "Chicken (Curry Cut)", amount: "500g", available: true },
+      { name: "Fresh Ginger & Garlic Paste", amount: "2 tbsp", available: true },
       { name: "Biryani Spices (Star Anise, Cardamom)", amount: "Whole spices", available: true },
       { name: "Thick Curd (Yogurt)", amount: "1/2 cup", available: true },
       { name: "Saffron strands soaked in milk", amount: "2 tbsp", available: false },
@@ -250,7 +251,7 @@ export const INITIAL_RECIPES = [
     ],
     instructions: [
       "Marinate chicken with yogurt, ginger-garlic paste, mint, coriander, and biryani spices for 45 mins.",
-      "Parboil soaked basmati rice with whole whole spices until 70% cooked.",
+      "Parboil soaked basmati rice with whole spices until 70% cooked.",
       "Layer marinated chicken at the bottom of a heavy pot, top with fragrant rice.",
       "Scatter fried onions, saffron milk, seal lid with dough or foil, and slow-cook (Dum) for 25 minutes."
     ]
@@ -259,7 +260,7 @@ export const INITIAL_RECIPES = [
     id: "rcp-8",
     title: "Avocado & Tomato Sourdough Toast",
     description: "Toasted artisan sourdough rubbed with garlic, smashed hass avocado, cherry tomatoes, and microgreens.",
-    image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80",
+    image: "",
     cuisine: "Continental",
     mealType: "Breakfast",
     dietType: "veg",
@@ -289,8 +290,173 @@ export const INITIAL_RECIPES = [
       "Spread thickly over toast and arrange sweet cherry tomato halves.",
       "Finish with chili flakes, microgreens, and a light mist of olive oil."
     ]
+  },
+  {
+    id: "rcp-9",
+    title: "Homestyle Kadai Chicken Curry",
+    description: "Rich, aromatic chicken curry slow-cooked with fresh ginger juliennes, garlic, crushed tomatoes, and roasted kadai spices.",
+    image: "",
+    cuisine: "North Indian",
+    mealType: "Dinner",
+    dietType: "non-veg",
+    healthTags: ["High Protein", "Gym Friendly", "Keto"],
+    time: 30,
+    servings: 3,
+    calories: 410,
+    protein: "36g",
+    carbs: "14g",
+    fat: "22g",
+    sodium: "340mg",
+    sugar: "3g",
+    rating: 4.9,
+    reviewsCount: 260,
+    matchScore: 98,
+    difficulty: "Medium",
+    ingredients: [
+      { name: "Chicken (Curry Cut)", amount: "500g", available: true },
+      { name: "Fresh Ginger", amount: "2 tbsp, julienned", available: true },
+      { name: "Garlic Cloves", amount: "6 cloves, minced", available: true },
+      { name: "Onions", amount: "2 medium, finely chopped", available: true },
+      { name: "Ripe Tomatoes", amount: "3, pureed", available: true },
+      { name: "Green Bell Pepper (Capsicum)", amount: "1, cubed", available: true },
+      { name: "Turmeric Powder", amount: "1/2 tsp", available: true },
+      { name: "Garam Masala Powder", amount: "1 tsp", available: true },
+      { name: "Kashmiri Red Chili Powder", amount: "1 tsp", available: true },
+      { name: "Mustard Oil / Ghee", amount: "2 tbsp", available: true },
+      { name: "Fresh Coriander Leaves", amount: "2 tbsp, chopped", available: true }
+    ],
+    instructions: [
+      "Heat mustard oil or ghee in a heavy-bottomed kadai until warm.",
+      "Add minced garlic and half of the julienned ginger; sauté for 1 minute until fragrant.",
+      "Add chopped onions and fry on medium heat until golden brown.",
+      "Stir in turmeric powder, red chili powder, and garam masala.",
+      "Add the chicken pieces and sear over high heat for 6-8 minutes until sealed.",
+      "Stir in tomato puree and bell peppers; cover and simmer for 15 minutes until chicken is tender.",
+      "Garnish with remaining ginger juliennes and fresh coriander. Serve piping hot with rotis or rice."
+    ]
+  },
+  {
+    id: "rcp-10",
+    title: "Ginger Garlic Chicken Stir-Fry",
+    description: "Lean chicken breast stir-fried in a hot wok with pungent ginger, crushed garlic, broccoli florets, and light soy sauce.",
+    image: "",
+    cuisine: "Asian",
+    mealType: "Dinner",
+    dietType: "non-veg",
+    healthTags: ["High Protein", "Gym Friendly", "Low Sugar"],
+    time: 15,
+    servings: 2,
+    calories: 330,
+    protein: "38g",
+    carbs: "10g",
+    fat: "12g",
+    sodium: "310mg",
+    sugar: "1g",
+    rating: 4.8,
+    reviewsCount: 175,
+    matchScore: 95,
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Chicken Breast", amount: "300g, thinly sliced", available: true },
+      { name: "Fresh Ginger", amount: "2 tbsp, finely minced", available: true },
+      { name: "Garlic Cloves", amount: "4 cloves, minced", available: true },
+      { name: "Broccoli Florets", amount: "1 cup", available: true },
+      { name: "Soy Sauce", amount: "2 tbsp", available: true },
+      { name: "Toasted Sesame Oil", amount: "1 tbsp", available: true },
+      { name: "Spring Onions", amount: "3 stalks, chopped", available: true },
+      { name: "Crushed Black Pepper", amount: "1/2 tsp", available: true }
+    ],
+    instructions: [
+      "Toss sliced chicken breast with half the minced ginger, black pepper, and 1 tbsp soy sauce.",
+      "Heat sesame oil in a wok or large skillet over high heat.",
+      "Add minced garlic and remaining ginger; toss for 30 seconds until aromatic.",
+      "Add chicken and stir-fry briskly for 5-6 minutes until cooked through and golden.",
+      "Add broccoli florets and spring onions with remaining soy sauce, tossing for 2 minutes.",
+      "Remove from heat and serve hot over rice or noodles."
+    ]
+  },
+  {
+    id: "rcp-11",
+    title: "Palak Paneer (Spinach Cottage Cheese)",
+    description: "Creamy pureed fresh spinach gravy infused with garlic, cumin, and tender lightly tossed paneer cubes.",
+    image: "",
+    cuisine: "North Indian",
+    mealType: "Lunch",
+    dietType: "veg",
+    healthTags: ["High Protein", "High Iron", "Low Sugar"],
+    time: 25,
+    servings: 3,
+    calories: 320,
+    protein: "22g",
+    carbs: "12g",
+    fat: "18g",
+    sodium: "280mg",
+    sugar: "2g",
+    rating: 4.9,
+    reviewsCount: 310,
+    matchScore: 94,
+    difficulty: "Medium",
+    ingredients: [
+      { name: "Paneer (Cottage Cheese)", amount: "250g, cubed", available: true },
+      { name: "Fresh Spinach (Palak)", amount: "300g, washed", available: true },
+      { name: "Garlic Cloves", amount: "5 cloves, finely sliced", available: true },
+      { name: "Fresh Ginger", amount: "1 tbsp, grated", available: true },
+      { name: "Onions", amount: "1 medium, chopped", available: true },
+      { name: "Green Chilies", amount: "2, slit", available: true },
+      { name: "Cumin Seeds", amount: "1 tsp", available: true },
+      { name: "Garam Masala", amount: "1/2 tsp", available: true },
+      { name: "Fresh Cream / Butter", amount: "1 tbsp", available: true }
+    ],
+    instructions: [
+      "Blanch spinach leaves in salted boiling water for 2 minutes, then shock in ice-cold water.",
+      "Blend blanched spinach with green chilies into a vibrant green puree.",
+      "Heat ghee in a pan, crackle cumin seeds, then sauté garlic, ginger, and onions until soft.",
+      "Pour in the spinach puree and garam masala; simmer gently on low heat for 5 minutes.",
+      "Gently add paneer cubes and stir in fresh cream. Cook for 2 minutes and serve with warm rotis."
+    ]
+  },
+  {
+    id: "rcp-12",
+    title: "Homestyle Yellow Dal Tadka",
+    description: "Comforting yellow lentils tempered with sizzled garlic, ginger, cumin, green chilies, and ripe tomatoes.",
+    image: "",
+    cuisine: "North Indian",
+    mealType: "Lunch",
+    dietType: "veg",
+    healthTags: ["High Fiber", "Low Salt", "Vegan Friendly"],
+    time: 20,
+    servings: 3,
+    calories: 240,
+    protein: "14g",
+    carbs: "36g",
+    fat: "6g",
+    sodium: "210mg",
+    sugar: "2g",
+    rating: 4.8,
+    reviewsCount: 190,
+    matchScore: 92,
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Yellow Toor / Moong Dal", amount: "1 cup, rinsed", available: true },
+      { name: "Garlic Cloves", amount: "6 cloves, thinly sliced", available: true },
+      { name: "Fresh Ginger", amount: "1 tbsp, chopped", available: true },
+      { name: "Ripe Tomatoes", amount: "2, chopped", available: true },
+      { name: "Green Chilies", amount: "2, slit", available: true },
+      { name: "Cumin Seeds", amount: "1 tsp", available: true },
+      { name: "Turmeric Powder", amount: "1/2 tsp", available: true },
+      { name: "Ghee", amount: "2 tbsp", available: true },
+      { name: "Fresh Coriander", amount: "2 tbsp, chopped", available: true }
+    ],
+    instructions: [
+      "Cook rinsed dal with 3 cups water, turmeric powder, and salt until soft and creamy.",
+      "In a tadka pan, heat ghee and add cumin seeds until they splutter.",
+      "Add sliced garlic, chopped ginger, and green chilies, frying until garlic turns golden.",
+      "Add chopped tomatoes and cook for 3-4 minutes until soft.",
+      "Pour sizzling tadka over the dal, mix well, and garnish with fresh coriander."
+    ]
   }
 ];
+
 
 export const CATEGORIES = [
   {

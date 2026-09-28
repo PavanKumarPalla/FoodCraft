@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ArrowUpDown, Sparkles, Utensils, X } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
+import { matchRecipeIngredients } from '../utils/ingredientMatcher';
 import RecipeCard from '../components/RecipeCard';
 import FilterBar from '../components/FilterBar';
 import './RecipeResults.css';
@@ -30,7 +31,7 @@ export default function RecipeResults() {
 
       const fetchAiRecommendations = async () => {
         try {
-          const payload = { ingredients: scannedIngredients, top_k: 20, include_images: true };
+          const payload = { ingredients: scannedIngredients, top_k: 20, include_images: false };
           let res;
           try {
             res = await fetch('/api/recommend-recipes', {
@@ -52,18 +53,18 @@ export default function RecipeResults() {
               const mapped = data.recipes.map((r, idx) => ({
                 id: `ai-${r.rank || idx}`,
                 title: r.title,
-                image: r.image?.url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
+                image: '',
                 description: r.directions ? r.directions.slice(0, 2).join(' ') : 'Curated recipe retrieved via Sentence-BERT vector matching.',
                 ingredients: (r.ingredients || []).map(ing => ({ name: ing, amount: '' })),
                 instructions: r.directions || [],
                 matchScore: Math.min(99, Math.max(70, Math.round(((r.similarity_score || 0.8) + 0.15) * 100))),
                 time: 25,
                 calories: 390,
-                protein: 22,
-                carbs: 40,
-                fat: 14,
+                protein: '22g',
+                carbs: '40g',
+                fat: '14g',
                 dietType: 'veg',
-                cuisine: 'SBERT AI',
+                cuisine: 'RecipeNLG',
                 mealType: 'Dinner',
                 rating: 4.8,
                 reviewsCount: 95,
@@ -73,6 +74,7 @@ export default function RecipeResults() {
             }
           }
         } catch (err) {
+
           console.warn('AI recipe recommendation server unavailable, using local recipes:', err);
         } finally {
           if (isMounted) setIsAiLoading(false);
@@ -129,7 +131,21 @@ export default function RecipeResults() {
 
     // Sorting
     result.sort((a, b) => {
-      if (sortBy === 'match') return b.matchScore - a.matchScore;
+      if (sortBy === 'match') {
+        if (scannedIngredients && scannedIngredients.length > 0) {
+          const matchA = matchRecipeIngredients(a.ingredients, scannedIngredients);
+          const matchB = matchRecipeIngredients(b.ingredients, scannedIngredients);
+          // 1. Highest number of matched ingredients first
+          if (matchB.have.length !== matchA.have.length) {
+            return matchB.have.length - matchA.have.length;
+          }
+          // 2. Highest match ratio percentage next
+          if (matchB.matchRatio !== matchA.matchRatio) {
+            return matchB.matchRatio - matchA.matchRatio;
+          }
+        }
+        return (b.matchScore || 0) - (a.matchScore || 0);
+      }
       if (sortBy === 'time') return a.time - b.time;
       if (sortBy === 'rating') return b.rating - a.rating;
       if (sortBy === 'calories') return a.calories - b.calories;
@@ -137,7 +153,8 @@ export default function RecipeResults() {
     });
 
     return result;
-  }, [aiRecipes, recipes, searchQuery, activeFilter, sortBy, initialFilterKey, initialFilterVal]);
+  }, [aiRecipes, recipes, scannedIngredients, searchQuery, activeFilter, sortBy, initialFilterKey, initialFilterVal]);
+
 
   const clearCategoryParam = () => {
     setSearchParams({});

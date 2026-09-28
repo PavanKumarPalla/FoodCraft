@@ -7,8 +7,19 @@ const FoodCraftContext = createContext();
 export function FoodCraftProvider({ children }) {
   const [recipes, setRecipes] = useState(() => {
     const saved = localStorage.getItem('foodcraft_recipes');
-    return saved ? JSON.parse(saved) : INITIAL_RECIPES;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_RECIPES.length) {
+          return parsed;
+        }
+      } catch (e) {
+        // fallback
+      }
+    }
+    return INITIAL_RECIPES;
   });
+
 
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('foodcraft_favorites');
@@ -53,9 +64,10 @@ export function FoodCraftProvider({ children }) {
     return saved ? JSON.parse(saved) : WEEKLY_MEAL_PLAN;
   });
 
-  const [scannedIngredients, setScannedIngredients] = useState([
-    'Tomatoes', 'Eggs', 'Bell Peppers', 'Garlic', 'Paneer'
-  ]);
+  const [scannedIngredients, setScannedIngredients] = useState(() => {
+    const saved = localStorage.getItem('foodcraft_scanned_ingredients');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
@@ -81,6 +93,10 @@ export function FoodCraftProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('foodcraft_mealplan', JSON.stringify(mealPlan));
   }, [mealPlan]);
+
+  useEffect(() => {
+    localStorage.setItem('foodcraft_scanned_ingredients', JSON.stringify(scannedIngredients));
+  }, [scannedIngredients]);
 
   useEffect(() => {
     if (token) {

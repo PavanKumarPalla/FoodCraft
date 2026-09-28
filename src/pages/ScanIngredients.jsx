@@ -6,15 +6,19 @@ import {
   Cpu, ArrowRight, RefreshCw, AlertCircle, Sparkles
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
+import { matchRecipeIngredients } from '../utils/ingredientMatcher';
 import './ScanIngredients.css';
 
 export default function ScanIngredients() {
+  const navigate = useNavigate();
   const { 
+    recipes,
     scannedIngredients, 
     addScannedIngredient, 
     removeScannedIngredient, 
     resetScannedIngredients 
   } = useFoodCraft();
+
 
   const [activeTab, setActiveTab] = useState('image'); // 'image' | 'text'
   const [manualInput, setManualInput] = useState('');
@@ -56,6 +60,22 @@ export default function ScanIngredients() {
     }
   };
 
+  // Module-level model cache to prevent re-downloading on every scan
+  const [cachedModel, setCachedModel] = useState(null);
+
+  // Pre-load TensorFlow.js COCO-SSD model in background on mount so it's instantly ready
+  useEffect(() => {
+    let isMounted = true;
+    if (window.cocoSsd && !cachedModel) {
+      window.cocoSsd.load({ base: 'mobilenet_v2' })
+        .then(net => {
+          if (isMounted) setCachedModel(net);
+        })
+        .catch(err => console.warn('Model preloading warning:', err));
+    }
+    return () => { isMounted = false; };
+  }, [cachedModel]);
+
   // Real Deep Learning AI inference call (FastAPI YOLOv8 + Client-Side TensorFlow.js)
   const runYoloDetection = async (base64Image) => {
     setIsScanning(true);
@@ -63,7 +83,7 @@ export default function ScanIngredients() {
     setStatusMessage('Analyzing photo with neural network vision model...');
 
     try {
-      // 1. Check if backend (FastAPI YOLOv8) is available and returns detections
+      // 1. Check if backend (FastAPI YOLOv8) is available with 3s fast timeout
       let backendData = null;
       try {
         const payload = { image: base64Image, confidence: 0.25 };
@@ -72,14 +92,16 @@ export default function ScanIngredients() {
           res = await fetch('/api/detect-ingredients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(3000)
           });
         } catch {
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             res = await fetch('http://localhost:8000/api/detect-ingredients', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+              body: JSON.stringify(payload),
+              signal: AbortSignal.timeout(3000)
             });
           }
         }
@@ -94,10 +116,10 @@ export default function ScanIngredients() {
           }
         }
       } catch {
-        // Continue to client-side model
+        // Fallback to client-side model
       }
 
-      if (backendData && backendData.detected_ingredients.length > 0) {
+      if (backendData && backendData.detected_ingredients && backendData.detected_ingredients.length > 0) {
         setIsScanning(false);
         setHasScanned(true);
         setDetectedBoxes(backendData.detected_ingredients);
@@ -108,7 +130,7 @@ export default function ScanIngredients() {
 
       // 2. Real Client-Side Object Detection using TensorFlow.js COCO-SSD
       if (window.cocoSsd) {
-        setStatusMessage('Running TensorFlow.js deep learning inference in browser...');
+        setStatusMessage('Running pre-trained deep learning inference in browser...');
 
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -116,11 +138,21 @@ export default function ScanIngredients() {
 
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = reject;
+          img.onerror = () => reject(new Error('Image failed to load'));
         });
 
-        const net = await window.cocoSsd.load({ base: 'mobilenet_v2' });
+        // Use cached model or load with timeout
+        let net = cachedModel;
+        if (!net) {
+          net = await Promise.race([
+            window.cocoSsd.load({ base: 'mobilenet_v2' }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timed out')), 8000))
+          ]);
+          setCachedModel(net);
+        }
+
         const predictions = await net.detect(img, 10, 0.25);
+
 
         const FOOD_DICTIONARY = {
           banana: 'Banana',
@@ -223,9 +255,31 @@ export default function ScanIngredients() {
     navigate('/recipes');
   };
 
+  // Live calculation of matching recipes from user's current ingredients
+  const matchedRecipesPreview = React.useMemo(() => {
+    if (!scannedIngredients || scannedIngredients.length === 0 || !recipes) return [];
+    const matched = [];
+    recipes.forEach(recipe => {
+      const match = matchRecipeIngredients(recipe.ingredients, scannedIngredients);
+      if (match.have.length > 0) {
+        matched.push({ recipe, match });
+      }
+    });
+
+    matched.sort((a, b) => {
+      if (b.match.have.length !== a.match.have.length) {
+        return b.match.have.length - a.match.have.length;
+      }
+      return b.match.matchRatio - a.match.matchRatio;
+    });
+
+    return matched;
+  }, [recipes, scannedIngredients]);
+
   const QUICK_SUGGESTIONS = [
     "Garlic", "Onions", "Basmati Rice", "Chicken Breast", "Broccoli", "Ginger", "Curd / Yogurt", "Potatoes"
   ];
+
 
   return (
     <div className="scan-page page-wrapper">
@@ -458,16 +512,46 @@ export default function ScanIngredients() {
               </button>
             )}
 
-            {/* Model Architecture Note */}
-            <div className="model-info-box">
-              <div className="model-info-header">
-                <Cpu size={15} className="text-primary" />
-                <span>Search Algorithm</span>
+            {/* Live Matched Recipes Preview with Have vs. Missing Breakdown */}
+            {matchedRecipesPreview.length > 0 && (
+              <div className="matched-preview-container">
+                <div className="matched-preview-header">
+                  <div className="preview-header-title">
+                    <Sparkles size={16} className="text-primary" />
+                    <h4>Found Recipes ({matchedRecipesPreview.length})</h4>
+                  </div>
+                  <span className="live-match-badge">Live Match</span>
+                </div>
+
+                <div className="matched-preview-list">
+                  {matchedRecipesPreview.slice(0, 3).map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className="preview-recipe-card"
+                      onClick={() => navigate(`/recipe/${item.recipe.id}`)}
+                      title="Click to view preparation & missing items"
+                    >
+                      <div className="preview-title-row">
+                        <span className="preview-recipe-title">{item.recipe.title}</span>
+                        <span className="preview-match-pill">{item.match.matchRatio}% Match</span>
+                      </div>
+
+                      <div className="preview-ing-breakdown">
+                        <div className="preview-have-text">
+                          <span className="status-label-green">🟢 You Have ({item.match.have.length}):</span>{' '}
+                          {item.match.have.map(h => h.name).join(', ')}
+                        </div>
+                        <div className="preview-missing-text">
+                          <span className="status-label-amber">⚠️ You Have To Have These Also ({item.match.missing.length}):</span>{' '}
+                          {item.match.missing.slice(0, 3).map(m => m.name).join(', ')}
+                          {item.match.missing.length > 3 && ` +${item.match.missing.length - 3} more`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p>
-                <strong>RecipeNLG + FAISS</strong> calculates cosine distance between detected ingredient embeddings and 2.2M catalog recipes with instant response.
-              </p>
-            </div>
+            )}
 
             {/* Action CTA */}
             <button
@@ -477,10 +561,15 @@ export default function ScanIngredients() {
               disabled={scannedIngredients.length === 0}
               id="find-matching-recipes-btn"
             >
-              <span>Find Matching Recipes</span>
+              <span>
+                {matchedRecipesPreview.length > 0 
+                  ? `Find Matching Recipes (${matchedRecipesPreview.length})` 
+                  : 'Find Matching Recipes'}
+              </span>
               <ArrowRight size={18} />
             </button>
           </div>
+
         </div>
       </div>
     </div>
