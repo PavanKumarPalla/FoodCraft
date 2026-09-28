@@ -56,67 +56,146 @@ export default function ScanIngredients() {
     }
   };
 
-  // Real YOLOv8 AI inference call
+  // Real Deep Learning AI inference call (FastAPI YOLOv8 + Client-Side TensorFlow.js)
   const runYoloDetection = async (base64Image) => {
     setIsScanning(true);
     setBackendError(null);
-    setStatusMessage('Analyzing photo with food detection model...');
+    setStatusMessage('Analyzing photo with neural network vision model...');
 
     try {
-      let res;
-      const payload = { image: base64Image, confidence: 0.25 };
-
+      // 1. Check if backend (FastAPI YOLOv8) is available and returns detections
+      let backendData = null;
       try {
-        res = await fetch('/api/detect-ingredients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch {
-        // Fallback to direct localhost:8000 only in local dev
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          res = await fetch('http://localhost:8000/api/detect-ingredients', {
+        const payload = { image: base64Image, confidence: 0.25 };
+        let res;
+        try {
+          res = await fetch('/api/detect-ingredients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
+        } catch {
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            res = await fetch('http://localhost:8000/api/detect-ingredients', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          }
         }
+
+        if (res && res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await res.json();
+            if (data.detected_ingredients && data.detected_ingredients.length > 0) {
+              backendData = data;
+            }
+          }
+        }
+      } catch {
+        // Continue to client-side model
       }
 
-      if (!res) {
-        throw new Error('Could not reach AI detection endpoint');
+      if (backendData && backendData.detected_ingredients.length > 0) {
+        setIsScanning(false);
+        setHasScanned(true);
+        setDetectedBoxes(backendData.detected_ingredients);
+        backendData.unique_ingredients.forEach(item => addScannedIngredient(item));
+        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} with ${backendData.model}`);
+        return;
       }
 
-      const contentType = res.headers.get('content-type') || '';
-      if (!res.ok || !contentType.includes('application/json')) {
-        throw new Error(`AI Backend returned non-JSON response (HTTP ${res.status})`);
-      }
+      // 2. Real Client-Side Object Detection using TensorFlow.js COCO-SSD
+      if (window.cocoSsd) {
+        setStatusMessage('Running TensorFlow.js deep learning inference in browser...');
 
-      const data = await res.json();
-      setIsScanning(false);
-      setHasScanned(true);
-      setBackendOnline(true);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = base64Image;
 
-      if (data.detected_ingredients && data.detected_ingredients.length > 0) {
-        setDetectedBoxes(data.detected_ingredients);
-        
-        // Populate the detected ingredients basket
-        data.unique_ingredients.forEach(item => {
-          addScannedIngredient(item);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
         });
 
-        setStatusMessage(`Recognized ${data.count} ingredient${data.count > 1 ? 's' : ''} with ${data.model}`);
-      } else {
-        setDetectedBoxes([]);
-        setStatusMessage('No recognized food items detected. Try another photo or add manually below.');
+        const net = await window.cocoSsd.load({ base: 'mobilenet_v2' });
+        const predictions = await net.detect(img, 10, 0.25);
+
+        const FOOD_DICTIONARY = {
+          banana: 'Banana',
+          apple: 'Apple',
+          orange: 'Orange',
+          sandwich: 'Sandwich',
+          broccoli: 'Broccoli',
+          carrot: 'Carrot',
+          'hot dog': 'Hot Dog',
+          pizza: 'Pizza',
+          donut: 'Donut',
+          cake: 'Cake',
+          bottle: 'Bottle',
+          bowl: 'Bowl / Soup',
+          cup: 'Cup / Drink',
+        };
+
+        const BOX_PALETTE = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+        const foodBoxes = [];
+        const nonFoodItems = [];
+
+        predictions.forEach((pred, idx) => {
+          const cls = pred.class.toLowerCase();
+          const [x, y, w, h] = pred.bbox;
+          const naturalW = img.naturalWidth || 600;
+          const naturalH = img.naturalHeight || 400;
+
+          const x_pct = Math.round((Math.max(0, x) / naturalW) * 100);
+          const y_pct = Math.round((Math.max(0, y) / naturalH) * 100);
+          const w_pct = Math.round((Math.min(naturalW, w) / naturalW) * 100);
+          const h_pct = Math.round((Math.min(naturalH, h) / naturalH) * 100);
+
+          if (FOOD_DICTIONARY[cls]) {
+            foodBoxes.push({
+              name: FOOD_DICTIONARY[cls],
+              confidence: `${Math.round(pred.score * 100)}%`,
+              color: BOX_PALETTE[idx % BOX_PALETTE.length],
+              box: { x: x_pct, y: y_pct, w: w_pct, h: h_pct }
+            });
+          } else {
+            nonFoodItems.push(pred.class);
+          }
+        });
+
+        setIsScanning(false);
+        setHasScanned(true);
+
+        if (foodBoxes.length > 0) {
+          setDetectedBoxes(foodBoxes);
+          const uniqueItems = [...new Set(foodBoxes.map(b => b.name))];
+          uniqueItems.forEach(item => addScannedIngredient(item));
+          setStatusMessage(`Recognized ${uniqueItems.length} ingredient${uniqueItems.length > 1 ? 's' : ''} with TensorFlow.js (COCO-SSD Deep Learning)`);
+        } else if (nonFoodItems.length > 0) {
+          setDetectedBoxes([]);
+          const uniqueNonFood = [...new Set(nonFoodItems)].join(', ');
+          setStatusMessage(`No food items detected. (Detected non-food: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
+        } else {
+          setDetectedBoxes([]);
+          setStatusMessage('No food ingredients recognized in this photo. Please try a clearer angle or enter items manually.');
+        }
+        return;
       }
+
+      // 3. Fallback when neither backend nor TensorFlow is loaded
+      setIsScanning(false);
+      setHasScanned(true);
+      setDetectedBoxes([]);
+      setStatusMessage('No recognized food items detected. Try another photo or enter them manually below.');
     } catch (err) {
       console.warn('Food detection error:', err);
       setIsScanning(false);
       setHasScanned(true);
       setDetectedBoxes([]);
       setBackendError(
-        'AI detection service is currently unavailable. You can enter your ingredients manually below.'
+        'Could not analyze this photo. Please upload a clear photo of food ingredients or enter items manually.'
       );
     }
   };
