@@ -20,8 +20,19 @@ export default function RecipeResults() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeFilter, setActiveFilter] = useState('All');
   const [sortBy, setSortBy] = useState('match'); // 'match' | 'time' | 'rating' | 'calories'
+  const [onlyMatching, setOnlyMatching] = useState(true);
   const [aiRecipes, setAiRecipes] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Count how many recipes match the user's ingredients
+  const matchingRecipesCount = useMemo(() => {
+    if (!scannedIngredients || scannedIngredients.length === 0) return 0;
+    const baseList = (aiRecipes && aiRecipes.length > 0) ? aiRecipes : recipes;
+    return baseList.filter(r => {
+      const match = matchRecipeIngredients(r.ingredients, scannedIngredients);
+      return match.have.length > 0;
+    }).length;
+  }, [recipes, aiRecipes, scannedIngredients]);
 
   // Fetch real SBERT + FAISS recommendations when scannedIngredients exist
   React.useEffect(() => {
@@ -74,7 +85,6 @@ export default function RecipeResults() {
             }
           }
         } catch (err) {
-
           console.warn('AI recipe recommendation server unavailable, using local recipes:', err);
         } finally {
           if (isMounted) setIsAiLoading(false);
@@ -91,6 +101,14 @@ export default function RecipeResults() {
     const baseList = (aiRecipes && aiRecipes.length > 0) ? aiRecipes : recipes;
     let result = [...baseList];
 
+    // When user provides ingredients and onlyMatching is true, strictly filter to recipes that use those ingredients
+    if (scannedIngredients && scannedIngredients.length > 0 && onlyMatching) {
+      result = result.filter(r => {
+        const match = matchRecipeIngredients(r.ingredients, scannedIngredients);
+        return match.have.length > 0;
+      });
+    }
+
     // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -98,7 +116,7 @@ export default function RecipeResults() {
         r.title.toLowerCase().includes(q) ||
         r.description.toLowerCase().includes(q) ||
         r.cuisine.toLowerCase().includes(q) ||
-        r.ingredients.some(i => i.name.toLowerCase().includes(q))
+        r.ingredients.some(i => (typeof i === 'string' ? i : i.name).toLowerCase().includes(q))
       );
     }
 
@@ -153,7 +171,8 @@ export default function RecipeResults() {
     });
 
     return result;
-  }, [aiRecipes, recipes, scannedIngredients, searchQuery, activeFilter, sortBy, initialFilterKey, initialFilterVal]);
+  }, [aiRecipes, recipes, scannedIngredients, onlyMatching, searchQuery, activeFilter, sortBy, initialFilterKey, initialFilterVal]);
+
 
 
   const clearCategoryParam = () => {
@@ -226,9 +245,20 @@ export default function RecipeResults() {
 
       {/* Results Count & Match Indicator */}
       <div className="results-count-bar">
-        <span className="count-text">
-          Showing <strong>{filteredAndSortedRecipes.length}</strong> recipes
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <span className="count-text">
+            Showing <strong>{filteredAndSortedRecipes.length}</strong> {onlyMatching && scannedIngredients.length > 0 && matchingRecipesCount > 0 ? 'matching' : ''} recipes
+          </span>
+          {scannedIngredients.length > 0 && matchingRecipesCount > 0 && (
+            <button 
+              type="button" 
+              className="toggle-match-view-btn"
+              onClick={() => setOnlyMatching(prev => !prev)}
+            >
+              {onlyMatching ? `Show All Recipes (${(aiRecipes && aiRecipes.length > 0) ? aiRecipes.length : recipes.length})` : `Show Matching Only (${matchingRecipesCount})`}
+            </button>
+          )}
+        </div>
         {isAiLoading ? (
           <span className="scanned-info-pill" style={{ color: 'var(--primary-light)' }}>
             <Sparkles size={13} className="spin-icon" />
@@ -237,10 +267,11 @@ export default function RecipeResults() {
         ) : scannedIngredients.length > 0 && (
           <span className="scanned-info-pill">
             <Sparkles size={13} />
-            <span>Using {scannedIngredients.length} fridge ingredients</span>
+            <span>Matched with: {scannedIngredients.join(', ')}</span>
           </span>
         )}
       </div>
+
 
       {/* Recipe Grid */}
       <div className="recipes-grid">

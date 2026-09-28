@@ -16,6 +16,29 @@ export function normalizeIngredient(str) {
     .trim();
 }
 
+const SYNONYMS = {
+  aloo: 'potato',
+  potatoes: 'potato',
+  batata: 'potato',
+  pyaz: 'onion',
+  onions: 'onion',
+  kanda: 'onion',
+  tamatar: 'tomato',
+  tomatoes: 'tomato',
+  mirchi: 'chili',
+  chillies: 'chili',
+  chilies: 'chili',
+  dhania: 'coriander',
+  dhaniya: 'coriander',
+  cilantro: 'coriander',
+  jeera: 'cumin',
+  haldi: 'turmeric',
+  paneer: 'cottage cheese',
+  dahi: 'curd',
+  curd: 'yogurt',
+  yoghurt: 'yogurt'
+};
+
 export function matchRecipeIngredients(recipeIngredients, userIngredients = []) {
   if (!recipeIngredients || !Array.isArray(recipeIngredients)) {
     return { have: [], missing: [], matchRatio: 0, total: 0 };
@@ -48,17 +71,35 @@ export function matchRecipeIngredients(recipeIngredients, userIngredients = []) 
         return true;
       }
 
+      // Root word match (potatoes -> potato, tomatoes -> tomato)
+      const cleanU = userIng.replace(/es$/, '').replace(/s$/, '');
+      const cleanI = ingNormalized.replace(/es$/, '').replace(/s$/, '');
+      if (cleanI && cleanU && (cleanI.includes(cleanU) || cleanU.includes(cleanI))) {
+        return true;
+      }
+
+      // Synonym mapping
+      const uSyn = SYNONYMS[userIng] || SYNONYMS[cleanU] || cleanU;
+      const iSyn = SYNONYMS[ingNormalized] || SYNONYMS[cleanI] || cleanI;
+      if (uSyn && iSyn && (uSyn === iSyn || ingNormalized.includes(uSyn) || uSyn.includes(cleanI))) {
+        return true;
+      }
+
       // Check significant words (e.g. "chicken", "ginger", "garlic", "paneer", "rice")
       const userTokens = userIng.split(' ').filter(t => t.length >= 3);
       const ingTokens = ingNormalized.split(' ').filter(t => t.length >= 3);
 
-      return userTokens.some(uTok => 
-        ingTokens.some(iTok => 
-          iTok.includes(uTok) || uTok.includes(iTok) ||
-          (uTok.endsWith('s') && iTok === uTok.slice(0, -1)) ||
-          (iTok.endsWith('s') && uTok === iTok.slice(0, -1))
-        )
-      );
+      return userTokens.some(uTok => {
+        const uRoot = uTok.replace(/es$/, '').replace(/s$/, '');
+        return ingTokens.some(iTok => {
+          const iRoot = iTok.replace(/es$/, '').replace(/s$/, '');
+          return iTok.includes(uTok) || uTok.includes(iTok) ||
+                 iRoot.includes(uRoot) || uRoot.includes(iRoot) ||
+                 (SYNONYMS[uTok] && SYNONYMS[uTok] === iTok) ||
+                 (SYNONYMS[iTok] && SYNONYMS[iTok] === uTok) ||
+                 (SYNONYMS[uRoot] && SYNONYMS[uRoot] === iRoot);
+        });
+      });
     });
 
     const itemObj = {

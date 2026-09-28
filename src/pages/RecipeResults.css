@@ -184,6 +184,24 @@
   border-radius: var(--radius-full);
 }
 
+.toggle-match-view-btn {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: rgba(255, 107, 53, 0.12);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggle-match-view-btn:hover {
+  background: rgba(255, 107, 53, 0.25);
+  color: #ffffff;
+}
+
+
 .sr-only {
   position: absolute;
   width: 1px;

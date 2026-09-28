@@ -1,5 +1,5 @@
 // src/pages/ScanIngredients.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, Upload, Plus, X, CheckCircle2, 
@@ -13,14 +13,11 @@ export default function ScanIngredients() {
   const navigate = useNavigate();
   const { 
     recipes,
-    scannedIngredients, 
-    addScannedIngredient, 
-    removeScannedIngredient, 
-    resetScannedIngredients 
+    scannedIngredients,
+    setScannedIngredients
   } = useFoodCraft();
 
-
-  const [activeTab, setActiveTab] = useState('image'); // 'image' | 'text'
+  const [activeTab, setActiveTab] = useState('text'); // 'text' | 'image' (default to text as requested)
   const [manualInput, setManualInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
@@ -31,6 +28,25 @@ export default function ScanIngredients() {
   const [sampleImage, setSampleImage] = useState(
     'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=1000&q=80'
   );
+
+  // Distinct states for Manual Text ingredients vs Photo Detected ingredients
+  const [textIngredients, setTextIngredients] = useState(() => {
+    const saved = localStorage.getItem('foodcraft_text_ingredients');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return scannedIngredients && scannedIngredients.length > 0 ? scannedIngredients : [];
+  });
+
+  const [photoIngredients, setPhotoIngredients] = useState([]);
+
+  // Sync text ingredients to localStorage
+  useEffect(() => {
+    localStorage.setItem('foodcraft_text_ingredients', JSON.stringify(textIngredients));
+  }, [textIngredients]);
 
   const checkBackendHealth = async () => {
     try {
@@ -55,9 +71,37 @@ export default function ScanIngredients() {
   const handleManualAdd = (e) => {
     e.preventDefault();
     if (manualInput.trim()) {
-      addScannedIngredient(manualInput.trim());
+      const val = manualInput.trim();
+      if (!textIngredients.includes(val)) {
+        setTextIngredients(prev => [...prev, val]);
+      }
       setManualInput('');
     }
+  };
+
+  const handleQuickAdd = (item) => {
+    if (!textIngredients.includes(item)) {
+      setTextIngredients(prev => [...prev, item]);
+    }
+  };
+
+  const removeTextIngredient = (item) => {
+    setTextIngredients(prev => prev.filter(i => i !== item));
+  };
+
+  const clearTextIngredients = () => {
+    setTextIngredients([]);
+  };
+
+  const removePhotoIngredient = (item) => {
+    setPhotoIngredients(prev => prev.filter(i => i !== item));
+  };
+
+  const clearPhotoIngredients = () => {
+    setPhotoIngredients([]);
+    setDetectedBoxes([]);
+    setHasScanned(false);
+    setStatusMessage('');
   };
 
   // Module-level model cache to prevent re-downloading on every scan
@@ -123,7 +167,7 @@ export default function ScanIngredients() {
         setIsScanning(false);
         setHasScanned(true);
         setDetectedBoxes(backendData.detected_ingredients);
-        backendData.unique_ingredients.forEach(item => addScannedIngredient(item));
+        setPhotoIngredients(backendData.unique_ingredients);
         setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} with ${backendData.model}`);
         return;
       }
@@ -152,7 +196,6 @@ export default function ScanIngredients() {
         }
 
         const predictions = await net.detect(img, 10, 0.25);
-
 
         const FOOD_DICTIONARY = {
           banana: 'Banana',
@@ -203,14 +246,16 @@ export default function ScanIngredients() {
         if (foodBoxes.length > 0) {
           setDetectedBoxes(foodBoxes);
           const uniqueItems = [...new Set(foodBoxes.map(b => b.name))];
-          uniqueItems.forEach(item => addScannedIngredient(item));
+          setPhotoIngredients(uniqueItems);
           setStatusMessage(`Recognized ${uniqueItems.length} ingredient${uniqueItems.length > 1 ? 's' : ''} with TensorFlow.js (COCO-SSD Deep Learning)`);
         } else if (nonFoodItems.length > 0) {
           setDetectedBoxes([]);
+          setPhotoIngredients([]);
           const uniqueNonFood = [...new Set(nonFoodItems)].join(', ');
-          setStatusMessage(`No food items detected. (Detected non-food: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
+          setStatusMessage(`No food items detected. (Detected: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
         } else {
           setDetectedBoxes([]);
+          setPhotoIngredients([]);
           setStatusMessage('No food ingredients recognized in this photo. Please try a clearer angle or enter items manually.');
         }
         return;
@@ -220,12 +265,14 @@ export default function ScanIngredients() {
       setIsScanning(false);
       setHasScanned(true);
       setDetectedBoxes([]);
+      setPhotoIngredients([]);
       setStatusMessage('No recognized food items detected. Try another photo or enter them manually below.');
     } catch (err) {
       console.warn('Food detection error:', err);
       setIsScanning(false);
       setHasScanned(true);
       setDetectedBoxes([]);
+      setPhotoIngredients([]);
       setBackendError(
         'Could not analyze this photo. Please upload a clear photo of food ingredients or enter items manually.'
       );
@@ -239,6 +286,10 @@ export default function ScanIngredients() {
       reader.onload = (event) => {
         const base64Data = event.target.result;
         setSampleImage(base64Data);
+        // Clear previous detections immediately when uploading a new photo
+        setPhotoIngredients([]);
+        setDetectedBoxes([]);
+        setHasScanned(false);
         runYoloDetection(base64Data);
       };
       reader.readAsDataURL(file);
@@ -247,20 +298,21 @@ export default function ScanIngredients() {
 
   const handleReScan = () => {
     if (sampleImage) {
+      setPhotoIngredients([]);
+      setDetectedBoxes([]);
       runYoloDetection(sampleImage);
     }
   };
 
-  const handleFindRecipes = () => {
-    navigate('/recipes');
-  };
+  // Active ingredients list depending on current tab
+  const activeIngredientsList = activeTab === 'text' ? textIngredients : photoIngredients;
 
-  // Live calculation of matching recipes from user's current ingredients
-  const matchedRecipesPreview = React.useMemo(() => {
-    if (!scannedIngredients || scannedIngredients.length === 0 || !recipes) return [];
+  // Live calculation of matching recipes from user's current ingredients in the active tab
+  const matchedRecipesPreview = useMemo(() => {
+    if (!activeIngredientsList || activeIngredientsList.length === 0 || !recipes) return [];
     const matched = [];
     recipes.forEach(recipe => {
-      const match = matchRecipeIngredients(recipe.ingredients, scannedIngredients);
+      const match = matchRecipeIngredients(recipe.ingredients, activeIngredientsList);
       if (match.have.length > 0) {
         matched.push({ recipe, match });
       }
@@ -274,12 +326,17 @@ export default function ScanIngredients() {
     });
 
     return matched;
-  }, [recipes, scannedIngredients]);
+  }, [recipes, activeIngredientsList]);
+
+  const handleFindRecipes = () => {
+    // Save the active tab's ingredients as the active pantry search list
+    setScannedIngredients(activeIngredientsList);
+    navigate('/recipes');
+  };
 
   const QUICK_SUGGESTIONS = [
     "Garlic", "Onions", "Basmati Rice", "Chicken Breast", "Broccoli", "Ginger", "Curd / Yogurt", "Potatoes"
   ];
-
 
   return (
     <div className="scan-page page-wrapper">
@@ -313,21 +370,21 @@ export default function ScanIngredients() {
       <div className="scan-tabs-nav glass-panel">
         <button
           type="button"
-          className={`scan-tab-btn ${activeTab === 'image' ? 'active' : ''}`}
-          onClick={() => setActiveTab('image')}
-          id="scan-tab-image"
-        >
-          <Camera size={18} />
-          <span>Image Recognition (YOLOv8)</span>
-        </button>
-        <button
-          type="button"
           className={`scan-tab-btn ${activeTab === 'text' ? 'active' : ''}`}
           onClick={() => setActiveTab('text')}
           id="scan-tab-text"
         >
           <Plus size={18} />
           <span>Manual Input (Text)</span>
+        </button>
+        <button
+          type="button"
+          className={`scan-tab-btn ${activeTab === 'image' ? 'active' : ''}`}
+          onClick={() => setActiveTab('image')}
+          id="scan-tab-image"
+        >
+          <Camera size={18} />
+          <span>Image Recognition (YOLOv8)</span>
         </button>
       </div>
 
@@ -420,7 +477,7 @@ export default function ScanIngredients() {
                   id="re-scan-yolo-btn"
                 >
                   <RefreshCw size={17} className={isScanning ? 'spin-icon' : ''} />
-                  <span>{isScanning ? 'Detecting Items...' : 'Re-Run YOLOv8 Detection'}</span>
+                  <span>{isScanning ? 'Detecting Items...' : 'Re-Run Detection'}</span>
                 </button>
               </div>
             </div>
@@ -433,7 +490,7 @@ export default function ScanIngredients() {
                 <input
                   id="manual-ingredient-input"
                   type="text"
-                  placeholder="e.g., Paneer, Chicken, Garlic, Quinoa..."
+                  placeholder="e.g., Potato, Chicken, Ginger, Garlic..."
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
                 />
@@ -452,7 +509,7 @@ export default function ScanIngredients() {
                       key={idx}
                       type="button"
                       className="suggestion-chip"
-                      onClick={() => addScannedIngredient(item)}
+                      onClick={() => handleQuickAdd(item)}
                     >
                       + {item}
                     </button>
@@ -463,52 +520,92 @@ export default function ScanIngredients() {
           )}
         </div>
 
-        {/* Ingredients Basket & Match Summary */}
+        {/* Ingredients Basket & Match Summary Column */}
         <div className="scan-summary-col">
           <div className="basket-card glass-panel">
             <div className="basket-header">
               <div className="basket-title-wrap">
                 <CheckCircle2 size={20} className="text-veg" />
-                <h3>Detected Ingredients</h3>
+                <h3>{activeTab === 'text' ? 'Entered Ingredients' : 'Photo Detected Ingredients'}</h3>
               </div>
-              <span className="basket-count-badge">{scannedIngredients.length} Items</span>
+              <span className="basket-count-badge">
+                {activeIngredientsList.length} Items
+              </span>
             </div>
 
             <p className="basket-instructions">
-              These items will be matched against 2.2M+ recipes using Sentence-BERT embeddings.
+              {activeTab === 'text'
+                ? 'These text ingredients are matched with our recipe catalog to find exact dishes.'
+                : 'Items recognized from your photo will be matched against our recipe catalog.'}
             </p>
 
             {/* Chips List */}
             <div className="ingredient-chips-cloud">
-              {scannedIngredients.map((item, idx) => (
-                <div key={idx} className="ingredient-tag-chip">
-                  <span>{item}</span>
-                  <button
-                    type="button"
-                    className="chip-remove-btn"
-                    onClick={() => removeScannedIngredient(item)}
-                    aria-label={`Remove ${item}`}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+              {activeTab === 'text' ? (
+                <>
+                  {textIngredients.map((item, idx) => (
+                    <div key={idx} className="ingredient-tag-chip">
+                      <span>{item}</span>
+                      <button
+                        type="button"
+                        className="chip-remove-btn"
+                        onClick={() => removeTextIngredient(item)}
+                        aria-label={`Remove ${item}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
 
-              {scannedIngredients.length === 0 && (
-                <div className="no-ingredients-msg">
-                  No ingredients selected yet. Upload a photo or type ingredients above.
-                </div>
+                  {textIngredients.length === 0 && (
+                    <div className="no-ingredients-msg">
+                      No text ingredients added yet. Type ingredients on the left.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {photoIngredients.map((item, idx) => (
+                    <div key={idx} className="ingredient-tag-chip">
+                      <span>{item}</span>
+                      <button
+                        type="button"
+                        className="chip-remove-btn"
+                        onClick={() => removePhotoIngredient(item)}
+                        aria-label={`Remove ${item}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {photoIngredients.length === 0 && (
+                    <div className="no-ingredients-msg">
+                      No photo ingredients detected yet. Upload a photo on the left.
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Clear all link */}
-            {scannedIngredients.length > 0 && (
+            {/* Clear ingredients link */}
+            {activeTab === 'text' && textIngredients.length > 0 && (
               <button 
                 type="button" 
                 className="clear-ingredients-link"
-                onClick={resetScannedIngredients}
+                onClick={clearTextIngredients}
               >
-                Clear all ingredients
+                Clear all text ingredients
+              </button>
+            )}
+
+            {activeTab === 'image' && photoIngredients.length > 0 && (
+              <button 
+                type="button" 
+                className="clear-ingredients-link"
+                onClick={clearPhotoIngredients}
+              >
+                Clear detected photo ingredients
               </button>
             )}
 
@@ -558,7 +655,7 @@ export default function ScanIngredients() {
               type="button"
               className="btn-primary btn-glow find-recipes-cta"
               onClick={handleFindRecipes}
-              disabled={scannedIngredients.length === 0}
+              disabled={activeIngredientsList.length === 0}
               id="find-matching-recipes-btn"
             >
               <span>
@@ -569,7 +666,6 @@ export default function ScanIngredients() {
               <ArrowRight size={18} />
             </button>
           </div>
-
         </div>
       </div>
     </div>

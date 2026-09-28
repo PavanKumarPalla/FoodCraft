@@ -454,8 +454,88 @@ export const INITIAL_RECIPES = [
       "Add chopped tomatoes and cook for 3-4 minutes until soft.",
       "Pour sizzling tadka over the dal, mix well, and garnish with fresh coriander."
     ]
+  },
+  {
+    id: "rcp-13",
+    title: "Aloo Gobi Matar (Spiced Potato & Cauliflower)",
+    description: "Tender potatoes and cauliflower florets gently simmered with green peas, cumin, turmeric, and fresh ginger.",
+    image: "",
+    cuisine: "North Indian",
+    mealType: "Lunch",
+    dietType: "veg",
+    healthTags: ["High Fiber", "Vegan", "Low Sugar"],
+    time: 20,
+    servings: 3,
+    calories: 260,
+    protein: "7g",
+    carbs: "38g",
+    fat: "8g",
+    sodium: "220mg",
+    sugar: "4g",
+    rating: 4.8,
+    reviewsCount: 154,
+    matchScore: 95,
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Potatoes (Aloo)", amount: "3 medium, cubed", available: true },
+      { name: "Cauliflower Florets (Gobi)", amount: "2 cups", available: true },
+      { name: "Green Peas (Matar)", amount: "1/2 cup", available: true },
+      { name: "Fresh Ginger", amount: "1 tbsp, minced", available: true },
+      { name: "Garlic Cloves", amount: "4 cloves, minced", available: true },
+      { name: "Onions", amount: "1 medium, chopped", available: true },
+      { name: "Ripe Tomatoes", amount: "2, chopped", available: true },
+      { name: "Cumin Seeds & Turmeric Powder", amount: "1 tsp each", available: true },
+      { name: "Garam Masala", amount: "1/2 tsp", available: true },
+      { name: "Mustard Oil / Cooking Oil", amount: "2 tbsp", available: true },
+      { name: "Fresh Coriander", amount: "2 tbsp, chopped", available: true }
+    ],
+    instructions: [
+      "Heat mustard oil in a pan, crackle cumin seeds, then sauté onions, ginger, and garlic until lightly golden.",
+      "Add turmeric powder, red chili powder, and chopped tomatoes; cook until tomatoes are soft.",
+      "Add diced potatoes, cauliflower florets, and green peas; mix well to coat with the masala.",
+      "Cover with lid and cook on low heat for 12-14 minutes, stirring occasionally until potatoes are fork-tender.",
+      "Sprinkle garam masala and chopped coriander leaves. Serve hot with rotis or parathas."
+    ]
+  },
+  {
+    id: "rcp-14",
+    title: "Crispy Herb Roasted Baby Potatoes",
+    description: "Golden, crispy-edged baby potatoes tossed with fragrant rosemary, crushed garlic, sea salt, and extra virgin olive oil.",
+    image: "",
+    cuisine: "Continental",
+    mealType: "Snacks",
+    dietType: "veg",
+    healthTags: ["Gym Friendly", "Gluten Free", "Vegan"],
+    time: 25,
+    servings: 2,
+    calories: 210,
+    protein: "5g",
+    carbs: "32g",
+    fat: "7g",
+    sodium: "240mg",
+    sugar: "1g",
+    rating: 4.9,
+    reviewsCount: 180,
+    matchScore: 94,
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Baby Potatoes", amount: "400g, halved", available: true },
+      { name: "Garlic Cloves", amount: "5 cloves, crushed", available: true },
+      { name: "Fresh Rosemary or Thyme", amount: "2 sprigs", available: true },
+      { name: "Extra Virgin Olive Oil", amount: "2 tbsp", available: true },
+      { name: "Sea Salt & Cracked Black Pepper", amount: "To taste", available: true },
+      { name: "Smoked Paprika", amount: "1/2 tsp", available: true }
+    ],
+    instructions: [
+      "Parboil halved baby potatoes in salted water for 5 minutes, then drain thoroughly and let steam dry.",
+      "Gently toss potatoes with olive oil, crushed garlic, paprika, sea salt, and fresh rosemary.",
+      "Spread potatoes cut-side down in a preheated hot skillet or roasting tray.",
+      "Roast over medium-high heat for 15-18 minutes, turning once, until deeply golden and crispy.",
+      "Serve immediately as a savory side or evening snack."
+    ]
   }
 ];
+
 
 
 export const CATEGORIES = [
