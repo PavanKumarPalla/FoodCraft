@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +36,9 @@ if (MONGODB_URI) {
 // Auth & User Database Routes
 app.use('/api/auth', authRoutes);
 
+// AI & Vision Recognition Routes (YOLOv8 proxy + cloud engine)
+app.use('/api', aiRoutes);
+
 // API health check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -46,14 +50,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mock Scan Ingredients endpoint (can be connected to a real model)
-app.post('/api/scan', (req, res) => {
-  const { ingredients } = req.body;
-  res.json({
-    success: true,
-    message: 'Ingredients received successfully',
-    detectedCount: ingredients ? ingredients.length : 0,
-    timestamp: new Date().toISOString(),
+// Guard: Unknown /api/* routes must return JSON, never index.html
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `API route ${req.method} ${req.originalUrl} not found`,
   });
 });
 

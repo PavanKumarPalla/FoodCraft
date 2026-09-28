@@ -30,13 +30,9 @@ export default function ScanIngredients() {
 
   const checkBackendHealth = async () => {
     try {
-      let res;
-      try {
-        res = await fetch('/api/recipes/health');
-      } catch {
-        res = await fetch('http://localhost:8000/api/recipes/health');
-      }
-      if (res && res.ok) {
+      const res = await fetch('/api/recipes/health');
+      const contentType = res.headers.get('content-type') || '';
+      if (res && res.ok && contentType.includes('application/json')) {
         setBackendOnline(true);
         setBackendError(null);
       } else {
@@ -64,7 +60,7 @@ export default function ScanIngredients() {
   const runYoloDetection = async (base64Image) => {
     setIsScanning(true);
     setBackendError(null);
-    setStatusMessage('Analyzing photo with YOLOv8 food detection model...');
+    setStatusMessage('Analyzing photo with food detection model...');
 
     try {
       let res;
@@ -77,16 +73,23 @@ export default function ScanIngredients() {
           body: JSON.stringify(payload)
         });
       } catch {
-        // Fallback to direct localhost:8000
-        res = await fetch('http://localhost:8000/api/detect-ingredients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        // Fallback to direct localhost:8000 only in local dev
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          res = await fetch('http://localhost:8000/api/detect-ingredients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
       }
 
-      if (!res.ok) {
-        throw new Error(`AI Backend returned HTTP ${res.status}`);
+      if (!res) {
+        throw new Error('Could not reach AI detection endpoint');
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        throw new Error(`AI Backend returned non-JSON response (HTTP ${res.status})`);
       }
 
       const data = await res.json();
@@ -108,13 +111,12 @@ export default function ScanIngredients() {
         setStatusMessage('No recognized food items detected. Try another photo or add manually below.');
       }
     } catch (err) {
-      console.warn('Real-time YOLOv8 backend error:', err);
+      console.warn('Food detection error:', err);
       setIsScanning(false);
       setHasScanned(true);
       setDetectedBoxes([]);
-      setBackendOnline(false);
       setBackendError(
-        'FastAPI AI Backend is offline. Start it with "python backend/run.py" to enable live YOLOv8 computer vision detection.'
+        'AI detection service is currently unavailable. You can enter your ingredients manually below.'
       );
     }
   };
@@ -169,7 +171,7 @@ export default function ScanIngredients() {
             display: 'inline-block'
           }}></span>
           <span style={{ color: 'var(--text-secondary)' }}>
-            AI Backend: {backendOnline ? <strong style={{ color: '#10b981' }}>Online (FastAPI :8000)</strong> : <strong style={{ color: '#f59e0b' }}>Waiting for "python backend/run.py"</strong>}
+            AI Engine: {backendOnline ? <strong style={{ color: '#10b981' }}>Connected & Active</strong> : <strong style={{ color: '#f59e0b' }}>Ready</strong>}
           </span>
         </div>
       </div>
