@@ -10,8 +10,10 @@ export function normalizeIngredient(str) {
   if (!str) return '';
   return str
     .toLowerCase()
+    // Split compound prefixes like coolmilk -> cool milk, hotwater -> hot water, coldmilk -> cold milk
+    .replace(/\b(cool|cold|hot|warm|fresh|chilled|frozen|sweet|skim)([a-z]+)\b/g, '$1 $2')
     .replace(/[0-9/().,%-]+/g, ' ')
-    .replace(/\b(tsp|tbsp|cup|cups|gm|g|kg|ml|oz|lb|pound|pounds|pinch|can|clove|cloves|diced|sliced|chopped|minced|crushed|fresh|dried|powder|shredded|boiled|large|medium|small|warm|hot|cold|boneless|skinless|raw|cooked)\b/g, '')
+    .replace(/\b(tsp|tbsp|cup|cups|gm|g|kg|ml|oz|lb|pound|pounds|pinch|can|clove|cloves|diced|sliced|chopped|minced|crushed|fresh|dried|powder|shredded|boiled|large|medium|small|warm|hot|cold|cool|chilled|frozen|sweet|skim|boneless|skinless|raw|cooked)\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -36,7 +38,11 @@ const SYNONYMS = {
   paneer: 'cottage cheese',
   dahi: 'curd',
   curd: 'yogurt',
-  yoghurt: 'yogurt'
+  yoghurt: 'yogurt',
+  coolmilk: 'milk',
+  coldmilk: 'milk',
+  hotmilk: 'milk',
+  doodh: 'milk'
 };
 
 export function matchRecipeIngredients(recipeIngredients, userIngredients = []) {

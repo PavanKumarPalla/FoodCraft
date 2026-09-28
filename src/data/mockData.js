@@ -533,6 +533,72 @@ export const INITIAL_RECIPES = [
       "Roast over medium-high heat for 15-18 minutes, turning once, until deeply golden and crispy.",
       "Serve immediately as a savory side or evening snack."
     ]
+  },
+  {
+    id: "rcp-15",
+    title: "Creamy Cardamom Almond Milk (Badam Milk)",
+    image: "",
+    time: 15,
+    calories: 220,
+    protein: "9g",
+    carbs: "22g",
+    fat: "11g",
+    rating: 4.9,
+    reviewsCount: 142,
+    cuisine: "South Indian",
+    mealType: "Breakfast",
+    dietType: "veg",
+    healthTags: ["High Calcium", "Energy Booster", "Kid Friendly"],
+    matchScore: 97,
+    description: "Traditional fragrant Indian milk simmered with crushed almonds, aromatic green cardamom, and a pinch of golden saffron.",
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Milk", amount: "500 ml whole milk", available: true },
+      { name: "Almonds (Badam)", amount: "15-20 blanched and crushed", available: true },
+      { name: "Green Cardamom Powder", amount: "1/4 tsp", available: true },
+      { name: "Saffron Strands (Kesar)", amount: "A generous pinch", available: true },
+      { name: "Sugar or Honey", amount: "2 tbsp", available: true }
+    ],
+    instructions: [
+      "Soak almonds in warm water for 15 minutes, peel the skins off, and crush into a coarse paste or fine slivers.",
+      "In a heavy-bottom saucepan, bring whole milk to a gentle boil over medium heat.",
+      "Lower the flame and stir in the crushed almond paste, saffron strands, and cardamom powder.",
+      "Simmer gently for 8 to 10 minutes while stirring occasionally until rich and aromatic.",
+      "Add sugar or honey, mix well until dissolved, and serve hot or chilled as cool milk."
+    ]
+  },
+  {
+    id: "rcp-16",
+    title: "Chilled Strawberry Banana Protein Milkshake",
+    image: "",
+    time: 5,
+    calories: 260,
+    protein: "14g",
+    carbs: "38g",
+    fat: "5g",
+    rating: 4.8,
+    reviewsCount: 98,
+    cuisine: "Continental",
+    mealType: "Breakfast",
+    dietType: "veg",
+    healthTags: ["Gym Protein", "Low Fat", "Quick Refreshment"],
+    matchScore: 95,
+    description: "Luscious chilled milk blended with sweet ripe bananas, fresh strawberries, and chia seeds for post-workout energy.",
+    difficulty: "Easy",
+    ingredients: [
+      { name: "Chilled Milk", amount: "350 ml (cool milk)", available: true },
+      { name: "Ripe Banana", amount: "1 medium, sliced", available: true },
+      { name: "Fresh Strawberries", amount: "6-8 whole", available: true },
+      { name: "Honey", amount: "1 tbsp", available: true },
+      { name: "Chia Seeds", amount: "1 tsp", available: true }
+    ],
+    instructions: [
+      "Wash and hull fresh strawberries, peel and slice the ripe banana.",
+      "Add the sliced fruits, cold milk, and honey to a high-speed blender pitcher.",
+      "Blend on high speed for 60-90 seconds until completely smooth, thick, and frothy.",
+      "Pour immediately into a tall chilled glass and stir in chia seeds.",
+      "Serve refreshingly cold as an instant energizer."
+    ]
   }
 ];
 
