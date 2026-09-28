@@ -50,8 +50,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Guard: Unknown /api/* routes must return JSON, never index.html
-app.all('/api/*', (req, res) => {
+// Guard: Unknown /api routes must return JSON, never index.html
+app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     error: `API route ${req.method} ${req.originalUrl} not found`,
