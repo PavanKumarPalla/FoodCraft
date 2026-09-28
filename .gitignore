@@ -7,17 +7,62 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Node dependencies & builds
+node_modules/
+dist/
+dist-ssr/
 *.local
+
+# Environment variables & secrets
 .env
 .env.*
+!.env.example
+
+# Datasets & Large Data (Ignore all raw datasets & vector stores)
+/data/
+backend/data/*
+!backend/data/sample_recipes.json
+*.csv
+*.parquet
+*.tsv
+*.arrow
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.faiss
+*.index
+
+# Machine Learning Models & Heavy Weights (Downloaded dynamically)
+*.pt
+*.pth
+*.onnx
+*.weights
+*.bin
+!backend/models/.gitkeep
+
+# Python artifacts & Virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+
+# Caches
+.cache/
+.huggingface/
+hf_cache/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*

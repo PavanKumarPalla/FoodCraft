@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────────────────────
+# Food Craft AI Backend — Python Dependencies
+# ──────────────────────────────────────────────────────────────
+# Core Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.18
+
+# Computer Vision — YOLOv8 Ingredient Detection
+ultralytics>=8.3.0
+torch>=2.0.0
+torchvision>=0.15.0
+Pillow>=10.0.0
+
+# NLP — Sentence Embeddings for Recipe Retrieval
+sentence-transformers>=3.0.0
+
+# Vector Search — FAISS (CPU build)
+faiss-cpu>=1.9.0
+
+# Data Handling
+pandas>=2.0.0
+pyarrow>=15.0.0
+numpy>=1.24.0
+
+# Hugging Face Hub — Dataset & Model Downloads
+huggingface-hub>=2.0.0
+
+# HTTP Client — Wikipedia & Pollinations Image Fallback
+requests>=2.31.0

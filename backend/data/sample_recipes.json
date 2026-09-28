@@ -1,0 +1,32 @@
+[
+  {
+    "title": "No-Bake Nut Cookies",
+    "ingredients": ["1 c. firmly packed brown sugar", "1/2 c. evaporated milk", "1/2 tsp. vanilla", "1/2 c. broken nuts (pecans)", "2 Tbsp. butter or margarine", "3 1/2 c. bite size shredded rice biscuits"],
+    "directions": ["In a heavy 2-quart saucepan, mix brown sugar, nuts, evaporated milk and butter or margarine.", "Stir over medium heat until mixture bubbles all over top.", "Boil and stir 5 minutes more. Take off heat.", "Stir in vanilla and cereal; mix well.", "Using 2 teaspoons, drop and shape into 30 clusters on wax paper.", "Let stand until firm, about 30 minutes."],
+    "NER": ["brown sugar", "milk", "vanilla", "nuts", "butter", "bite size shredded rice biscuits"]
+  },
+  {
+    "title": "Creamy Corn",
+    "ingredients": ["2 (16 oz.) pkg. frozen corn", "1 (8 oz.) pkg. cream cheese, cubed", "1/3 c. butter, cubed", "1/2 tsp. garlic powder", "1/2 tsp. salt", "1/4 tsp. pepper"],
+    "directions": ["In a slow cooker, combine all ingredients. Cover and cook on low for 4 hours or until heated through and cheese is melted. Stir well before serving. Yields 6 servings."],
+    "NER": ["frozen corn", "cream cheese", "butter", "garlic powder", "salt", "pepper"]
+  },
+  {
+    "title": "Chicken Tikka Masala",
+    "ingredients": ["500g chicken breast, cubed", "1 cup yogurt", "2 tbsp tikka masala paste", "1 can crushed tomatoes", "1 cup heavy cream", "1 onion, diced", "3 cloves garlic, minced", "1 inch ginger, grated", "2 tbsp oil", "Salt to taste", "Fresh cilantro for garnish"],
+    "directions": ["Marinate chicken in yogurt and tikka paste for 1 hour.", "Heat oil in a pan, sauté onion until golden.", "Add garlic and ginger, cook 1 minute.", "Add chicken, cook until browned.", "Add crushed tomatoes, simmer 15 minutes.", "Stir in cream, cook 5 more minutes.", "Garnish with cilantro and serve with rice."],
+    "NER": ["chicken", "yogurt", "tikka masala paste", "tomatoes", "cream", "onion", "garlic", "ginger", "oil", "salt", "cilantro"]
+  },
+  {
+    "title": "Classic Pancakes",
+    "ingredients": ["1 1/2 cups all-purpose flour", "3 1/2 tsp baking powder", "1 tsp salt", "1 tbsp white sugar", "1 1/4 cups milk", "1 egg", "3 tbsp melted butter"],
+    "directions": ["Sift flour, baking powder, salt and sugar together.", "Make a well in the center and pour in milk, egg and melted butter.", "Mix until smooth.", "Heat a griddle over medium-high heat and pour batter.", "Cook until bubbles form, then flip and cook until browned.", "Serve hot with maple syrup."],
+    "NER": ["flour", "baking powder", "salt", "sugar", "milk", "egg", "butter"]
+  },
+  {
+    "title": "Garlic Butter Shrimp",
+    "ingredients": ["1 lb large shrimp, peeled and deveined", "4 tbsp butter", "6 cloves garlic, minced", "1/4 cup white wine", "Juice of 1 lemon", "2 tbsp fresh parsley, chopped", "Salt and pepper to taste", "Red pepper flakes"],
+    "directions": ["Melt butter in a large skillet over medium heat.", "Add garlic, cook 30 seconds until fragrant.", "Add shrimp in a single layer, cook 2 minutes per side.", "Pour in white wine and lemon juice.", "Season with salt, pepper, and red pepper flakes.", "Garnish with parsley and serve immediately."],
+    "NER": ["shrimp", "butter", "garlic", "white wine", "lemon", "parsley", "salt", "pepper", "red pepper flakes"]
+  }
+]
