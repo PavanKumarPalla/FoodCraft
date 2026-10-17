@@ -212,13 +212,17 @@ export default function ScanIngredients() {
         ctx.drawImage(img, 0, 0);
 
         // Classify produce by analyzing color distribution in a detected bounding box
-        // This ONLY runs on regions that the neural network already identified as objects
-        const classifyProduceRegion = (bx, by, bw, bh, hintCls = '') => {
+        // source: 'neural' = anchored by COCO-SSD detection, 'scan' = supplementary grid scan
+        const classifyProduceRegion = (bx, by, bw, bh, hintCls = '', source = 'neural') => {
           const x = Math.max(0, Math.floor(bx));
           const y = Math.max(0, Math.floor(by));
           const w = Math.min(naturalW - x, Math.floor(bw));
           const h = Math.min(naturalH - y, Math.floor(bh));
           if (w < 15 || h < 15) return null;
+
+          // Grid-scanned regions need stricter thresholds to prevent false positives
+          const isGridScan = source === 'scan';
+          const boost = isGridScan ? 1.4 : 1.0; // grid requires 40% higher color ratios
 
           try {
             const imgData = ctx.getImageData(x, y, w, h);
@@ -233,6 +237,7 @@ export default function ScanIngredients() {
             let onionPurple = 0;
             let onionGolden = 0;
             let berryPurple = 0;
+            let whiteGray = 0;
 
             // Sample every 12th pixel for efficiency
             for (let i = 0; i < d.length; i += 12) {
@@ -245,7 +250,7 @@ export default function ScanIngredients() {
               const sat = max === 0 ? 0 : delta / max;
 
               // Skip near-white backgrounds and very dark shadows
-              if (max > 230 && sat < 0.10) continue;
+              if (max > 230 && sat < 0.10) { whiteGray++; continue; }
               if (max < 20) continue;
 
               total++;
@@ -254,16 +259,16 @@ export default function ScanIngredients() {
               if (max < 45 && r < 45 && g < 45 && b < 45) darkSeeds++;
 
               // Tomato / Cherry Tomato red
-              if (r > 140 && r > g * 1.35 && r > b * 1.35 && sat > 0.40) tomatoRed++;
+              if (r > 135 && r > g * 1.30 && r > b * 1.30 && sat > 0.38) tomatoRed++;
 
               // Carrot / Bright Orange
-              if (r > 170 && g >= 65 && g <= 150 && b < 70 && (r - g) >= 30) carrotOrange++;
+              if (r > 165 && g >= 60 && g <= 155 && b < 75 && (r - g) >= 28) carrotOrange++;
 
               // Sweet Corn / Yellow produce
-              if (r > 160 && g > 135 && b < 90 && (r + g) > 310 && b < g * 0.65) cornYellow++;
+              if (r > 155 && g > 130 && b < 95 && (r + g) > 300 && b < g * 0.68) cornYellow++;
 
               // Green Vegetables
-              if (g > 70 && g > r + 12 && g > b + 12) greenCount++;
+              if (g > 65 && g > r + 10 && g > b + 10) greenCount++;
 
               // Fuzzy earthy brown (whole kiwi skin)
               if (r >= 75 && r <= 175 && g >= 50 && g <= 135 && b >= 20 && b <= 95 && r > g && g > b) {
@@ -280,7 +285,11 @@ export default function ScanIngredients() {
               if (b > 70 && r > 50 && g < b * 0.80) berryPurple++;
             }
 
-            if (total < 25) return null;
+            if (total < 20) return null;
+
+            // For grid scans: reject regions that are mostly white/gray (fridge walls, containers)
+            const totalPixels = total + whiteGray;
+            if (isGridScan && totalPixels > 0 && (whiteGray / totalPixels) > 0.55) return null;
 
             const gR = greenCount / total;
             const rR = tomatoRed / total;
@@ -292,75 +301,62 @@ export default function ScanIngredients() {
             const sR = darkSeeds / total;
             const berryR = berryPurple / total;
 
-            // Calculate dominant color ratio — the strongest signal must be well above others
-            const allRatios = [
-              { key: 'kiwi_sliced', val: gR + sR },
-              { key: 'tomato', val: rR },
-              { key: 'carrot', val: oR },
-              { key: 'corn', val: yR },
-              { key: 'green', val: gR },
-              { key: 'brown', val: bR },
-              { key: 'purple', val: purpR },
-              { key: 'golden', val: goldR },
-              { key: 'berry', val: berryR },
-            ];
-            const dominantSignal = Math.max(...allRatios.map(r => r.val));
-
-            // Require a strong dominant color signal — reject weak/ambiguous regions
-            if (dominantSignal < 0.12) return null;
+            // Require a minimum dominant color signal
+            const dominantSignal = Math.max(gR, rR, oR, yR, bR, purpR, goldR, berryR);
+            if (dominantSignal < 0.10 * boost) return null;
 
             // Sliced Kiwi (emerald green + black seeds)
-            if (gR > 0.10 && sR > 0.008) {
+            if (gR > 0.08 * boost && sR > 0.005) {
               return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', conf: '95%', color: '#10b981', rawConf: 0.95 };
             }
 
-            // Tomato / Cherry Tomatoes — requires strong red dominance
-            if (rR > 0.20) {
+            // Tomato / Cherry Tomatoes
+            if (rR > 0.16 * boost) {
               return { name: 'Tomato', ingredient: 'Tomato', conf: '97%', color: '#ef4444', rawConf: 0.97 };
             }
 
-            // Carrot — requires strong orange with hint class support
-            if (oR > 0.18 || (oR > 0.12 && hintCls === 'carrot')) {
+            // Carrot
+            if (oR > 0.14 * boost || (oR > 0.10 && hintCls === 'carrot')) {
               return { name: 'Carrot', ingredient: 'Carrot', conf: '96%', color: '#f97316', rawConf: 0.96 };
             }
 
-            // Sweet Corn — strong yellow, elongated shape preferred
-            if (yR > 0.20 && (h > w * 0.9 || yR > 0.30)) {
+            // Sweet Corn (golden yellow)
+            if (yR > 0.16 * boost && (h > w * 0.8 || yR > 0.25)) {
               return { name: 'Sweet Corn', ingredient: 'Corn', conf: '96%', color: '#eab308', rawConf: 0.96 };
             }
 
             // Banana — yellow + hint
-            if (yR > 0.20 && hintCls === 'banana') {
+            if (yR > 0.18 && hintCls === 'banana') {
               return { name: 'Banana', ingredient: 'Banana', conf: '95%', color: '#facc15', rawConf: 0.95 };
             }
 
-            // Green Beans / Peas — strong green, elongated shape
-            if (gR > 0.22 && (h > w * 0.9 || gR > 0.35)) {
+            // Green Beans / Peas — green, elongated preferred
+            if (gR > 0.18 * boost && (h > w * 0.8 || gR > 0.30)) {
               return { name: 'Green Beans', ingredient: 'Beans', conf: '94%', color: '#10b981', rawConf: 0.94 };
             }
 
             // Lime / Lemon — green, small-medium sized
-            if (gR > 0.20 && w < naturalW * 0.35 && h < naturalH * 0.35) {
+            if (gR > 0.16 * boost && w < naturalW * 0.40 && h < naturalH * 0.40) {
               return { name: 'Lime / Lemon', ingredient: 'Lemon', conf: '94%', color: '#84cc16', rawConf: 0.94 };
             }
 
-            // Onion (Red/Purple or Golden/Papery) — requires strong purple/golden signal
-            if (purpR > 0.16 || goldR > 0.22) {
+            // Onion (Red/Purple or Golden/Papery)
+            if (purpR > 0.14 * boost || goldR > 0.20 * boost) {
               return { name: 'Onion', ingredient: 'Onion', conf: '95%', color: '#8b5cf6', rawConf: 0.95 };
             }
 
-            // Whole Kiwi — strong brown + COCO hint (apple/orange misclassification)
-            if (bR > 0.22 && (hintCls === 'apple' || hintCls === 'orange')) {
+            // Whole Kiwi — brown + COCO hint
+            if (bR > 0.18 * boost && (hintCls === 'apple' || hintCls === 'orange' || bR > 0.25)) {
               return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', conf: '96%', color: '#f59e0b', rawConf: 0.96 };
             }
 
             // Berries / Grapes
-            if (berryR > 0.16) {
+            if (berryR > 0.14 * boost) {
               return { name: 'Berries / Grapes', ingredient: 'Berries', conf: '93%', color: '#a855f7', rawConf: 0.93 };
             }
 
-            // Broccoli / Leafy Greens — strong green with no other dominant signal
-            if (gR > 0.20 && rR < 0.05 && oR < 0.05) {
+            // Broccoli / Leafy Greens — strong green, no red or orange
+            if (gR > 0.18 * boost && rR < 0.05 && oR < 0.05) {
               return { name: 'Leafy Greens', ingredient: 'Spinach', conf: '92%', color: '#10b981', rawConf: 0.92 };
             }
           } catch {
@@ -477,6 +473,39 @@ export default function ScanIngredients() {
             });
           }
         });
+
+        // 2. Supplementary Grid Scan — catches items COCO-SSD misses (beans, corn, carrots in containers)
+        //    Uses source='scan' which requires 40% higher color ratios to prevent false positives
+        const gridCols = 3;
+        const gridRows = 3;
+        const cellW = naturalW / gridCols;
+        const cellH = naturalH / gridRows;
+
+        for (let r = 0; r < gridRows; r++) {
+          for (let c = 0; c < gridCols; c++) {
+            const gx = c * cellW + cellW * 0.08;
+            const gy = r * cellH + cellH * 0.08;
+            const gw = cellW * 0.84;
+            const gh = cellH * 0.84;
+
+            const produce = classifyProduceRegion(gx, gy, gw, gh, '', 'scan');
+            if (produce) {
+              const x_pct = Math.round((gx / naturalW) * 100);
+              const y_pct = Math.round((gy / naturalH) * 100);
+              const w_pct = Math.round((gw / naturalW) * 100);
+              const h_pct = Math.round((gh / naturalH) * 100);
+
+              rawCandidateBoxes.push({
+                name: produce.name,
+                ingredient: produce.ingredient,
+                confidence: produce.conf,
+                rawConf: produce.rawConf * 0.85, // slightly lower confidence for grid scans
+                color: produce.color,
+                box: { x: x_pct, y: y_pct, w: w_pct, h: h_pct }
+              });
+            }
+          }
+        }
 
         // Apply aggressive Non-Maximum Suppression
         let finalBoxes = applyNMS(rawCandidateBoxes, 0.25, 18);
