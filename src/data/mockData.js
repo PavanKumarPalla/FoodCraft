@@ -900,6 +900,77 @@ export const INITIAL_RECIPES = [
       "Crush roasted kasuri methi between palms and sprinkle on top with garam masala.",
       "Stir gently and serve hot with phulkas or steamed jeera rice."
     ]
+  },
+  {
+    id: "rcp-25",
+    title: "Refreshing Kiwi & Chia Superfood Smoothie",
+    image: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80",
+    time: 5,
+    calories: 210,
+    protein: "7g",
+    carbs: "38g",
+    fat: "4g",
+    rating: 4.9,
+    reviewsCount: 168,
+    cuisine: "Continental",
+    mealType: "Breakfast",
+    dietType: "veg",
+    healthTags: ["High Vitamin C", "Immunity Booster", "Antioxidant Rich", "Low Calorie"],
+    matchScore: 98,
+    description: "A zesty and revitalizing emerald smoothie packed with fresh kiwi fruit, Greek yogurt, chia seeds, and raw honey for a potent immunity boost.",
+    difficulty: "Easy",
+    ner_tags: ["kiwi", "kiwifruit", "kiwi fruit", "banana", "yogurt", "chia seeds", "honey", "mint"],
+    ingredients: [
+      { name: "Fresh Ripe Kiwis (Peeled & Sliced)", amount: "3 whole kiwis", available: true },
+      { name: "Greek Yogurt or Almond Milk", amount: "1/2 cup", available: true },
+      { name: "Ripe Banana (Frozen or Fresh)", amount: "1 medium", available: true },
+      { name: "Organic Chia Seeds", amount: "1 tbsp", available: true },
+      { name: "Raw Honey or Maple Syrup", amount: "1 tsp", available: true },
+      { name: "Fresh Mint Leaves", amount: "3-4 leaves for garnish", available: true },
+      { name: "Crushed Ice", amount: "1/2 cup", available: true }
+    ],
+    instructions: [
+      "Peel the kiwis using a spoon or paring knife, reserving two thin wheel slices for glass garnish.",
+      "Add the sliced kiwis, frozen banana, Greek yogurt, raw honey, and crushed ice into a high-speed blender.",
+      "Pulse for 45 to 60 seconds until silkily smooth and vibrantly green.",
+      "Stir in the chia seeds and let rest for 2 minutes to gently bloom.",
+      "Pour into chilled glasses, slide a fresh kiwi wheel onto the rim, top with mint leaves, and serve cold."
+    ]
+  },
+  {
+    id: "rcp-26",
+    title: "Vibrant Tropical Kiwi & Berry Antioxidant Bowl",
+    image: "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=800&q=80",
+    time: 10,
+    calories: 260,
+    protein: "9g",
+    carbs: "46g",
+    fat: "5g",
+    rating: 4.8,
+    reviewsCount: 142,
+    cuisine: "Continental",
+    mealType: "Breakfast",
+    dietType: "veg",
+    healthTags: ["High Fiber", "Antioxidant Rich", "Immunity Booster", "Gluten Free"],
+    matchScore: 96,
+    description: "Crisp fan-sliced kiwi wheels paired with wild blueberries, roasted toasted granola, and thick vanilla yogurt with a hint of fresh lime zest.",
+    difficulty: "Easy",
+    ner_tags: ["kiwi", "kiwifruit", "kiwi fruit", "berries", "strawberries", "yogurt", "granola", "honey", "lime"],
+    ingredients: [
+      { name: "Fresh Sweet Kiwis (Peeled & Round Slices)", amount: "2 whole kiwis", available: true },
+      { name: "Thick Greek Yogurt or Coconut Yogurt", amount: "1 cup", available: true },
+      { name: "Fresh Strawberries or Wild Blueberries", amount: "1/2 cup, sliced", available: true },
+      { name: "Roasted Almond Granola", amount: "3 tbsp", available: true },
+      { name: "Wildflower Honey or Agave", amount: "1 tbsp", available: true },
+      { name: "Fresh Lime Zest", amount: "1/4 tsp", available: true }
+    ],
+    instructions: [
+      "Spoon velvety Greek yogurt into a chilled ceramic serving bowl and smooth the surface with a spoon.",
+      "Arrange freshly cut kiwi wheels in an overlapping crescent pattern along one half of the bowl.",
+      "Fill the remaining section with fresh berries and golden crunchy almond granola.",
+      "Drizzle with raw wildflower honey and microplane fresh lime zest over the sliced kiwi for bright citrus aroma.",
+      "Enjoy immediately for maximum crispness and vitamin retention."
+    ]
   }
 ];
 

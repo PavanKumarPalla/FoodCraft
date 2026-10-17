@@ -86,7 +86,13 @@ const SYNONYMS = {
   anda: 'egg',
   mushroom: 'mushroom',
   mushrooms: 'mushroom',
-  khumb: 'mushroom'
+  khumb: 'mushroom',
+
+  // Kiwi & Fresh Fruits
+  kiwi: 'kiwi',
+  kiwis: 'kiwi',
+  kiwifruit: 'kiwi',
+  'kiwi fruit': 'kiwi'
 };
 
 const BROAD_MEAT_ITEMS = ['mutton', 'lamb', 'goat', 'gosht', 'beef', 'pork', 'meat', 'keema', 'mince'];

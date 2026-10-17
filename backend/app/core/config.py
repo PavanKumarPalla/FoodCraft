@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["*"]
 
     # ── YOLOv8 Vision Model ──────────────────────────────────
-    YOLO_CUSTOM_WEIGHTS: str = str(MODELS_DIR / "yolov8n_food_ingredients.pt")
+    YOLO_CUSTOM_WEIGHTS: str = str(MODELS_DIR / "yolov8_food_ingredients.pt")
     YOLO_FALLBACK_WEIGHTS: str = "yolov8n.pt"
     YOLO_CONFIDENCE_THRESHOLD: float = 0.35
 

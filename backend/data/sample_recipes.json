@@ -28,5 +28,11 @@
     "ingredients": ["1 lb large shrimp, peeled and deveined", "4 tbsp butter", "6 cloves garlic, minced", "1/4 cup white wine", "Juice of 1 lemon", "2 tbsp fresh parsley, chopped", "Salt and pepper to taste", "Red pepper flakes"],
     "directions": ["Melt butter in a large skillet over medium heat.", "Add garlic, cook 30 seconds until fragrant.", "Add shrimp in a single layer, cook 2 minutes per side.", "Pour in white wine and lemon juice.", "Season with salt, pepper, and red pepper flakes.", "Garnish with parsley and serve immediately."],
     "NER": ["shrimp", "butter", "garlic", "white wine", "lemon", "parsley", "salt", "pepper", "red pepper flakes"]
+  },
+  {
+    "title": "Fresh Kiwi Chia Smoothie",
+    "ingredients": ["3 ripe kiwis, peeled and sliced", "1 frozen banana", "1/2 cup Greek yogurt", "1 tbsp chia seeds", "1 tbsp honey", "1/2 cup ice cubes"],
+    "directions": ["Place peeled kiwis, banana, yogurt, honey, and ice in a blender.", "Blend on high speed until completely smooth.", "Stir in chia seeds and let rest 2 minutes.", "Pour into glasses and serve chilled."],
+    "NER": ["kiwi", "banana", "yogurt", "chia seeds", "honey", "ice"]
   }
 ]

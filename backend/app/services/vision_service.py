@@ -35,6 +35,24 @@ def _load_model():
     from app.core.config import settings
 
     custom = Path(settings.YOLO_CUSTOM_WEIGHTS)
+    if not custom.exists():
+        logger.info("Custom food weights not found at %s. Downloading from Hugging Face Hub...", custom)
+        try:
+            from huggingface_hub import hf_hub_download
+            import shutil
+            custom.parent.mkdir(parents=True, exist_ok=True)
+            dl_path = hf_hub_download(
+                repo_id="Senu-12/snapstock-fruit-vegetable-detector",
+                filename="yolov8/fruit_vegetable_yolov8m.pt",
+                local_dir=str(custom.parent),
+            )
+            dl = Path(dl_path)
+            if dl.exists() and dl != custom:
+                shutil.copy2(dl, custom)
+                logger.info("Cached food weights to: %s", custom)
+        except Exception as e:
+            logger.warning("Could not auto-download food weights from Hugging Face: %s", e)
+
     if custom.exists():
         logger.info("Loading custom YOLOv8 food weights: %s", custom.name)
         _model = YOLO(str(custom))
@@ -110,7 +128,66 @@ def detect_ingredients(
         for box in boxes:
             cls_id = int(box.cls[0])
             conf = float(box.conf[0])
-            name = model.names.get(cls_id, f"class_{cls_id}").strip().title()
+            raw_name = model.names.get(cls_id, f"class_{cls_id}").strip().lower()
+
+            # Clean compound label names from LVIS / Food weights
+            if "kiwi" in raw_name:
+                name = "Kiwi"
+            elif "tomato" in raw_name:
+                name = "Tomato"
+            elif "potato" in raw_name and "sweet" not in raw_name:
+                name = "Potato"
+            elif "sweet potato" in raw_name:
+                name = "Sweet Potato"
+            elif "onion" in raw_name and "green" not in raw_name and "spring" not in raw_name:
+                name = "Onion"
+            elif "spring onion" in raw_name or "green onion" in raw_name or "scallion" in raw_name:
+                name = "Spring Onion"
+            elif "garlic" in raw_name:
+                name = "Garlic"
+            elif "ginger" in raw_name:
+                name = "Ginger"
+            elif "corn" in raw_name or "maize" in raw_name:
+                name = "Corn"
+            elif "cucumber" in raw_name or "cuke" in raw_name:
+                name = "Cucumber"
+            elif "capsicum" in raw_name or "bell pepper" in raw_name:
+                name = "Capsicum"
+            elif "chili" in raw_name or "chilli" in raw_name or "cayenne" in raw_name:
+                name = "Chili"
+            elif "mushroom" in raw_name:
+                name = "Mushroom"
+            elif "tofu" in raw_name or "bean curd" in raw_name:
+                name = "Tofu"
+            elif "lemon" in raw_name:
+                name = "Lemon"
+            elif "lime" in raw_name:
+                name = "Lime"
+            elif "apple" in raw_name:
+                name = "Apple"
+            elif "banana" in raw_name:
+                name = "Banana"
+            elif "orange" in raw_name:
+                name = "Orange"
+            elif "strawberry" in raw_name:
+                name = "Strawberry"
+            elif "eggplant" in raw_name or "aubergine" in raw_name:
+                name = "Eggplant"
+            elif "watermelon" in raw_name:
+                name = "Watermelon"
+            elif "broccoli" in raw_name:
+                name = "Broccoli"
+            elif "carrot" in raw_name:
+                name = "Carrot"
+            elif "cauliflower" in raw_name:
+                name = "Cauliflower"
+            elif "avocado" in raw_name:
+                name = "Avocado"
+            elif "spinach" in raw_name:
+                name = "Spinach"
+            else:
+                name = raw_name.split("/")[0].strip().title()
+
             coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
             x1, y1, x2, y2 = coords
 
@@ -137,7 +214,7 @@ def detect_ingredients(
             })
             seen_names.add(name)
 
-    unique_list = sorted(seen_names)
+        unique_list = sorted(seen_names)
 
     logger.info(
         "Detected %d objects → %d unique ingredients: %s",
