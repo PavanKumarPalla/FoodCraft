@@ -245,10 +245,12 @@ export default function ScanIngredients() {
           return { h, s, v };
         };
 
-        // Filter out human skin tones (e.g. hand holding produce)
+        // Filter out all human skin tones across any lighting conditions (face, hands, neck)
         const isHumanSkin = (r, g, b, h, s, v) => {
-          if (h >= 12 && h <= 36 && s >= 0.18 && s <= 0.52 && v >= 0.58) {
-            if (r > g + 14 && g > b + 10) return true;
+          if (r > g && g >= b - 8) {
+            if (h >= 8 && h <= 42 && s >= 0.12 && s <= 0.62 && v >= 0.18) {
+              return true;
+            }
           }
           return false;
         };
@@ -429,10 +431,18 @@ export default function ScanIngredients() {
         ]);
 
         // 1. Process COCO-SSD Neural Detections
+        const personBoxes = [];
         predictions.forEach((pred) => {
           const cls = pred.class.toLowerCase();
           const [x, y, w, h] = pred.bbox;
           const cocoConf = pred.score || 0;
+
+          // Track people / human selfies
+          if (cls === 'person' && cocoConf > 0.25) {
+            personBoxes.push({ x, y, w, h, score: cocoConf });
+            nonFoodClasses.push('person');
+            return;
+          }
 
           if (rejectClasses.has(cls)) {
             nonFoodClasses.push(cls);
@@ -462,108 +472,127 @@ export default function ScanIngredients() {
           }
         });
 
+        // Check if the image is a person's photo / selfie / portrait
+        const totalPersonArea = personBoxes.reduce((acc, p) => acc + (p.w * p.h), 0);
+        const isPersonDominant = totalPersonArea > (naturalW * naturalH * 0.10);
+
         // 2. Multi-Scale Salient Food Region Clustering
-        // Discovers produce items that COCO-SSD misses (Green Beans, Corn, Carrots in containers, Potatoes, Berries, etc.)
-        const gridCols = 18;
-        const gridRows = 18;
-        const cellW = naturalW / gridCols;
-        const cellH = naturalH / gridRows;
+        // ONLY scan for produce if the scene is NOT a human selfie/portrait.
+        // If a person is the main subject, only keep genuine neural food items (e.g. apple or sandwich in hand)
+        if (!isPersonDominant) {
+          const gridCols = 18;
+          const gridRows = 18;
+          const cellW = naturalW / gridCols;
+          const cellH = naturalH / gridRows;
 
-        const cellGrid = [];
-        for (let r = 0; r < gridRows; r++) {
-          const row = [];
-          for (let c = 0; c < gridCols; c++) {
-            const cx = Math.floor(c * cellW);
-            const cy = Math.floor(r * cellH);
-            const cw = Math.floor(Math.min(naturalW - cx, cellW));
-            const ch = Math.floor(Math.min(naturalH - cy, cellH));
+          const cellGrid = [];
+          for (let r = 0; r < gridRows; r++) {
+            const row = [];
+            for (let c = 0; c < gridCols; c++) {
+              const cx = Math.floor(c * cellW);
+              const cy = Math.floor(r * cellH);
+              const cw = Math.floor(Math.min(naturalW - cx, cellW));
+              const ch = Math.floor(Math.min(naturalH - cy, cellH));
 
-            if (cw < 6 || ch < 6) {
-              row.push(null);
-              continue;
-            }
-
-            try {
-              const imgData = ctx.getImageData(cx, cy, cw, ch);
-              const d = imgData.data;
-              let sR = 0, sG = 0, sB = 0, cnt = 0, seeds = 0;
-              for (let i = 0; i < d.length; i += 8) {
-                const pr = d[i], pg = d[i + 1], pb = d[i + 2], pa = d[i + 3];
-                if (pa < 50) continue;
-                if (pr < 40 && pg < 40 && pb < 40) seeds++;
-                sR += pr; sG += pg; sB += pb; cnt++;
-              }
-              if (cnt < 6) {
+              if (cw < 6 || ch < 6) {
                 row.push(null);
-              } else {
-                row.push(classifyCellData(sR / cnt, sG / cnt, sB / cnt, seeds / cnt));
+                continue;
               }
-            } catch {
-              row.push(null);
+
+              // Reject cells that fall on any detected person (hand, arm, body)
+              const cellCenterX = cx + cw / 2;
+              const cellCenterY = cy + ch / 2;
+              const isInsidePerson = personBoxes.some(p => 
+                cellCenterX >= p.x - 5 && cellCenterX <= p.x + p.w + 5 &&
+                cellCenterY >= p.y - 5 && cellCenterY <= p.y + p.h + 5
+              );
+              if (isInsidePerson) {
+                row.push(null);
+                continue;
+              }
+
+              try {
+                const imgData = ctx.getImageData(cx, cy, cw, ch);
+                const d = imgData.data;
+                let sR = 0, sG = 0, sB = 0, cnt = 0, seeds = 0;
+                for (let i = 0; i < d.length; i += 8) {
+                  const pr = d[i], pg = d[i + 1], pb = d[i + 2], pa = d[i + 3];
+                  if (pa < 50) continue;
+                  if (pr < 40 && pg < 40 && pb < 40) seeds++;
+                  sR += pr; sG += pg; sB += pb; cnt++;
+                }
+                if (cnt < 6) {
+                  row.push(null);
+                } else {
+                  row.push(classifyCellData(sR / cnt, sG / cnt, sB / cnt, seeds / cnt));
+                }
+              } catch {
+                row.push(null);
+              }
             }
+            cellGrid.push(row);
           }
-          cellGrid.push(row);
-        }
 
-        // Connected-component clustering (BFS) of adjacent same-type food cells
-        const visited = Array.from({ length: gridRows }, () => Array(gridCols).fill(false));
-        const minClusterCells = 3;
+          // Connected-component clustering (BFS) of adjacent same-type food cells
+          const visited = Array.from({ length: gridRows }, () => Array(gridCols).fill(false));
+          const minClusterCells = 3;
 
-        for (let r = 0; r < gridRows; r++) {
-          for (let c = 0; c < gridCols; c++) {
-            if (visited[r][c] || !cellGrid[r][c]) continue;
+          for (let r = 0; r < gridRows; r++) {
+            for (let c = 0; c < gridCols; c++) {
+              if (visited[r][c] || !cellGrid[r][c]) continue;
 
-            const targetType = cellGrid[r][c].type;
-            const info = cellGrid[r][c];
-            const queue = [[r, c]];
-            visited[r][c] = true;
-            const clusterCells = [];
+              const targetType = cellGrid[r][c].type;
+              const info = cellGrid[r][c];
+              const queue = [[r, c]];
+              visited[r][c] = true;
+              const clusterCells = [];
 
-            while (queue.length > 0) {
-              const [currR, currC] = queue.shift();
-              clusterCells.push([currR, currC]);
+              while (queue.length > 0) {
+                const [currR, currC] = queue.shift();
+                clusterCells.push([currR, currC]);
 
-              const neighbors = [
-                [-1, 0], [1, 0], [0, -1], [0, 1],
-                [-1, -1], [-1, 1], [1, -1], [1, 1]
-              ];
+                const neighbors = [
+                  [-1, 0], [1, 0], [0, -1], [0, 1],
+                  [-1, -1], [-1, 1], [1, -1], [1, 1]
+                ];
 
-              for (const [dr, dc] of neighbors) {
-                const nr = currR + dr;
-                const nc = currC + dc;
-                if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols && !visited[nr][nc]) {
-                  if (cellGrid[nr][nc] && cellGrid[nr][nc].type === targetType) {
-                    visited[nr][nc] = true;
-                    queue.push([nr, nc]);
+                for (const [dr, dc] of neighbors) {
+                  const nr = currR + dr;
+                  const nc = currC + dc;
+                  if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols && !visited[nr][nc]) {
+                    if (cellGrid[nr][nc] && cellGrid[nr][nc].type === targetType) {
+                      visited[nr][nc] = true;
+                      queue.push([nr, nc]);
+                    }
                   }
                 }
               }
-            }
 
-            if (clusterCells.length >= minClusterCells) {
-              const minR = Math.min(...clusterCells.map(cell => cell[0]));
-              const maxR = Math.max(...clusterCells.map(cell => cell[0]));
-              const minC = Math.min(...clusterCells.map(cell => cell[1]));
-              const maxC = Math.max(...clusterCells.map(cell => cell[1]));
+              if (clusterCells.length >= minClusterCells) {
+                const minR = Math.min(...clusterCells.map(cell => cell[0]));
+                const maxR = Math.max(...clusterCells.map(cell => cell[0]));
+                const minC = Math.min(...clusterCells.map(cell => cell[1]));
+                const maxC = Math.max(...clusterCells.map(cell => cell[1]));
 
-              const bx = minC * cellW;
-              const by = minR * cellH;
-              const bw = (maxC - minC + 1) * cellW;
-              const bh = (maxR - minR + 1) * cellH;
+                const bx = minC * cellW;
+                const by = minR * cellH;
+                const bw = (maxC - minC + 1) * cellW;
+                const bh = (maxR - minR + 1) * cellH;
 
-              rawCandidateBoxes.push({
-                name: info.name,
-                ingredient: info.ingredient,
-                confidence: info.conf,
-                rawConf: (info.rawConf || 0.95) * 0.90,
-                color: info.color,
-                box: {
-                  x: Math.round((bx / naturalW) * 100),
-                  y: Math.round((by / naturalH) * 100),
-                  w: Math.round((bw / naturalW) * 100),
-                  h: Math.round((bh / naturalH) * 100)
-                }
-              });
+                rawCandidateBoxes.push({
+                  name: info.name,
+                  ingredient: info.ingredient,
+                  confidence: info.conf,
+                  rawConf: (info.rawConf || 0.95) * 0.90,
+                  color: info.color,
+                  box: {
+                    x: Math.round((bx / naturalW) * 100),
+                    y: Math.round((by / naturalH) * 100),
+                    w: Math.round((bw / naturalW) * 100),
+                    h: Math.round((bh / naturalH) * 100)
+                  }
+                });
+              }
             }
           }
         }
