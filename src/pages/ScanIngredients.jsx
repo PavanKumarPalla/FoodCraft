@@ -267,62 +267,66 @@ export default function ScanIngredients() {
           if (s < 0.15 && v >= 0.18 && v <= 0.88) return null; // neutral gray walls/plastic
           if (isHumanSkin(arrMeanR, arrMeanG, arrMeanB, h, s, v)) return null; // hand/fingers
 
-          // Sliced Kiwi: bright green flesh WITH dark seeds in the region
-          if (h >= 75 && h <= 130 && s >= 0.35 && (seedRatio > 0.02 || (hintCls === 'apple' && seedRatio > 0.008))) {
-            return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_sliced', rawConf: 0.96 };
+          // 1. Sliced Kiwi: warm golden lime-green flesh WITH dark seed spots
+          if (h >= 52 && h <= 110 && s >= 0.30 && v >= 0.22) {
+            if ((h <= 68 && (arrMeanR - arrMeanG >= -8) && seedRatio > 0.020) || (hintCls === 'apple' && seedRatio > 0.015) || (hintCls === 'bowl' && seedRatio > 0.015)) {
+              return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_sliced', rawConf: 0.96 };
+            }
           }
 
-          // True Red: Tomato / Cherry Tomatoes / Pomegranate / Strawberries
+          // 2. Whole Kiwi: Earthy fuzzy brown skin (Hue: 20-46 deg, R - G < 68, blue >= 20)
+          if (h >= 20 && h <= 46 && s >= 0.25 && s <= 0.85 && v >= 0.25 && v <= 0.88) {
+            if (hintCls === 'apple' || hintCls === 'orange' || ((arrMeanR - arrMeanG) < 68 && arrMeanB >= 20 && seedRatio < 0.01)) {
+              return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#f59e0b', conf: '95%', type: 'kiwi_whole', rawConf: 0.95 };
+            }
+          }
+
+          // 3. True Red: Tomato / Cherry Tomatoes / Pomegranate / Strawberries
           if ((h >= 346 || h <= 14) && s >= 0.38 && v >= 0.25) {
             return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
           }
 
-          // Carrot: Intense, highly-saturated neon orange
-          if (h >= 15 && h <= 38 && s >= 0.52 && v >= 0.40) {
+          // 4. Carrot: Intense neon orange (R >> G, R - G >= 65, b < 60)
+          if (h >= 15 && h <= 38 && s >= 0.52 && v >= 0.40 && ((arrMeanR - arrMeanG) >= 65) && arrMeanB < 60) {
             return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
           }
 
-          // Sweet Corn: Bright golden yellow
-          if (h >= 41 && h <= 66 && s >= 0.38 && v >= 0.45) {
+          // 5. Sweet Corn: Bright golden yellow (H: 40-56 deg, R - G >= 20, seedRatio < 0.01)
+          if (h >= 40 && h <= 56 && s >= 0.38 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 20) && seedRatio < 0.01) {
             return { name: 'Sweet Corn', ingredient: 'Corn', color: '#eab308', conf: '96%', type: 'corn', rawConf: 0.96 };
           }
 
-          // Banana: Yellow produce or COCO hint
+          // 6. Banana: Yellow produce or COCO hint
           if (h >= 40 && h <= 66 && s >= 0.35 && hintCls === 'banana') {
             return { name: 'Banana', ingredient: 'Banana', color: '#facc15', conf: '96%', type: 'banana', rawConf: 0.96 };
           }
 
-          // Citrus / Orange: Warm orange
-          if (h >= 18 && h <= 44 && s >= 0.42 && v >= 0.45) {
+          // 7. Citrus / Orange: Warm orange
+          if (h >= 18 && h <= 44 && s >= 0.42 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 50)) {
             return { name: 'Citrus / Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
           }
 
-          // Lime / Lemon: Yellow-Green
-          if (h >= 65 && h <= 88 && s >= 0.30 && v >= 0.28) {
+          // 8. Lime / Lemon: Yellow-Green (H: 55-88 deg)
+          if (h >= 55 && h <= 88 && s >= 0.25 && v >= 0.25) {
             return { name: 'Lime / Lemon', ingredient: 'Lemon', color: '#84cc16', conf: '94%', type: 'lime', rawConf: 0.94 };
           }
 
-          // Green Beans / Peas: Fresh Green
+          // 9. Green Beans / Peas: Fresh Green
           if (h >= 89 && h <= 155 && s >= 0.24 && v >= 0.20) {
             return { name: 'Green Beans', ingredient: 'Beans', color: '#10b981', conf: '94%', type: 'beans', rawConf: 0.94 };
           }
 
-          // Whole Kiwi: Earthy fuzzy brown (often detected by COCO as orange/apple)
-          if (h >= 20 && h <= 45 && s >= 0.22 && s <= 0.55 && v >= 0.25 && v <= 0.60 && (hintCls === 'apple' || hintCls === 'orange')) {
-            return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#f59e0b', conf: '95%', type: 'kiwi_whole', rawConf: 0.95 };
-          }
-
-          // Purple / Violet: Berries / Grapes / Red Onion
+          // 10. Purple / Violet: Berries / Grapes / Red Onion
           if (h >= 260 && h <= 342 && s >= 0.20 && v >= 0.20) {
             return { name: 'Berries / Grapes', ingredient: 'Berries', color: '#a855f7', conf: '93%', type: 'berries', rawConf: 0.93 };
           }
 
-          // Potato: Warm earthy tan / brown (moderate saturation, NOT neon orange like carrots)
+          // 11. Potato: Warm earthy tan / brown (moderate saturation, NOT neon orange like carrots)
           if (h >= 20 && h <= 48 && s >= 0.18 && s <= 0.48 && v >= 0.30 && v <= 0.80) {
             return { name: 'Potato', ingredient: 'Potato', color: '#d97706', conf: '95%', type: 'potato', rawConf: 0.95 };
           }
 
-          // Leafy Greens / Spinach / Lettuce: Broad vibrant green
+          // 12. Leafy Greens / Spinach / Lettuce: Broad vibrant green
           if (h >= 75 && h <= 155 && s >= 0.25 && v >= 0.20) {
             return { name: 'Leafy Greens', ingredient: 'Spinach', color: '#10b981', conf: '92%', type: 'greens', rawConf: 0.92 };
           }
@@ -399,10 +403,26 @@ export default function ScanIngredients() {
                 selArea > 0 ? interArea / selArea : 0
               );
 
-              // Same ingredient nearby = duplicate
+              const sameExactLabel = cand.name === sel.name;
               const sameIngredient = cand.ingredient === sel.ingredient;
+              const isWholeAndSlicedPair = 
+                (cand.name.includes('Whole') && sel.name.includes('Sliced')) ||
+                (cand.name.includes('Sliced') && sel.name.includes('Whole'));
 
-              if (iou > iouThreshold || containment > 0.55 || (sameIngredient && dist < 22) || dist < distThreshold) {
+              // 1. Same exact produce label duplicate nearby
+              if (sameExactLabel && (iou > 0.20 || containment > 0.45 || dist < 20)) {
+                dominated = true;
+                break;
+              }
+
+              // 2. Physical geometric overlap / containment
+              if (iou > iouThreshold || containment > 0.55 || dist < distThreshold) {
+                dominated = true;
+                break;
+              }
+
+              // 3. Same parent ingredient nearby (unless it's a distinct Whole & Sliced Kiwi pair)
+              if (sameIngredient && !isWholeAndSlicedPair && dist < 22) {
                 dominated = true;
                 break;
               }
@@ -560,9 +580,15 @@ export default function ScanIngredients() {
                   const nr = currR + dr;
                   const nc = currC + dc;
                   if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols && !visited[nr][nc]) {
-                    if (cellGrid[nr][nc] && cellGrid[nr][nc].type === targetType) {
-                      visited[nr][nc] = true;
-                      queue.push([nr, nc]);
+                    const neighbor = cellGrid[nr][nc];
+                    if (neighbor) {
+                      const canConnect = (neighbor.type === targetType) ||
+                        (targetType === 'kiwi_sliced' && neighbor.type === 'lime') ||
+                        (targetType === 'lime' && neighbor.type === 'kiwi_sliced');
+                      if (canConnect) {
+                        visited[nr][nc] = true;
+                        queue.push([nr, nc]);
+                      }
                     }
                   }
                 }
@@ -579,12 +605,16 @@ export default function ScanIngredients() {
                 const bw = (maxC - minC + 1) * cellW;
                 const bh = (maxR - minR + 1) * cellH;
 
+                // Re-evaluate produce region with whole cluster bounds
+                const refined = classifyProduceRegion(bx, by, bw, bh);
+                const finalProduce = refined || info;
+
                 rawCandidateBoxes.push({
-                  name: info.name,
-                  ingredient: info.ingredient,
-                  confidence: info.conf,
-                  rawConf: (info.rawConf || 0.95) * 0.90,
-                  color: info.color,
+                  name: finalProduce.name,
+                  ingredient: finalProduce.ingredient,
+                  confidence: finalProduce.conf,
+                  rawConf: (finalProduce.rawConf || 0.95) * 0.90,
+                  color: finalProduce.color,
                   box: {
                     x: Math.round((bx / naturalW) * 100),
                     y: Math.round((by / naturalH) * 100),
