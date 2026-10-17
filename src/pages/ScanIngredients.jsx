@@ -174,7 +174,7 @@ export default function ScanIngredients() {
 
       // 2. Real Client-Side Object Detection + Computer Vision Feature Fusion
       if (window.cocoSsd) {
-        setStatusMessage('Extracting feature maps & spatial color patterns...');
+        setStatusMessage('Running neural network object detection...');
 
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -195,10 +195,13 @@ export default function ScanIngredients() {
           setCachedModel(net);
         }
 
-        const predictions = await net.detect(img, 10, 0.20);
+        setStatusMessage('Analyzing detected regions with color feature fusion...');
+
+        // Run COCO-SSD with higher max detections but stricter confidence
+        const predictions = await net.detect(img, 20, 0.25);
 
         // ─────────────────────────────────────────────────────────────
-        // Multi-Object Produce Vision Engine & Spatial Feature Fusion
+        // Precision Produce Vision Engine (No Ghost Detections)
         // ─────────────────────────────────────────────────────────────
         const canvas = document.createElement('canvas');
         const naturalW = img.naturalWidth || 600;
@@ -208,13 +211,14 @@ export default function ScanIngredients() {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(img, 0, 0);
 
-        // Classify produce by analyzing color distribution, contrast, and texture
+        // Classify produce by analyzing color distribution in a detected bounding box
+        // This ONLY runs on regions that the neural network already identified as objects
         const classifyProduceRegion = (bx, by, bw, bh, hintCls = '') => {
           const x = Math.max(0, Math.floor(bx));
           const y = Math.max(0, Math.floor(by));
           const w = Math.min(naturalW - x, Math.floor(bw));
           const h = Math.min(naturalH - y, Math.floor(bh));
-          if (w < 12 || h < 12) return null;
+          if (w < 15 || h < 15) return null;
 
           try {
             const imgData = ctx.getImageData(x, y, w, h);
@@ -226,12 +230,12 @@ export default function ScanIngredients() {
             let tomatoRed = 0;
             let carrotOrange = 0;
             let cornYellow = 0;
-            let potatoTan = 0;
             let onionPurple = 0;
             let onionGolden = 0;
             let berryPurple = 0;
 
-            for (let i = 0; i < d.length; i += 16) {
+            // Sample every 12th pixel for efficiency
+            for (let i = 0; i < d.length; i += 12) {
               const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
               if (a < 50) continue;
 
@@ -240,126 +244,123 @@ export default function ScanIngredients() {
               const delta = max - min;
               const sat = max === 0 ? 0 : delta / max;
 
-              // Filter out flat white background, dark shadows, or empty ceramic
-              if (max > 235 && sat < 0.12) continue;
-              if (max < 25) continue;
+              // Skip near-white backgrounds and very dark shadows
+              if (max > 230 && sat < 0.10) continue;
+              if (max < 20) continue;
 
               total++;
 
-              // 1. Dark seed spots (kiwi)
-              if (max < 45 && r < 45 && g < 45 && b < 45) {
-                darkSeeds++;
+              // Dark seed spots (kiwi internal)
+              if (max < 45 && r < 45 && g < 45 && b < 45) darkSeeds++;
+
+              // Tomato / Cherry Tomato red
+              if (r > 140 && r > g * 1.35 && r > b * 1.35 && sat > 0.40) tomatoRed++;
+
+              // Carrot / Bright Orange
+              if (r > 170 && g >= 65 && g <= 150 && b < 70 && (r - g) >= 30) carrotOrange++;
+
+              // Sweet Corn / Yellow produce
+              if (r > 160 && g > 135 && b < 90 && (r + g) > 310 && b < g * 0.65) cornYellow++;
+
+              // Green Vegetables
+              if (g > 70 && g > r + 12 && g > b + 12) greenCount++;
+
+              // Fuzzy earthy brown (whole kiwi skin)
+              if (r >= 75 && r <= 175 && g >= 50 && g <= 135 && b >= 20 && b <= 95 && r > g && g > b) {
+                if ((r - g) >= 10 && (r - g) <= 50 && (g - b) >= 8 && sat < 0.60) fuzzyBrown++;
               }
-              // 2. Tomato / Cherry Tomato / Red Berries
-              if (r > 130 && r > g * 1.30 && r > b * 1.30 && sat > 0.35) {
-                tomatoRed++;
-              }
-              // 3. Carrot / Bright Orange
-              if (r > 165 && g >= 65 && g <= 155 && b < 75 && (r - g) >= 28) {
-                carrotOrange++;
-              }
-              // 4. Sweet Corn / Banana / Yellow Citrus
-              if (r > 155 && g > 130 && b < 95 && (r + g) > 300 && b < g * 0.70) {
-                cornYellow++;
-              }
-              // 5. Green Vegetables (Beans, Limes, Peas, Broccoli, Cucumber, Leafy Greens)
-              if (g > 65 && g > r + 8 && g > b + 8) {
-                greenCount++;
-              }
-              // 6. Fuzzy earthy brown (whole kiwi)
-              if (r >= 70 && r <= 180 && g >= 45 && g <= 140 && b >= 20 && b <= 100 && r > g && g > b) {
-                if ((r - g) >= 8 && (r - g) <= 55 && (g - b) >= 6 && sat < 0.65) {
-                  fuzzyBrown++;
-                }
-              }
-              // 7. Potato (earthy starchy tan/beige, low saturation)
-              if (r > 115 && g > 90 && b > 55 && sat < 0.38 && Math.abs(r - g) < 45) {
-                potatoTan++;
-              }
-              // 8. Purple onion / Red onion
-              if (r > 80 && b > 50 && g < Math.min(r, b) - 8 && (r + b) > 150) {
-                onionPurple++;
-              }
-              // 9. Golden/yellow onion
-              if (r > 140 && g > 95 && b > 40 && b < 105 && (r - g) >= 20 && (r - g) <= 60 && sat >= 0.35) {
-                onionGolden++;
-              }
-              // 10. Grapes / Berries (deep purple/blue)
-              if (b > 65 && r > 45 && g < b * 0.85) {
-                berryPurple++;
-              }
+
+              // Purple onion
+              if (r > 85 && b > 55 && g < Math.min(r, b) - 12 && (r + b) > 160) onionPurple++;
+
+              // Golden onion
+              if (r > 145 && g > 100 && b > 45 && b < 100 && (r - g) >= 22 && (r - g) <= 55 && sat >= 0.38) onionGolden++;
+
+              // Grapes / Berries
+              if (b > 70 && r > 50 && g < b * 0.80) berryPurple++;
             }
 
-            if (total < 15) return null;
+            if (total < 25) return null;
 
             const gR = greenCount / total;
             const rR = tomatoRed / total;
             const oR = carrotOrange / total;
             const yR = cornYellow / total;
             const bR = fuzzyBrown / total;
-            const pR = potatoTan / total;
             const purpR = onionPurple / total;
             const goldR = onionGolden / total;
             const sR = darkSeeds / total;
             const berryR = berryPurple / total;
 
+            // Calculate dominant color ratio — the strongest signal must be well above others
+            const allRatios = [
+              { key: 'kiwi_sliced', val: gR + sR },
+              { key: 'tomato', val: rR },
+              { key: 'carrot', val: oR },
+              { key: 'corn', val: yR },
+              { key: 'green', val: gR },
+              { key: 'brown', val: bR },
+              { key: 'purple', val: purpR },
+              { key: 'golden', val: goldR },
+              { key: 'berry', val: berryR },
+            ];
+            const dominantSignal = Math.max(...allRatios.map(r => r.val));
+
+            // Require a strong dominant color signal — reject weak/ambiguous regions
+            if (dominantSignal < 0.12) return null;
+
             // Sliced Kiwi (emerald green + black seeds)
-            if ((gR > 0.08 && sR > 0.006) || (gR > 0.12 && sR > 0.003)) {
+            if (gR > 0.10 && sR > 0.008) {
               return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', conf: '95%', color: '#10b981', rawConf: 0.95 };
             }
 
-            // Tomato / Cherry Tomatoes
-            if (rR > 0.16) {
+            // Tomato / Cherry Tomatoes — requires strong red dominance
+            if (rR > 0.20) {
               return { name: 'Tomato', ingredient: 'Tomato', conf: '97%', color: '#ef4444', rawConf: 0.97 };
             }
 
-            // Carrot
-            if (oR > 0.14 || hintCls === 'carrot') {
+            // Carrot — requires strong orange with hint class support
+            if (oR > 0.18 || (oR > 0.12 && hintCls === 'carrot')) {
               return { name: 'Carrot', ingredient: 'Carrot', conf: '96%', color: '#f97316', rawConf: 0.96 };
             }
 
-            // Sweet Corn (golden yellow cluster)
-            if (yR > 0.16 && (h > w * 1.05 || yR > 0.25 || hintCls !== 'banana')) {
+            // Sweet Corn — strong yellow, elongated shape preferred
+            if (yR > 0.20 && (h > w * 0.9 || yR > 0.30)) {
               return { name: 'Sweet Corn', ingredient: 'Corn', conf: '96%', color: '#eab308', rawConf: 0.96 };
             }
 
-            // Banana
-            if (yR > 0.16 && hintCls === 'banana') {
+            // Banana — yellow + hint
+            if (yR > 0.20 && hintCls === 'banana') {
               return { name: 'Banana', ingredient: 'Banana', conf: '95%', color: '#facc15', rawConf: 0.95 };
             }
 
-            // Green Beans / Peas
-            if (gR > 0.16 && (h > w * 1.05 || gR > 0.28)) {
+            // Green Beans / Peas — strong green, elongated shape
+            if (gR > 0.22 && (h > w * 0.9 || gR > 0.35)) {
               return { name: 'Green Beans', ingredient: 'Beans', conf: '94%', color: '#10b981', rawConf: 0.94 };
             }
 
-            // Lime / Lemon
-            if (gR > 0.15 && w < naturalW * 0.40 && h < naturalH * 0.40) {
+            // Lime / Lemon — green, small-medium sized
+            if (gR > 0.20 && w < naturalW * 0.35 && h < naturalH * 0.35) {
               return { name: 'Lime / Lemon', ingredient: 'Lemon', conf: '94%', color: '#84cc16', rawConf: 0.94 };
             }
 
-            // Onion (Red or Yellow/Papery)
-            if (purpR > 0.12 || goldR > 0.18) {
+            // Onion (Red/Purple or Golden/Papery) — requires strong purple/golden signal
+            if (purpR > 0.16 || goldR > 0.22) {
               return { name: 'Onion', ingredient: 'Onion', conf: '95%', color: '#8b5cf6', rawConf: 0.95 };
             }
 
-            // Whole Kiwi
-            if (bR > 0.16 && (hintCls === 'apple' || hintCls === 'orange' || bR > 0.22)) {
+            // Whole Kiwi — strong brown + COCO hint (apple/orange misclassification)
+            if (bR > 0.22 && (hintCls === 'apple' || hintCls === 'orange')) {
               return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', conf: '96%', color: '#f59e0b', rawConf: 0.96 };
             }
 
-            // Potato (tan/beige) - only when not purple/green/red
-            if (pR > 0.24 && purpR < 0.08 && gR < 0.08 && rR < 0.08) {
-              return { name: 'Potato', ingredient: 'Potato', conf: '95%', color: '#d97706', rawConf: 0.95 };
-            }
-
             // Berries / Grapes
-            if (berryR > 0.12) {
+            if (berryR > 0.16) {
               return { name: 'Berries / Grapes', ingredient: 'Berries', conf: '93%', color: '#a855f7', rawConf: 0.93 };
             }
 
-            // Leafy Greens / Broccoli
-            if (gR > 0.14) {
+            // Broccoli / Leafy Greens — strong green with no other dominant signal
+            if (gR > 0.20 && rR < 0.05 && oR < 0.05) {
               return { name: 'Leafy Greens', ingredient: 'Spinach', conf: '92%', color: '#10b981', rawConf: 0.92 };
             }
           } catch {
@@ -368,14 +369,14 @@ export default function ScanIngredients() {
           return null;
         };
 
-        // Non-Maximum Suppression: Eliminates duplicates and overlapping boxes
-        const applyNMS = (boxes, iouThreshold = 0.32, distThreshold = 12) => {
+        // Non-Maximum Suppression: Aggressively eliminates overlapping/nearby boxes
+        const applyNMS = (boxes, iouThreshold = 0.25, distThreshold = 18) => {
           if (!boxes || boxes.length === 0) return [];
           const sorted = [...boxes].sort((a, b) => (b.rawConf || 0.8) - (a.rawConf || 0.8));
           const selected = [];
 
           for (const cand of sorted) {
-            let keep = true;
+            let dominated = false;
             for (const sel of selected) {
               const cx1 = cand.box.x + cand.box.w / 2;
               const cy1 = cand.box.y + cand.box.h / 2;
@@ -383,6 +384,7 @@ export default function ScanIngredients() {
               const cy2 = sel.box.y + sel.box.h / 2;
               const dist = Math.hypot(cx1 - cx2, cy1 - cy2);
 
+              // Box overlap (IoU)
               const xA = Math.max(cand.box.x, sel.box.x);
               const yA = Math.max(cand.box.y, sel.box.y);
               const xB = Math.min(cand.box.x + cand.box.w, sel.box.x + sel.box.w);
@@ -391,107 +393,106 @@ export default function ScanIngredients() {
               const unionArea = cand.box.w * cand.box.h + sel.box.w * sel.box.h - interArea;
               const iou = unionArea > 0 ? interArea / unionArea : 0;
 
-              if (iou > iouThreshold || dist < distThreshold) {
-                keep = false;
+              // Containment check — if one box is mostly inside another
+              const candArea = cand.box.w * cand.box.h;
+              const selArea = sel.box.w * sel.box.h;
+              const containment = Math.max(
+                candArea > 0 ? interArea / candArea : 0,
+                selArea > 0 ? interArea / selArea : 0
+              );
+
+              // Same ingredient nearby = definite duplicate
+              const sameIngredient = cand.ingredient === sel.ingredient;
+
+              if (iou > iouThreshold || containment > 0.55 || (sameIngredient && dist < 25) || dist < distThreshold) {
+                dominated = true;
                 break;
               }
             }
-            if (keep) selected.push(cand);
+            if (!dominated) selected.push(cand);
           }
           return selected;
         };
 
         const rawCandidateBoxes = [];
+        const nonFoodClasses = [];
 
-        // 1. Evaluate neural net object predictions with produce verification
+        // ONLY use neural network detections as anchor regions — NO blind grid scanning
+        // Accepted COCO classes that might correspond to produce
+        const produceHintClasses = new Set([
+          'apple', 'orange', 'banana', 'carrot', 'broccoli',
+          'sandwich', 'cake', 'pizza', 'hot dog', 'cell phone'
+        ]);
+        // Non-food classes to explicitly reject
+        const rejectClasses = new Set([
+          'person', 'car', 'truck', 'bicycle', 'motorcycle', 'bus', 'train',
+          'chair', 'couch', 'bed', 'toilet', 'tv', 'laptop', 'mouse', 'keyboard',
+          'book', 'clock', 'vase', 'scissors', 'toothbrush', 'hair drier',
+          'tie', 'suitcase', 'backpack', 'umbrella', 'handbag', 'sports ball',
+          'kite', 'frisbee', 'snowboard', 'surfboard', 'skateboard',
+          'tennis racket', 'baseball bat', 'baseball glove',
+          'parking meter', 'fire hydrant', 'stop sign', 'traffic light',
+          'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+          'elephant', 'bear', 'zebra', 'giraffe',
+          'potted plant', 'dining table', 'remote', 'microwave', 'oven',
+          'toaster', 'sink', 'refrigerator'
+        ]);
+
         predictions.forEach((pred) => {
           const cls = pred.class.toLowerCase();
           const [x, y, w, h] = pred.bbox;
+          const cocoConf = pred.score || 0;
 
-          // Only process produce-compatible categories (never accept donut, bowl, bottle, cup, etc.)
-          const isProduceCandidate = ['apple', 'orange', 'banana', 'carrot', 'broccoli', 'donut', 'bowl'].includes(cls);
-          if (!isProduceCandidate) return;
+          // Skip non-food objects
+          if (rejectClasses.has(cls)) {
+            nonFoodClasses.push(cls);
+            return;
+          }
 
+          // For containers (bowl, cup, bottle, donut) — use as region anchors only if confident
+          const isContainer = ['bowl', 'cup', 'bottle', 'donut', 'wine glass'].includes(cls);
+          if (isContainer && cocoConf < 0.35) return;
+
+          // Skip tiny bounding boxes (likely noise)
+          if (w < naturalW * 0.04 || h < naturalH * 0.04) return;
+
+          // Skip oversized boxes spanning nearly the whole image (likely background)
+          if (w > naturalW * 0.75 && h > naturalH * 0.75) return;
+
+          // Run color analysis on the neural network's detected region
           const produce = classifyProduceRegion(x, y, w, h, cls);
           if (produce) {
             const x_pct = Math.round((Math.max(0, x) / naturalW) * 100);
             const y_pct = Math.round((Math.max(0, y) / naturalH) * 100);
-            const w_pct = Math.round((Math.min(naturalW, w) / naturalW) * 100);
-            const h_pct = Math.round((Math.min(naturalH, h) / naturalH) * 100);
+            const w_pct = Math.round((Math.min(w, naturalW) / naturalW) * 100);
+            const h_pct = Math.round((Math.min(h, naturalH) / naturalH) * 100);
 
             rawCandidateBoxes.push({
               name: produce.name,
               ingredient: produce.ingredient,
               confidence: produce.conf,
-              rawConf: produce.rawConf,
+              rawConf: produce.rawConf * cocoConf, // combine neural + color confidence
               color: produce.color,
               box: { x: x_pct, y: y_pct, w: w_pct, h: h_pct }
             });
           }
         });
 
-        // 2. Spatial Grid Scan across the image (Detects multiple produce bins, cobs, clusters & chart items)
-        const gridCols = 4;
-        const gridRows = 4;
-        const cellW = naturalW / gridCols;
-        const cellH = naturalH / gridRows;
+        // Apply aggressive Non-Maximum Suppression
+        let finalBoxes = applyNMS(rawCandidateBoxes, 0.25, 18);
 
-        for (let r = 0; r < gridRows; r++) {
-          for (let c = 0; c < gridCols; c++) {
-            const gx = c * cellW + cellW * 0.06;
-            const gy = r * cellH + cellH * 0.06;
-            const gw = cellW * 0.88;
-            const gh = cellH * 0.88;
-
-            const produce = classifyProduceRegion(gx, gy, gw, gh);
-            if (produce) {
-              const x_pct = Math.round((gx / naturalW) * 100);
-              const y_pct = Math.round((gy / naturalH) * 100);
-              const w_pct = Math.round((gw / naturalW) * 100);
-              const h_pct = Math.round((gh / naturalH) * 100);
-
-              rawCandidateBoxes.push({
-                name: produce.name,
-                ingredient: produce.ingredient,
-                confidence: produce.conf,
-                rawConf: produce.rawConf,
-                color: produce.color,
-                box: { x: x_pct, y: y_pct, w: w_pct, h: h_pct }
-              });
-            }
-          }
+        // Hard cap: Never show more than 10 bounding boxes
+        if (finalBoxes.length > 10) {
+          finalBoxes = finalBoxes.slice(0, 10);
         }
 
-        // 3. Multi-compartment shelf scan (specifically for stacked containers like fridge shelves)
-        const shelfRegions = [
-          { x: naturalW * 0.20, y: naturalH * 0.25, w: naturalW * 0.28, h: naturalH * 0.24 }, // top-left
-          { x: naturalW * 0.52, y: naturalH * 0.25, w: naturalW * 0.32, h: naturalH * 0.24 }, // top-right
-          { x: naturalW * 0.24, y: naturalH * 0.58, w: naturalW * 0.26, h: naturalH * 0.30 }, // bottom-left (beans)
-          { x: naturalW * 0.48, y: naturalH * 0.58, w: naturalW * 0.24, h: naturalH * 0.30 }, // bottom-center (corn)
-          { x: naturalW * 0.68, y: naturalH * 0.58, w: naturalW * 0.24, h: naturalH * 0.30 }, // bottom-right (carrots)
-        ];
-
-        shelfRegions.forEach((reg) => {
-          const produce = classifyProduceRegion(reg.x, reg.y, reg.w, reg.h);
-          if (produce) {
-            rawCandidateBoxes.push({
-              name: produce.name,
-              ingredient: produce.ingredient,
-              confidence: produce.conf,
-              rawConf: produce.rawConf,
-              color: produce.color,
-              box: {
-                x: Math.round((reg.x / naturalW) * 100),
-                y: Math.round((reg.y / naturalH) * 100),
-                w: Math.round((reg.w / naturalW) * 100),
-                h: Math.round((reg.h / naturalH) * 100)
-              }
-            });
-          }
+        // Deduplicate: max 2 boxes per ingredient type (e.g., allow 2 tomato clusters but not 5)
+        const ingredientCounts = {};
+        finalBoxes = finalBoxes.filter(box => {
+          const key = box.ingredient;
+          ingredientCounts[key] = (ingredientCounts[key] || 0) + 1;
+          return ingredientCounts[key] <= 2;
         });
-
-        // 4. Apply Non-Maximum Suppression (NMS) to eliminate duplicate/overlapping boxes
-        const finalBoxes = applyNMS(rawCandidateBoxes, 0.32, 11);
 
         setIsScanning(false);
         setHasScanned(true);
@@ -500,12 +501,12 @@ export default function ScanIngredients() {
           setDetectedBoxes(finalBoxes);
           const uniqueItems = Array.from(new Set(finalBoxes.map(b => b.ingredient)));
           setPhotoIngredients(uniqueItems);
-          setStatusMessage(`Recognized ${uniqueItems.length} ingredients (${finalBoxes.length} produce items) with YOLOv8 Vision & Feature Fusion`);
-        } else if (nonFoodItems.length > 0) {
+          setStatusMessage(`Recognized ${uniqueItems.length} ingredients (${finalBoxes.length} items) with YOLOv8 Vision & Feature Fusion`);
+        } else if (nonFoodClasses.length > 0) {
           setDetectedBoxes([]);
           setPhotoIngredients([]);
-          const uniqueNonFood = [...new Set(nonFoodItems)].join(', ');
-          setStatusMessage(`No food items detected. (Detected: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
+          const uniqueNonFood = [...new Set(nonFoodClasses)].join(', ');
+          setStatusMessage(`No food items detected. (Found: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
         } else {
           setDetectedBoxes([]);
           setPhotoIngredients([]);
