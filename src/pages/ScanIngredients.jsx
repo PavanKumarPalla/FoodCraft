@@ -1,9 +1,9 @@
 // src/pages/ScanIngredients.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, Upload, Plus, X, CheckCircle2, 
-  Cpu, ArrowRight, RefreshCw, AlertCircle, Sparkles
+  Cpu, ArrowRight, RefreshCw, AlertCircle, Sparkles, SwitchCamera
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import { matchRecipeIngredients } from '../utils/ingredientMatcher';
@@ -28,6 +28,15 @@ export default function ScanIngredients() {
   const [sampleImage, setSampleImage] = useState(
     'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=1000&q=80'
   );
+
+  // Live Camera State & Refs
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState('environment'); // 'environment' (back) | 'user' (front)
+  const [cameraError, setCameraError] = useState(null);
+  const [isShutterFlashing, setIsShutterFlashing] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const nativeCameraInputRef = useRef(null);
 
   // Distinct states for Manual Text ingredients vs Photo Detected ingredients
   const [textIngredients, setTextIngredients] = useState(() => {
@@ -639,6 +648,122 @@ export default function ScanIngredients() {
     }
   };
 
+  // ── Live Camera Handlers ───────────────────────────────────────
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        try { track.stop(); } catch {}
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const startCamera = async (facing = cameraFacingMode) => {
+    setCameraError(null);
+    stopCamera();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Camera access requires HTTPS or is not supported by your browser. Tap below to capture with your device camera.');
+      return;
+    }
+
+    try {
+      const constraints = {
+        video: {
+          facingMode: facing,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      setCameraFacingMode(facing);
+      setIsCameraActive(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch {}
+      }
+    } catch (err) {
+      console.warn('Camera access error:', err);
+      setIsCameraActive(false);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera permission was denied. Please allow camera permissions in your browser or tap below to capture with your device camera.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setCameraError('No camera found on this device. You can upload an existing food photo instead.');
+      } else {
+        setCameraError(`Could not start camera: ${err.message || 'Unknown error'}. You can capture via device camera below.`);
+      }
+    }
+  };
+
+  const switchCamera = () => {
+    const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    startCamera(nextFacing);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    // Trigger visual flash
+    setIsShutterFlashing(true);
+    setTimeout(() => setIsShutterFlashing(false), 220);
+
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = video.videoWidth;
+    snapCanvas.height = video.videoHeight;
+    const sCtx = snapCanvas.getContext('2d');
+    sCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+
+    const capturedBase64 = snapCanvas.toDataURL('image/jpeg', 0.92);
+
+    // Stop camera stream
+    stopCamera();
+
+    // Set sample image and trigger AI detection immediately
+    setSampleImage(capturedBase64);
+    setPhotoIngredients([]);
+    setDetectedBoxes([]);
+    setHasScanned(false);
+    runYoloDetection(capturedBase64);
+  };
+
+  // Re-attach video stream whenever isCameraActive becomes true
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(e => console.warn('Video play error:', e));
+    }
+  }, [isCameraActive]);
+
+  // Clean up media tracks when unmounting
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          try { track.stop(); } catch {}
+        });
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Stop camera if user switches away from image tab
+  useEffect(() => {
+    if (activeTab !== 'image' && isCameraActive) {
+      stopCamera();
+    }
+  }, [activeTab, isCameraActive]);
+
   // Active ingredients list depending on current tab
   const activeIngredientsList = activeTab === 'text' ? textIngredients : photoIngredients;
 
@@ -728,54 +853,149 @@ export default function ScanIngredients() {
         <div className="scan-interactive-col">
           {activeTab === 'image' ? (
             <div className="image-scan-card glass-panel">
-              {/* Photo Preview & Bounding Box Overlay */}
-              <div className="image-viewport-container">
-                <div className="image-stage-wrapper">
-                  <img 
-                    src={sampleImage} 
-                    alt="Food Groceries" 
-                    className={`viewport-image ${isScanning ? 'blur-scan' : ''}`} 
-                  />
-
-                  {/* Laser Scanning Line Animation */}
-                  {isScanning && (
-                    <div className="scanner-laser-line">
-                      <div className="laser-beam"></div>
-                    </div>
-                  )}
-
-                  {/* Real YOLOv8 Detected Bounding Boxes */}
-                  {hasScanned && !isScanning && detectedBoxes.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="yolo-bounding-box"
-                      style={{
-                        left: `${item.box.x}%`,
-                        top: `${item.box.y}%`,
-                        width: `${item.box.w}%`,
-                        height: `${item.box.h}%`,
-                        borderColor: item.color || '#10b981',
-                        '--box-color': item.color || '#10b981'
-                      }}
+              {/* Camera Error / Permission Notice */}
+              {cameraError && (
+                <div className="camera-error-banner animate-fade-in">
+                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>Camera Unavailable</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{cameraError}</div>
+                    <button
+                      type="button"
+                      className="camera-fallback-btn"
+                      onClick={() => nativeCameraInputRef.current?.click()}
                     >
-                      <span 
-                        className="yolo-box-label"
-                        style={{ 
+                      <Camera size={14} />
+                      <span>Use Device Camera App</span>
+                    </button>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="camera-error-close"
+                    onClick={() => setCameraError(null)}
+                    title="Dismiss"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
+              {/* Photo Preview & Bounding Box Overlay OR Live Camera Viewfinder */}
+              <div className="image-viewport-container">
+                {isCameraActive ? (
+                  <div className="camera-viewfinder-wrapper animate-fade-in">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="camera-live-feed"
+                    />
+
+                    {/* Shutter flash animation */}
+                    {isShutterFlashing && <div className="camera-flash-overlay"></div>}
+
+                    {/* Autofocus framing guides */}
+                    <div className="viewfinder-frame">
+                      <span className="corner top-left"></span>
+                      <span className="corner top-right"></span>
+                      <span className="corner bottom-left"></span>
+                      <span className="corner bottom-right"></span>
+                      <div className="viewfinder-center-reticle">
+                        <span>Align food ingredients in frame</span>
+                      </div>
+                    </div>
+
+                    {/* Top camera controls */}
+                    <div className="camera-top-bar">
+                      <div className="camera-live-badge">
+                        <span className="camera-dot"></span>
+                        <span>LIVE CAMERA</span>
+                      </div>
+                      <div className="camera-top-actions">
+                        <button
+                          type="button"
+                          className="camera-ctrl-btn"
+                          onClick={switchCamera}
+                          title="Switch Camera (Front/Back)"
+                        >
+                          <SwitchCamera size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          className="camera-ctrl-btn close-btn"
+                          onClick={stopCamera}
+                          title="Close Camera"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bottom shutter controls */}
+                    <div className="camera-bottom-bar">
+                      <button
+                        type="button"
+                        className="camera-shutter-btn"
+                        onClick={capturePhoto}
+                        id="capture-live-photo-btn"
+                        title="Take Picture & Detect Ingredients"
+                      >
+                        <div className="shutter-inner">
+                          <Camera size={26} />
+                        </div>
+                      </button>
+                      <span className="shutter-hint">Tap to Snap Photo & Detect</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="image-stage-wrapper">
+                    <img 
+                      src={sampleImage} 
+                      alt="Food Groceries" 
+                      className={`viewport-image ${isScanning ? 'blur-scan' : ''}`} 
+                    />
+
+                    {/* Laser Scanning Line Animation */}
+                    {isScanning && (
+                      <div className="scanner-laser-line">
+                        <div className="laser-beam"></div>
+                      </div>
+                    )}
+
+                    {/* Real YOLOv8 Detected Bounding Boxes */}
+                    {hasScanned && !isScanning && detectedBoxes.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="yolo-bounding-box"
+                        style={{
+                          left: `${item.box.x}%`,
+                          top: `${item.box.y}%`,
+                          width: `${item.box.w}%`,
+                          height: `${item.box.h}%`,
+                          borderColor: item.color || '#10b981',
                           '--box-color': item.color || '#10b981'
                         }}
                       >
-                        <span style={{
-                          display: 'inline-block',
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          backgroundColor: item.color || '#10b981'
-                        }}></span>
-                        {item.name} ({item.confidence})
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                        <span 
+                          className="yolo-box-label"
+                          style={{ 
+                            '--box-color': item.color || '#10b981'
+                          }}
+                        >
+                          <span style={{
+                            display: 'inline-block',
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            backgroundColor: item.color || '#10b981'
+                          }}></span>
+                          {item.name} ({item.confidence})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Status & Feedback */}
@@ -803,11 +1023,22 @@ export default function ScanIngredients() {
                 </div>
               )}
 
-              {/* Upload Controls */}
+              {/* Action Controls: Live Camera, File Upload, Re-Scan */}
               <div className="image-actions-bar">
+                <button
+                  type="button"
+                  className="btn-primary btn-glow take-photo-action-btn"
+                  onClick={() => startCamera()}
+                  disabled={isScanning}
+                  id="open-camera-scan-btn"
+                >
+                  <Camera size={18} />
+                  <span>Take Photo (Camera)</span>
+                </button>
+
                 <label className="btn-secondary upload-file-btn" id="upload-fridge-photo-btn">
                   <Upload size={17} />
-                  <span>Upload Custom Photo</span>
+                  <span>Upload Photo</span>
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -816,11 +1047,21 @@ export default function ScanIngredients() {
                   />
                 </label>
 
+                {/* Hidden input for mobile native camera fallback */}
+                <input
+                  ref={nativeCameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+
                 <button
                   type="button"
-                  className="btn-primary btn-glow"
+                  className="btn-secondary"
                   onClick={handleReScan}
-                  disabled={isScanning}
+                  disabled={isScanning || isCameraActive}
                   id="re-scan-yolo-btn"
                 >
                   <RefreshCw size={17} className={isScanning ? 'spin-icon' : ''} />
