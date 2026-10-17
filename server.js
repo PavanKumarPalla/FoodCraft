@@ -67,7 +67,32 @@ app.use((req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
+function autoStartFastApiBackend() {
+  const isLocal = process.env.NODE_ENV !== 'production' || !process.env.RENDER;
+  if (!isLocal) return;
+
+  fetch('http://localhost:8000/api/recipes/health', { signal: AbortSignal.timeout(1000) })
+    .then(res => {
+      if (res.ok) console.log('🤖 Connected to active FastAPI YOLOv8 backend on port 8000');
+    })
+    .catch(() => {
+      console.log('⚡ Starting background FastAPI YOLOv8 AI service on port 8000...');
+      try {
+        const py = spawn('python', ['backend/run.py', '--host', '0.0.0.0', '--port', '8000'], {
+          cwd: __dirname,
+          detached: true,
+          stdio: 'ignore'
+        });
+        py.unref();
+      } catch (err) {
+        console.warn('Could not auto-start python backend:', err.message);
+      }
+    });
+}
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Food Craft Server running on port ${PORT}`);
   console.log(`📱 Local URL: http://localhost:${PORT}`);
+  autoStartFastApiBackend();
 });
+

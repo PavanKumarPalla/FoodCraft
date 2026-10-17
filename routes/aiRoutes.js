@@ -1,6 +1,56 @@
 import express from 'express';
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const router = express.Router();
+
+/**
+ * Execute local Python YOLOv8 CLI directly when FastAPI background daemon is offline.
+ * Writes image data to a temporary file to prevent Windows CLI arg length overflows.
+ */
+function runPythonYoloCLI(image, confidence = 0.25) {
+  return new Promise((resolve, reject) => {
+    const tempFile = path.join(os.tmpdir(), `fc_img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.txt`);
+    try {
+      fs.writeFileSync(tempFile, image, 'utf8');
+    } catch (writeErr) {
+      return reject(writeErr);
+    }
+
+    const py = spawn('python', ['-m', 'backend.scripts.detect_cli', tempFile, String(confidence)], {
+      cwd: process.cwd(),
+      timeout: 15000,
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    py.stdout.on('data', chunk => { stdout += chunk.toString(); });
+    py.stderr.on('data', chunk => { stderr += chunk.toString(); });
+
+    py.on('error', err => {
+      try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+      reject(err);
+    });
+
+    py.on('close', code => {
+      try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+      if (code === 0 && stdout.trim()) {
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          resolve(parsed);
+        } catch (parseErr) {
+          reject(new Error(`Failed to parse YOLO CLI JSON: ${parseErr.message}`));
+        }
+      } else {
+        reject(new Error(`Python detector exited with code ${code}: ${stderr.slice(0, 150)}`));
+      }
+    });
+  });
+}
 
 // ── GET /api/recipes/health ───────────────────────────────────
 router.get('/recipes/health', async (req, res) => {
@@ -34,7 +84,7 @@ router.post('/detect-ingredients', async (req, res) => {
     return res.status(400).json({ success: false, error: 'No image data provided' });
   }
 
-  // Forward to FastAPI YOLOv8 backend if reachable
+  // 1. Forward to FastAPI YOLOv8 daemon if running
   const aiServiceUrl = process.env.AI_SERVICE_URL || (process.env.NODE_ENV !== 'production' ? 'http://localhost:8000' : null);
 
   if (aiServiceUrl) {
@@ -43,19 +93,31 @@ router.post('/detect-ingredients', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image, confidence }),
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(6000)
       });
 
       if (pyRes.ok) {
         const pyData = await pyRes.json();
-        return res.json(pyData);
+        if (pyData && pyData.success && pyData.detected_ingredients) {
+          return res.json(pyData);
+        }
       }
     } catch {
-      // Backend not running
+      // Backend daemon not responding — fallback to direct CLI
     }
   }
 
-  // When backend is not active, return empty detections honestly (never fake Kiwi/Tomatoes)
+  // 2. Direct Python CLI execution fallback (uses yolov8_food_ingredients.pt)
+  try {
+    const cliData = await runPythonYoloCLI(image, confidence);
+    if (cliData && cliData.success) {
+      return res.json(cliData);
+    }
+  } catch (cliErr) {
+    console.warn('Direct Python YOLOv8 CLI fallback notice:', cliErr.message);
+  }
+
+  // 3. Fallback when Python is not present in environment (pure static container)
   return res.json({
     success: true,
     detected_ingredients: [],

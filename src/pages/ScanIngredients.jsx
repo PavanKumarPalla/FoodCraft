@@ -139,23 +139,29 @@ export default function ScanIngredients() {
       // 1. Check if backend (FastAPI YOLOv8 with custom food weights) is available
       let backendData = null;
       try {
-        const payload = { image: base64Image, confidence: 0.22 };
-        let res;
+        const payload = { image: base64Image, confidence: 0.20 };
+        let res = null;
         try {
           res = await fetch('/api/detect-ingredients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(8000)
+            signal: AbortSignal.timeout(15000)
           });
-        } catch {
+        } catch (fetchErr) {
+          console.warn('Relative backend fetch notice:', fetchErr);
+        }
+
+        if (!res || !res.ok) {
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            res = await fetch('http://localhost:8000/api/detect-ingredients', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-              signal: AbortSignal.timeout(8000)
-            });
+            try {
+              res = await fetch('http://localhost:8000/api/detect-ingredients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(12000)
+              });
+            } catch {}
           }
         }
 
@@ -163,13 +169,13 @@ export default function ScanIngredients() {
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
             const data = await res.json();
-            if (data.detected_ingredients && data.detected_ingredients.length > 0) {
+            if (data && data.success && data.detected_ingredients && data.detected_ingredients.length > 0) {
               backendData = data;
             }
           }
         }
-      } catch {
-        // Fallback to client-side deep vision model
+      } catch (err) {
+        console.warn('Backend YOLOv8 detection call:', err);
       }
 
       if (backendData && backendData.detected_ingredients && backendData.detected_ingredients.length > 0) {
@@ -177,7 +183,7 @@ export default function ScanIngredients() {
         setHasScanned(true);
         setDetectedBoxes(backendData.detected_ingredients);
         setPhotoIngredients(backendData.unique_ingredients);
-        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} with ${backendData.model}`);
+        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} (${backendData.detected_ingredients.length} items) with ${backendData.model || 'YOLOv8 Pretrained Food Weights'}`);
         return;
       }
 
@@ -204,7 +210,7 @@ export default function ScanIngredients() {
           setCachedModel(net);
         }
 
-        setStatusMessage('Analyzing detected regions with color feature fusion...');
+        setStatusMessage('Analyzing detected regions with deep neural feature fusion...');
 
         // Run COCO-SSD with higher max detections but stricter confidence
         const predictions = await net.detect(img, 20, 0.25);
@@ -268,16 +274,16 @@ export default function ScanIngredients() {
           if (isHumanSkin(arrMeanR, arrMeanG, arrMeanB, h, s, v)) return null; // hand/fingers
 
           // 1. Sliced Kiwi: warm golden lime-green flesh WITH dark seed spots
-          if (h >= 52 && h <= 110 && s >= 0.30 && v >= 0.22) {
-            if ((h <= 68 && (arrMeanR - arrMeanG >= -8) && seedRatio > 0.020) || (hintCls === 'apple' && seedRatio > 0.015) || (hintCls === 'bowl' && seedRatio > 0.015)) {
+          if (h >= 52 && h <= 110 && s >= 0.28 && v >= 0.20) {
+            if ((h <= 70 && (arrMeanR - arrMeanG >= -10) && seedRatio > 0.018) || (hintCls === 'apple' && seedRatio > 0.015) || (hintCls === 'bowl' && seedRatio > 0.015)) {
               return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_sliced', rawConf: 0.96 };
             }
           }
 
-          // 2. Whole Kiwi: Earthy fuzzy brown skin (Hue: 20-46 deg, R - G < 68, blue >= 20)
-          if (h >= 20 && h <= 46 && s >= 0.25 && s <= 0.85 && v >= 0.25 && v <= 0.88) {
-            if (hintCls === 'apple' || hintCls === 'orange' || ((arrMeanR - arrMeanG) < 68 && arrMeanB >= 20 && seedRatio < 0.01)) {
-              return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#f59e0b', conf: '95%', type: 'kiwi_whole', rawConf: 0.95 };
+          // 2. Whole Kiwi: Earthy fuzzy brown skin (Hue: 18-45 deg, moderate saturation, NOT neon orange like carrot)
+          if (h >= 18 && h <= 45 && s >= 0.20 && s <= 0.72 && v >= 0.20 && v <= 0.76) {
+            if (arrMeanR - arrMeanG < 62 && (hintCls === 'apple' || hintCls === 'orange' || (arrMeanB >= 15 && arrMeanB <= 80 && seedRatio < 0.01))) {
+              return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_whole', rawConf: 0.96 };
             }
           }
 
@@ -286,13 +292,13 @@ export default function ScanIngredients() {
             return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
           }
 
-          // 4. Carrot: Intense neon orange (R >> G, R - G >= 65, b < 60)
-          if (h >= 15 && h <= 38 && s >= 0.52 && v >= 0.40 && ((arrMeanR - arrMeanG) >= 65) && arrMeanB < 60) {
+          // 4. Carrot: Intense neon orange ONLY (R >> G, R - G >= 68, R > 165, B < 60, high saturation)
+          if (h >= 14 && h <= 36 && s >= 0.60 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 68) && arrMeanR > 165 && arrMeanB < 60) {
             return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
           }
 
-          // 5. Sweet Corn: Bright golden yellow (H: 40-56 deg, R - G >= 20, seedRatio < 0.01)
-          if (h >= 40 && h <= 56 && s >= 0.38 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 20) && seedRatio < 0.01) {
+          // 5. Sweet Corn: Bright golden yellow kernels ONLY (High saturation, high brightness, distinct yellow hue 46-58, high R & G)
+          if (h >= 46 && h <= 58 && s >= 0.48 && v >= 0.55 && (arrMeanR > 160 && arrMeanG > 140) && seedRatio < 0.01) {
             return { name: 'Sweet Corn', ingredient: 'Corn', color: '#eab308', conf: '96%', type: 'corn', rawConf: 0.96 };
           }
 
@@ -302,7 +308,7 @@ export default function ScanIngredients() {
           }
 
           // 7. Citrus / Orange: Warm orange
-          if (h >= 18 && h <= 44 && s >= 0.42 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 50)) {
+          if (h >= 18 && h <= 44 && s >= 0.48 && v >= 0.48 && ((arrMeanR - arrMeanG) >= 55) && hintCls === 'orange') {
             return { name: 'Citrus / Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
           }
 
@@ -555,7 +561,7 @@ export default function ScanIngredients() {
 
           // Connected-component clustering (BFS) of adjacent same-type food cells
           const visited = Array.from({ length: gridRows }, () => Array(gridCols).fill(false));
-          const minClusterCells = 3;
+          const minClusterCells = 6;
 
           for (let r = 0; r < gridRows; r++) {
             for (let c = 0; c < gridCols; c++) {

@@ -106,10 +106,21 @@ def detect_ingredients(
     image = _decode_image(image_base64)
     img_w, img_h = image.size
 
-    # Run inference
+    # If image is unusually small, upscale with high-quality resampling for YOLO feature extraction
+    if img_w < 320 or img_h < 320:
+        scale = max(1.0, 640.0 / max(img_w, img_h))
+        scaled_w = int(img_w * scale)
+        scaled_h = int(img_h * scale)
+        infer_img = image.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
+    else:
+        infer_img = image
+
+    # Run inference with standardized 640 input resolution and NMS
     results = model.predict(
-        source=np.array(image),
+        source=np.array(infer_img),
         conf=confidence_threshold,
+        iou=0.45,
+        imgsz=640,
         verbose=False,
     )
 
@@ -118,8 +129,7 @@ def detect_ingredients(
         "#ec4899", "#3b82f6", "#14b8a6", "#f97316", "#84cc16",
     ]
 
-    detections = []
-    seen_names = set()
+    raw_detections = []
 
     for result in results:
         boxes = result.boxes
@@ -130,7 +140,7 @@ def detect_ingredients(
             conf = float(box.conf[0])
             raw_name = model.names.get(cls_id, f"class_{cls_id}").strip().lower()
 
-            # Clean compound label names from LVIS / Food weights
+            # Clean compound label names from LVIS / Food weights into clear culinary names
             if "kiwi" in raw_name:
                 name = "Kiwi"
             elif "tomato" in raw_name:
@@ -171,6 +181,10 @@ def detect_ingredients(
                 name = "Orange"
             elif "strawberry" in raw_name:
                 name = "Strawberry"
+            elif "blueberry" in raw_name:
+                name = "Blueberry"
+            elif "blackberry" in raw_name:
+                name = "Blackberry"
             elif "eggplant" in raw_name or "aubergine" in raw_name:
                 name = "Eggplant"
             elif "watermelon" in raw_name:
@@ -183,38 +197,105 @@ def detect_ingredients(
                 name = "Cauliflower"
             elif "avocado" in raw_name:
                 name = "Avocado"
-            elif "spinach" in raw_name:
+            elif "spinach" in raw_name or "lettuce" in raw_name:
                 name = "Spinach"
+            elif "almond" in raw_name:
+                name = "Almond"
+            elif "asparagus" in raw_name:
+                name = "Asparagus"
+            elif "celery" in raw_name:
+                name = "Celery"
+            elif "cherry" in raw_name:
+                name = "Cherry"
+            elif "coconut" in raw_name:
+                name = "Coconut"
+            elif "grape" in raw_name:
+                name = "Grape"
+            elif "green bean" in raw_name:
+                name = "Green Bean"
+            elif "pea" in raw_name:
+                name = "Peas"
+            elif "peach" in raw_name:
+                name = "Peach"
+            elif "pear" in raw_name:
+                name = "Pear"
+            elif "pineapple" in raw_name:
+                name = "Pineapple"
+            elif "pumpkin" in raw_name:
+                name = "Pumpkin"
+            elif "radish" in raw_name:
+                name = "Radish"
+            elif "zucchini" in raw_name:
+                name = "Zucchini"
             else:
                 name = raw_name.split("/")[0].strip().title()
 
             coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
             x1, y1, x2, y2 = coords
 
-            # Compute percentage coordinates relative to image dimensions
-            x_pct = round((max(0.0, x1) / img_w) * 100, 2) if img_w > 0 else 0.0
-            y_pct = round((max(0.0, y1) / img_h) * 100, 2) if img_h > 0 else 0.0
-            w_pct = round((max(0.0, x2 - x1) / img_w) * 100, 2) if img_w > 0 else 0.0
-            h_pct = round((max(0.0, y2 - y1) / img_h) * 100, 2) if img_h > 0 else 0.0
+            # Map coordinates back to original image dimensions if infer_img was scaled
+            orig_infer_w = infer_img.size[0]
+            orig_infer_h = infer_img.size[1]
+            scale_x = img_w / orig_infer_w if orig_infer_w > 0 else 1.0
+            scale_y = img_h / orig_infer_h if orig_infer_h > 0 else 1.0
 
-            color = BOX_COLORS[len(detections) % len(BOX_COLORS)]
+            real_x1 = max(0.0, x1 * scale_x)
+            real_y1 = max(0.0, y1 * scale_y)
+            real_x2 = min(float(img_w), x2 * scale_x)
+            real_y2 = min(float(img_h), y2 * scale_y)
+            real_w = max(1.0, real_x2 - real_x1)
+            real_h = max(1.0, real_y2 - real_y1)
 
-            detections.append({
+            # Compute percentage coordinates relative to original image dimensions
+            x_pct = round((real_x1 / img_w) * 100, 2) if img_w > 0 else 0.0
+            y_pct = round((real_y1 / img_h) * 100, 2) if img_h > 0 else 0.0
+            w_pct = round((real_w / img_w) * 100, 2) if img_w > 0 else 0.0
+            h_pct = round((real_h / img_h) * 100, 2) if img_h > 0 else 0.0
+
+            raw_detections.append({
                 "name": name,
                 "confidence": f"{round(conf * 100, 1)}%",
                 "confidence_raw": round(conf, 4),
-                "color": color,
                 "box": {
                     "x": x_pct,
                     "y": y_pct,
                     "w": w_pct,
                     "h": h_pct,
                 },
-                "bbox_pixels": [round(c, 1) for c in coords],
+                "bbox_pixels": [round(real_x1, 1), round(real_y1, 1), round(real_x2, 1), round(real_y2, 1)],
             })
-            seen_names.add(name)
 
-        unique_list = sorted(seen_names)
+    # Sort by raw confidence descending and apply secondary deduplication
+    raw_detections.sort(key=lambda d: d["confidence_raw"], reverse=True)
+    detections = []
+    seen_names = set()
+
+    for cand in raw_detections:
+        dominated = False
+        for sel in detections:
+            # Overlap check
+            xA = max(cand["box"]["x"], sel["box"]["x"])
+            yA = max(cand["box"]["y"], sel["box"]["y"])
+            xB = min(cand["box"]["x"] + cand["box"]["w"], sel["box"]["x"] + sel["box"]["w"])
+            yB = min(cand["box"]["y"] + cand["box"]["h"], sel["box"]["y"] + sel["box"]["h"])
+            inter = max(0.0, xB - xA) * max(0.0, yB - yA)
+            union = (cand["box"]["w"] * cand["box"]["h"]) + (sel["box"]["w"] * sel["box"]["h"]) - inter
+            iou = inter / union if union > 0 else 0.0
+
+            if cand["name"] == sel["name"] and iou > 0.35:
+                dominated = True
+                break
+            if iou > 0.70:
+                dominated = True
+                break
+
+        if not dominated:
+            color = BOX_COLORS[len(detections) % len(BOX_COLORS)]
+            cand["color"] = color
+            detections.append(cand)
+            seen_names.add(cand["name"])
+
+    unique_list = sorted(seen_names)
 
     logger.info(
         "Detected %d objects → %d unique ingredients: %s",
