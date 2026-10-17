@@ -268,73 +268,63 @@ export default function ScanIngredients() {
           const { h, s, v } = rgbToHsv(arrMeanR, arrMeanG, arrMeanB);
 
           // Reject background: pure white, ceramic plate, fridge walls, light gray, dark shadows
-          if (v > 0.88 && s < 0.15) return null; // white/cream
-          if (v < 0.16) return null;             // dark shadows / black lines
-          if (s < 0.15 && v >= 0.18 && v <= 0.88) return null; // neutral gray walls/plastic
+          if (v > 0.90 && s < 0.12) return null; // white/cream walls/plates
+          if (v < 0.15) return null;             // dark shadows / black lines
+          if (s < 0.14 && v >= 0.18 && v <= 0.88) return null; // neutral gray walls/plastic
           if (isHumanSkin(arrMeanR, arrMeanG, arrMeanB, h, s, v)) return null; // hand/fingers
 
-          // 1. Sliced Kiwi: warm golden lime-green flesh WITH dark seed spots
-          if (h >= 52 && h <= 110 && s >= 0.28 && v >= 0.20) {
-            if ((h <= 70 && (arrMeanR - arrMeanG >= -10) && seedRatio > 0.018) || (hintCls === 'apple' && seedRatio > 0.015) || (hintCls === 'bowl' && seedRatio > 0.015)) {
-              return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_sliced', rawConf: 0.96 };
-            }
+          // 1. Red Produce: Tomato / Cherry Tomatoes / Strawberries
+          if ((h >= 346 || h <= 18) && s >= 0.20 && v >= 0.25 && (arrMeanR > arrMeanG + 12 && arrMeanR > arrMeanB + 12)) {
+            return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
           }
 
-          // 2. Whole Kiwi: Earthy fuzzy brown skin (Hue: 18-45 deg, moderate saturation, NOT neon orange like carrot)
-          if (h >= 18 && h <= 45 && s >= 0.20 && s <= 0.72 && v >= 0.20 && v <= 0.76) {
-            if (arrMeanR - arrMeanG < 62 && (hintCls === 'apple' || hintCls === 'orange' || (arrMeanB >= 15 && arrMeanB <= 80 && seedRatio < 0.01))) {
+          // 2. Carrot: Deep neon orange (R >> G, R - G >= 55, high saturation, R >= 165)
+          if (h >= 15 && h <= 48 && s >= 0.38 && v >= 0.42 && (arrMeanR >= 165 && (arrMeanR - arrMeanG) >= 55 && arrMeanR > arrMeanB + 35)) {
+            return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
+          }
+
+          // 3. Whole Kiwi: Earthy fuzzy brown produce (Hue: 20-46, moderate saturation, moderate R - G < 52)
+          if (h >= 20 && h <= 46 && s >= 0.22 && s <= 0.75 && v >= 0.22 && v <= 0.78) {
+            if (arrMeanR >= 95 && arrMeanG >= 65 && arrMeanB < 100 && (arrMeanR - arrMeanG) < 52) {
               return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_whole', rawConf: 0.96 };
             }
           }
 
-          // 3. True Red: Tomato / Cherry Tomatoes / Pomegranate / Strawberries
-          if ((h >= 346 || h <= 14) && s >= 0.38 && v >= 0.25) {
-            return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
+          // 4. Sliced Kiwi: Warm lime-green flesh with dark seed specks or emerald green circular produce
+          if (h >= 54 && h <= 75 && s >= 0.28 && v >= 0.25 && (arrMeanG >= arrMeanR - 15 && arrMeanB < 95)) {
+            if (seedRatio > 0.008 || (hintCls === 'apple' || hintCls === 'bowl') || (h >= 58 && h <= 72 && arrMeanG >= arrMeanR - 8)) {
+              return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '96%', type: 'kiwi_sliced', rawConf: 0.96 };
+            }
           }
 
-          // 4. Carrot: Intense neon orange ONLY (R >> G, R - G >= 68, R > 165, B < 60, high saturation)
-          if (h >= 14 && h <= 36 && s >= 0.60 && v >= 0.45 && ((arrMeanR - arrMeanG) >= 68) && arrMeanR > 165 && arrMeanB < 60) {
-            return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
-          }
-
-          // 5. Sweet Corn: Bright golden yellow kernels ONLY (High saturation, high brightness, distinct yellow hue 46-58, high R & G)
-          if (h >= 46 && h <= 58 && s >= 0.48 && v >= 0.55 && (arrMeanR > 160 && arrMeanG > 140) && seedRatio < 0.01) {
+          // 5. Sweet Corn: Golden yellow kernels (Hue 48-66, high G & R, R approx G, not brown)
+          if (h >= 48 && h <= 66 && s >= 0.22 && v >= 0.40 && (arrMeanR >= 120 && arrMeanG >= 110 && arrMeanB < 130 && Math.abs(arrMeanR - arrMeanG) <= 25 && arrMeanG > arrMeanB + 10)) {
             return { name: 'Sweet Corn', ingredient: 'Corn', color: '#eab308', conf: '96%', type: 'corn', rawConf: 0.96 };
           }
 
-          // 6. Banana: Yellow produce or COCO hint
+          // 6. Green Produce: Green Beans / Peas / Spinach
+          if (h >= 68 && h <= 140 && s >= 0.18 && v >= 0.20 && (arrMeanG > arrMeanR && arrMeanG > arrMeanB + 10)) {
+            return { name: 'Green Beans', ingredient: 'Green Bean', color: '#10b981', conf: '94%', type: 'beans', rawConf: 0.94 };
+          }
+
+          // 7. Banana: Yellow elongated produce
           if (h >= 40 && h <= 66 && s >= 0.35 && hintCls === 'banana') {
             return { name: 'Banana', ingredient: 'Banana', color: '#facc15', conf: '96%', type: 'banana', rawConf: 0.96 };
           }
 
-          // 7. Citrus / Orange: Warm orange
-          if (h >= 18 && h <= 44 && s >= 0.48 && v >= 0.48 && ((arrMeanR - arrMeanG) >= 55) && hintCls === 'orange') {
-            return { name: 'Citrus / Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
+          // 8. Citrus / Orange: Warm round citrus
+          if (h >= 18 && h <= 44 && s >= 0.45 && v >= 0.45 && (arrMeanR - arrMeanG >= 45) && (hintCls === 'orange' || hintCls === 'apple')) {
+            return { name: 'Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
           }
 
-          // 8. Lime / Lemon: Yellow-Green (H: 55-88 deg)
-          if (h >= 55 && h <= 88 && s >= 0.25 && v >= 0.25) {
-            return { name: 'Lime / Lemon', ingredient: 'Lemon', color: '#84cc16', conf: '94%', type: 'lime', rawConf: 0.94 };
+          // 9. Limes: Small glossy dark green citrus (ONLY when recognized as fruit or high green contrast)
+          if (h >= 75 && h <= 130 && s >= 0.35 && v >= 0.25 && (arrMeanG > arrMeanR + 25) && (hintCls === 'orange' || hintCls === 'apple')) {
+            return { name: 'Lime', ingredient: 'Lime', color: '#84cc16', conf: '94%', type: 'lime', rawConf: 0.94 };
           }
 
-          // 9. Green Beans / Peas: Fresh Green
-          if (h >= 89 && h <= 155 && s >= 0.24 && v >= 0.20) {
-            return { name: 'Green Beans', ingredient: 'Beans', color: '#10b981', conf: '94%', type: 'beans', rawConf: 0.94 };
-          }
-
-          // 10. Purple / Violet: Berries / Grapes / Red Onion
-          if (h >= 260 && h <= 342 && s >= 0.20 && v >= 0.20) {
-            return { name: 'Berries / Grapes', ingredient: 'Berries', color: '#a855f7', conf: '93%', type: 'berries', rawConf: 0.93 };
-          }
-
-          // 11. Potato: Warm earthy tan / brown (moderate saturation, NOT neon orange like carrots)
-          if (h >= 20 && h <= 48 && s >= 0.18 && s <= 0.48 && v >= 0.30 && v <= 0.80) {
+          // 10. Potato: Warm earthy tan / beige (low-to-moderate saturation, low contrast)
+          if (h >= 22 && h <= 48 && s >= 0.18 && s <= 0.44 && v >= 0.30 && v <= 0.75 && arrMeanB < 110) {
             return { name: 'Potato', ingredient: 'Potato', color: '#d97706', conf: '95%', type: 'potato', rawConf: 0.95 };
-          }
-
-          // 12. Leafy Greens / Spinach / Lettuce: Broad vibrant green
-          if (h >= 75 && h <= 155 && s >= 0.25 && v >= 0.20) {
-            return { name: 'Leafy Greens', ingredient: 'Spinach', color: '#10b981', conf: '92%', type: 'greens', rawConf: 0.92 };
           }
 
           return null;
@@ -429,6 +419,12 @@ export default function ScanIngredients() {
 
               // 3. Same parent ingredient nearby (unless it's a distinct Whole & Sliced Kiwi pair)
               if (sameIngredient && !isWholeAndSlicedPair && dist < 22) {
+                dominated = true;
+                break;
+              }
+
+              // 4. Suppress spurious green bean artifacts over or adjacent to Kiwi
+              if (cand.ingredient === 'Green Bean' && sel.ingredient === 'Kiwi' && (iou > 0.05 || dist < 30)) {
                 dominated = true;
                 break;
               }
@@ -561,7 +557,7 @@ export default function ScanIngredients() {
 
           // Connected-component clustering (BFS) of adjacent same-type food cells
           const visited = Array.from({ length: gridRows }, () => Array(gridCols).fill(false));
-          const minClusterCells = 6;
+          const minClusterCells = 3;
 
           for (let r = 0; r < gridRows; r++) {
             for (let c = 0; c < gridCols; c++) {
