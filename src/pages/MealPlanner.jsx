@@ -32,80 +32,183 @@ export default function MealPlanner() {
   const currentDayData = activePlanList[selectedDayIndex] || activePlanList[0];
   const currentDateInfo = weekDates[selectedDayIndex] || weekDates[0];
 
-  const OPTION_IMAGE_MAP = {
-    "Upma": "/images/meal_planner_images/upma.jpg",
-    "Rice, Dal, Carrot Poriyal": "/images/meal_planner_images/rice_dal_carrot.jpg",
-    "Chicken Biryani": "/images/meal_planner_images/chicken_biryani.jpg",
-    "Chicken Curry with Bagara Rice": "/images/meal_planner_images/bagara_rice.jpg",
-    "Non-Veg: Chicken Curry with Bagara Rice": "/images/meal_planner_images/bagara_rice.jpg",
-    "Mutton Biryani": "/images/meal_planner_images/mutton_biryani.jpg",
-    "Chapati with Vegetable Curry": "/images/meal_planner_images/chapati.jpg",
-    "Veg: Chapati with Vegetable Curry": "/images/meal_planner_images/chapati.jpg",
-    "Chapati with Dal": "/images/meal_planner_images/chapati.jpg",
-    "Veg: Chapati with Dal": "/images/meal_planner_images/chapati.jpg",
-    "Chapati with Paneer Curry": "/images/meal_planner_images/paneer_curry.jpg",
-    "Rice, Dal, Cluster Beans (Goruchikkudu)": "/images/meal_planner_images/rice_dal_carrot.jpg",
-    "Rice, Dal, Aloo Fry": "/images/meal_planner_images/rice_dal_carrot.jpg",
-    "Rice, Dal, Bendakaya (Okra) Fry": "/images/meal_planner_images/tomato_rice.jpg",
-    "Rice, Dal, Gutti Vankaya (Brinjal Curry)": "/images/meal_planner_images/lemon_rice.jpg",
-    "Idli, Chutney": "/images/meal_planner_images/idli_vada.jpg",
-    "Idli with Chutney & Sambar": "/images/meal_planner_images/idli_vada.jpg",
-    "Dosa, Chutney": "/images/meal_planner_images/dosa.jpg",
-    "Crispy Dosa with Chutney": "/images/meal_planner_images/dosa.jpg",
-    "Poori with Curry": "/images/meal_planner_images/poori.jpg",
-    "Poori with Potato Curry": "/images/meal_planner_images/poori.jpg",
-    "Veg Pulav": "/images/meal_planner_images/pulav.jpg"
+  // Dynamic dish image resolver ensuring every dish option receives its authentic photo
+  const resolveDishImage = (dishTitle, fallbackImage) => {
+    if (!dishTitle) return fallbackImage;
+    const clean = dishTitle.toLowerCase().replace(/^(non-veg|veg):\s*/i, '').trim();
+
+    // Mutton specialties
+    if (clean.includes('mutton biryani') || clean.includes('mutton curry') || clean.includes('mutton')) {
+      return '/images/meal_planner_images/mutton_biryani.jpg';
+    }
+    // Ragi Sangati / Ragi Rice
+    if (clean.includes('ragi')) {
+      return '/images/meal_planner_images/ragi_sankati.jpg';
+    }
+    // Fish specialties
+    if (clean.includes('fish')) {
+      return '/images/meal_planner_images/fish_curry.jpg';
+    }
+    // Egg specialties
+    if (clean.includes('egg')) {
+      return '/images/meal_planner_images/egg_curry.jpg';
+    }
+    // Chicken varieties
+    if (clean.includes('chicken fry')) {
+      return '/images/meal_planner_images/chicken_curry.jpg';
+    }
+    if (clean.includes('chicken biryani')) {
+      return '/images/meal_planner_images/chicken_biryani.jpg';
+    }
+    if (clean.includes('chicken') && clean.includes('bagara')) {
+      return '/images/meal_planner_images/bagara_rice.jpg';
+    }
+    if (clean.includes('chicken curry') || clean.includes('chicken')) {
+      return '/images/meal_planner_images/chicken_curry.jpg';
+    }
+    // Bagara Rice variations
+    if (clean.includes('bagara rice')) {
+      return '/images/meal_planner_images/bagara_rice.jpg';
+    }
+    // Biryani & Pulav
+    if (clean.includes('brinjal biryani') || clean.includes('gutti vankaya')) {
+      return '/images/meal_planner_images/brinjal_curry.jpg';
+    }
+    if (clean.includes('veg biryani') || clean.includes('pulav') || clean.includes('pulao')) {
+      return '/images/meal_planner_images/pulav.jpg';
+    }
+    // Paneer
+    if (clean.includes('paneer')) {
+      return '/images/meal_planner_images/paneer_curry.jpg';
+    }
+    // Sambar
+    if (clean.includes('sambar')) {
+      return '/images/meal_planner_images/sambar_rice.jpg';
+    }
+    // Aloo Fry / Potato
+    if (clean.includes('aloo fry') || clean.includes('potato')) {
+      return '/images/meal_planner_images/aloo_curry.jpg';
+    }
+    // Bendakaya / Okra
+    if (clean.includes('bendakaya') || clean.includes('okra')) {
+      return '/images/meal_planner_images/tomato_rice.jpg';
+    }
+    // Cluster beans (Goruchikkudu)
+    if (clean.includes('cluster beans') || clean.includes('goruchikkudu')) {
+      return '/images/meal_planner_images/full_meals.jpg';
+    }
+    // Carrot
+    if (clean.includes('carrot')) {
+      return '/images/meal_planner_images/rice_dal_carrot.jpg';
+    }
+    // Chapati / Roti / Phulka
+    if (clean.includes('chapati') || clean.includes('phulka') || clean.includes('roti')) {
+      return '/images/meal_planner_images/chapati.jpg';
+    }
+    // Dosa
+    if (clean.includes('dosa') || clean.includes('dosai')) {
+      return '/images/meal_planner_images/dosa.jpg';
+    }
+    // Idli
+    if (clean.includes('idli')) {
+      return '/images/meal_planner_images/idli_vada.jpg';
+    }
+    // Pongal
+    if (clean.includes('pongal')) {
+      return '/images/meal_planner_images/pongal_vada.jpg';
+    }
+    // Poori
+    if (clean.includes('poori') || clean.includes('puri')) {
+      return '/images/meal_planner_images/poori.jpg';
+    }
+    // Uggani / Bajji
+    if (clean.includes('uggani') || clean.includes('bajji')) {
+      return '/images/meal_planner_images/uggani_bajji.jpg';
+    }
+    // Pesarattu
+    if (clean.includes('pesarattu')) {
+      return '/images/meal_planner_images/pesarattu.jpg';
+    }
+    // Upma
+    if (clean.includes('upma')) {
+      return '/images/meal_planner_images/upma.jpg';
+    }
+    // Rice & Dal
+    if (clean.includes('rice') && clean.includes('dal')) {
+      return '/images/meal_planner_images/rice_dal_carrot.jpg';
+    }
+    // Lemon Rice
+    if (clean.includes('lemon rice')) {
+      return '/images/meal_planner_images/lemon_rice.jpg';
+    }
+    // Tomato Rice
+    if (clean.includes('tomato rice')) {
+      return '/images/meal_planner_images/tomato_rice.jpg';
+    }
+
+    return fallbackImage;
   };
 
-  const OPTION_RECIPE_MAP = {
-    "Upma": "south-upma",
-    "Rice, Dal, Carrot Poriyal": "south-rice-dal-carrot",
-    "Chicken Biryani": "south-chicken-biryani",
-    "Chicken Curry with Bagara Rice": "south-bagara-chicken",
-    "Non-Veg: Chicken Curry with Bagara Rice": "south-bagara-chicken",
-    "Chicken Fry with Bagara Rice": "south-bagara-chicken",
-    "Non-Veg: Chicken Fry with Bagara Rice": "south-bagara-chicken",
-    "Non-Veg: Egg Rice": "south-bagara-chicken",
-    "Mutton Biryani": "south-mutton-biryani",
-    "Ragi Rice with Chicken Curry": "south-bagara-chicken",
-    "Chapati with Vegetable Curry": "south-chapati-veg",
-    "Veg: Chapati with Vegetable Curry": "south-chapati-veg",
-    "Chapati with Dal": "south-chapati-veg",
-    "Veg: Chapati with Dal": "south-chapati-veg",
-    "Chapati with Sambar": "south-chapati-veg",
-    "Veg: Chapati with Sambar": "south-chapati-veg",
-    "Chapati with Paneer Curry": "south-bagara-paneer",
-    "Rice, Dal, Cluster Beans (Goruchikkudu)": "south-rice-cluster-beans",
-    "Rice, Dal, Goruchikkudu (Cluster Beans)": "south-rice-cluster-beans",
-    "Rice, Dal, Aloo Fry": "south-rice-aloo-fry",
-    "Rice, Dal, Bendakaya (Okra) Fry": "south-tomato-rice",
-    "Rice, Dal, Gutti Vankaya": "south-lemon-rice",
-    "Rice, Dal, Gutti Vankaya (Brinjal Curry)": "south-lemon-rice",
-    "Idli, Chutney": "south-idli-vada",
-    "Idli with Chutney & Sambar": "south-idli-vada",
-    "Dosa, Chutney": "south-dosa-chutney",
-    "Crispy Dosa with Chutney": "south-dosa-chutney",
-    "Poori with Curry": "south-poori-chutney",
-    "Poori with Potato Curry": "south-poori-chutney",
-    "Veg Pulav": "south-meals-pulav"
+  // Recipe ID resolver for dynamic options
+  const resolveRecipeId = (dishTitle, fallbackId) => {
+    if (!dishTitle) return fallbackId;
+    const clean = dishTitle.toLowerCase().replace(/^(non-veg|veg):\s*/i, '').trim();
+
+    if (clean.includes('mutton biryani') || clean.includes('mutton')) return 'south-mutton-biryani';
+    if (clean.includes('chicken biryani')) return 'south-chicken-biryani';
+    if (clean.includes('chicken') || clean.includes('bagara rice')) return 'south-bagara-chicken';
+    if (clean.includes('egg')) return 'south-bagara-chicken';
+    if (clean.includes('ragi')) return 'south-bagara-chicken';
+    if (clean.includes('fish')) return 'south-bagara-chicken';
+    if (clean.includes('veg biryani') || clean.includes('pulav')) return 'south-meals-pulav';
+    if (clean.includes('paneer')) return 'south-bagara-paneer';
+    if (clean.includes('upma')) return 'south-upma';
+    if (clean.includes('dosa')) return 'south-dosa-chutney';
+    if (clean.includes('idli')) return 'south-idli-vada';
+    if (clean.includes('pongal')) return 'south-pongal-vada';
+    if (clean.includes('poori')) return 'south-poori-chutney';
+    if (clean.includes('uggani')) return 'south-uggani-bajji';
+    if (clean.includes('pesarattu')) return 'south-pesarattu-chutney';
+    if (clean.includes('aloo fry')) return 'south-rice-aloo-fry';
+    if (clean.includes('carrot')) return 'south-rice-dal-carrot';
+    if (clean.includes('cluster beans') || clean.includes('goruchikkudu')) return 'south-rice-cluster-beans';
+    if (clean.includes('bendakaya') || clean.includes('okra')) return 'south-tomato-rice';
+    if (clean.includes('gutti vankaya') || clean.includes('brinjal')) return 'south-lemon-rice';
+    if (clean.includes('sambar')) return 'south-sambar-rice';
+    if (clean.includes('chapati') || clean.includes('roti') || clean.includes('phulka')) return 'south-chapati-veg';
+
+    return fallbackId;
+  };
+
+  // Diet indicator resolver (veg vs non-veg)
+  const resolveDietType = (dishTitle, fallbackDiet) => {
+    if (!dishTitle) return fallbackDiet;
+    const lower = dishTitle.toLowerCase();
+    if (lower.startsWith('veg:')) return 'veg';
+    if (lower.startsWith('non-veg:')) return 'non-veg';
+    if (lower.includes('chicken') || lower.includes('mutton') || lower.includes('fish') || lower.includes('egg')) {
+      return 'non-veg';
+    }
+    return fallbackDiet || 'veg';
   };
 
   // Helper to get active meal object (accounting for option selection)
   const getMealData = (dayIndex, slot) => {
     const day = activePlanList[dayIndex] || activePlanList[0];
-    const baseMeal = day.meals[slot];
+    const baseMeal = day?.meals?.[slot];
     if (!baseMeal) return null;
 
     const optKey = `${day.day}_${slot}`;
     const selectedOpt = selectedMealOption[optKey];
 
-    // If user picked an alternative option, try to adapt title, image, and recipeId
-    if (selectedOpt && selectedOpt !== baseMeal.title) {
+    // If user picked an alternative option, dynamically adapt title, authentic image, recipeId, and diet
+    if (selectedOpt) {
       return {
         ...baseMeal,
         title: selectedOpt,
-        image: OPTION_IMAGE_MAP[selectedOpt] || baseMeal.image,
-        recipeId: OPTION_RECIPE_MAP[selectedOpt] || baseMeal.recipeId
+        image: resolveDishImage(selectedOpt, baseMeal.image),
+        recipeId: resolveRecipeId(selectedOpt, baseMeal.recipeId),
+        dietType: resolveDietType(selectedOpt, baseMeal.dietType)
       };
     }
     return baseMeal;
@@ -129,9 +232,16 @@ export default function MealPlanner() {
     if (!meal) return;
     // Check if we have an explicit recipe ID in SOUTH_INDIAN_RECIPES
     let recipeDetails = null;
-    if (meal.recipeId && SOUTH_INDIAN_RECIPES[meal.recipeId]) {
-      recipeDetails = SOUTH_INDIAN_RECIPES[meal.recipeId];
-    } else {
+    if (meal.recipeId) {
+      if (SOUTH_INDIAN_RECIPES[meal.recipeId]) {
+        recipeDetails = SOUTH_INDIAN_RECIPES[meal.recipeId];
+      } else {
+        const found = Object.values(SOUTH_INDIAN_RECIPES).find(r => r.id === meal.recipeId);
+        if (found) recipeDetails = found;
+      }
+    }
+
+    if (!recipeDetails) {
       // Find matching by keyword
       const key = Object.keys(SOUTH_INDIAN_RECIPES).find(k => 
         meal.title.toLowerCase().includes(k.split('-')[0])
@@ -141,8 +251,14 @@ export default function MealPlanner() {
       }
     }
 
-    // Fallback template if custom recipe is not in dictionary
-    if (!recipeDetails) {
+    if (recipeDetails) {
+      // Ensure image and title match active meal
+      recipeDetails = {
+        ...recipeDetails,
+        title: meal.title,
+        image: meal.image || recipeDetails.image
+      };
+    } else {
       recipeDetails = {
         title: meal.title,
         subtitle: meal.description,
@@ -317,7 +433,12 @@ export default function MealPlanner() {
               id="meal-slot-breakfast"
             >
               <div className="meal-card-img-wrap">
-                <img src={currentMeals.breakfast.image} alt={currentMeals.breakfast.title} className="meal-card-img" />
+                <img 
+                  key={`bf_${currentMeals.breakfast.title}_${currentMeals.breakfast.image}`}
+                  src={currentMeals.breakfast.image} 
+                  alt={currentMeals.breakfast.title} 
+                  className="meal-card-img" 
+                />
                 <span className="meal-time-badge">
                   <Coffee size={13} /> 08:30 AM
                 </span>
@@ -378,7 +499,12 @@ export default function MealPlanner() {
               id="meal-slot-lunch"
             >
               <div className="meal-card-img-wrap">
-                <img src={currentMeals.lunch.image} alt={currentMeals.lunch.title} className="meal-card-img" />
+                <img 
+                  key={`lu_${currentMeals.lunch.title}_${currentMeals.lunch.image}`}
+                  src={currentMeals.lunch.image} 
+                  alt={currentMeals.lunch.title} 
+                  className="meal-card-img" 
+                />
                 <span className="meal-time-badge">
                   <Sun size={13} /> 01:15 PM
                 </span>
@@ -439,7 +565,12 @@ export default function MealPlanner() {
               id="meal-slot-dinner"
             >
               <div className="meal-card-img-wrap">
-                <img src={currentMeals.dinner.image} alt={currentMeals.dinner.title} className="meal-card-img" />
+                <img 
+                  key={`di_${currentMeals.dinner.title}_${currentMeals.dinner.image}`}
+                  src={currentMeals.dinner.image} 
+                  alt={currentMeals.dinner.title} 
+                  className="meal-card-img" 
+                />
                 <span className="meal-time-badge">
                   <Moon size={13} /> 08:30 PM
                 </span>
@@ -515,7 +646,7 @@ export default function MealPlanner() {
 
                 <div className="weekly-day-slots">
                   {['breakfast', 'lunch', 'dinner'].map(slot => {
-                    const m = dayItem.meals[slot];
+                    const m = getMealData(dIdx, slot);
                     return (
                       <div key={slot} className="weekly-slot-mini">
                         <span className="slot-mini-label">{slot}</span>
