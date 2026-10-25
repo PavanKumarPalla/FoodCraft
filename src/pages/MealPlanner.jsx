@@ -57,6 +57,39 @@ export default function MealPlanner() {
     "Veg Pulav": "/images/meal_planner_images/pulav.jpg"
   };
 
+  const OPTION_RECIPE_MAP = {
+    "Upma": "south-upma",
+    "Rice, Dal, Carrot Poriyal": "south-rice-dal-carrot",
+    "Chicken Biryani": "south-chicken-biryani",
+    "Chicken Curry with Bagara Rice": "south-bagara-chicken",
+    "Non-Veg: Chicken Curry with Bagara Rice": "south-bagara-chicken",
+    "Chicken Fry with Bagara Rice": "south-bagara-chicken",
+    "Non-Veg: Chicken Fry with Bagara Rice": "south-bagara-chicken",
+    "Non-Veg: Egg Rice": "south-bagara-chicken",
+    "Mutton Biryani": "south-mutton-biryani",
+    "Ragi Rice with Chicken Curry": "south-bagara-chicken",
+    "Chapati with Vegetable Curry": "south-chapati-veg",
+    "Veg: Chapati with Vegetable Curry": "south-chapati-veg",
+    "Chapati with Dal": "south-chapati-veg",
+    "Veg: Chapati with Dal": "south-chapati-veg",
+    "Chapati with Sambar": "south-chapati-veg",
+    "Veg: Chapati with Sambar": "south-chapati-veg",
+    "Chapati with Paneer Curry": "south-bagara-paneer",
+    "Rice, Dal, Cluster Beans (Goruchikkudu)": "south-rice-cluster-beans",
+    "Rice, Dal, Goruchikkudu (Cluster Beans)": "south-rice-cluster-beans",
+    "Rice, Dal, Aloo Fry": "south-rice-aloo-fry",
+    "Rice, Dal, Bendakaya (Okra) Fry": "south-tomato-rice",
+    "Rice, Dal, Gutti Vankaya": "south-lemon-rice",
+    "Rice, Dal, Gutti Vankaya (Brinjal Curry)": "south-lemon-rice",
+    "Idli, Chutney": "south-idli-vada",
+    "Idli with Chutney & Sambar": "south-idli-vada",
+    "Dosa, Chutney": "south-dosa-chutney",
+    "Crispy Dosa with Chutney": "south-dosa-chutney",
+    "Poori with Curry": "south-poori-chutney",
+    "Poori with Potato Curry": "south-poori-chutney",
+    "Veg Pulav": "south-meals-pulav"
+  };
+
   // Helper to get active meal object (accounting for option selection)
   const getMealData = (dayIndex, slot) => {
     const day = activePlanList[dayIndex] || activePlanList[0];
@@ -66,12 +99,13 @@ export default function MealPlanner() {
     const optKey = `${day.day}_${slot}`;
     const selectedOpt = selectedMealOption[optKey];
 
-    // If user picked an alternative option, try to adapt title and image
+    // If user picked an alternative option, try to adapt title, image, and recipeId
     if (selectedOpt && selectedOpt !== baseMeal.title) {
       return {
         ...baseMeal,
         title: selectedOpt,
-        image: OPTION_IMAGE_MAP[selectedOpt] || baseMeal.image
+        image: OPTION_IMAGE_MAP[selectedOpt] || baseMeal.image,
+        recipeId: OPTION_RECIPE_MAP[selectedOpt] || baseMeal.recipeId
       };
     }
     return baseMeal;
@@ -303,6 +337,30 @@ export default function MealPlanner() {
                 <h3 className="meal-card-title">{currentMeals.breakfast.title}</h3>
                 <p className="meal-card-desc">{currentMeals.breakfast.description}</p>
 
+                {/* Optional dishes switcher if multiple choices exist */}
+                {currentMeals.breakfast.options && currentMeals.breakfast.options.length > 0 && (
+                  <div className="meal-options-box" onClick={e => e.stopPropagation()}>
+                    <span className="options-hint">Available Choices:</span>
+                    <div className="options-chip-row">
+                      {currentMeals.breakfast.options.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          className={`opt-chip ${currentMeals.breakfast.title === opt ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedMealOption(prev => ({
+                              ...prev,
+                              [`${currentDayData.day}_breakfast`]: opt
+                            }));
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="meal-card-footer">
                   <button type="button" className="recipe-prep-cta">
                     <BookOpen size={13} />
@@ -345,7 +403,7 @@ export default function MealPlanner() {
                   <div className="meal-options-box" onClick={e => e.stopPropagation()}>
                     <span className="options-hint">Available Choices:</span>
                     <div className="options-chip-row">
-                      {currentMeals.lunch.options.slice(0, 4).map((opt) => (
+                      {currentMeals.lunch.options.map((opt) => (
                         <button
                           key={opt}
                           type="button"
