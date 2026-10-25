@@ -60,8 +60,14 @@ export function FoodCraftProvider({ children }) {
   });
 
   const [mealPlan, setMealPlan] = useState(() => {
-    const saved = localStorage.getItem('foodcraft_mealplan');
-    return saved ? JSON.parse(saved) : WEEKLY_MEAL_PLAN;
+    const saved = localStorage.getItem('foodcraft_mealplan_v2');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 7) return parsed;
+      } catch (e) {}
+    }
+    return WEEKLY_MEAL_PLAN;
   });
 
   const [scannedIngredients, setScannedIngredients] = useState(() => {
@@ -91,7 +97,7 @@ export function FoodCraftProvider({ children }) {
   }, [userProfile]);
 
   useEffect(() => {
-    localStorage.setItem('foodcraft_mealplan', JSON.stringify(mealPlan));
+    localStorage.setItem('foodcraft_mealplan_v2', JSON.stringify(mealPlan));
   }, [mealPlan]);
 
   useEffect(() => {

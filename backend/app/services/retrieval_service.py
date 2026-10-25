@@ -45,6 +45,16 @@ def _get_sbert():
     return _sbert_model
 
 
+def _format_ner_text(val) -> str:
+    if val is None:
+        return ""
+    if isinstance(val, list):
+        return ", ".join(str(i).strip() for i in val if str(i).strip())
+    if isinstance(val, str):
+        return ", ".join(_parse_string_list(val))
+    return ""
+
+
 def _parse_string_list(raw: str) -> list[str]:
     """Safely parse a stringified Python list like '["a","b"]' into a real list."""
     if not isinstance(raw, str) or not raw.strip():

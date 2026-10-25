@@ -1069,73 +1069,297 @@ export const MOCK_DETECTED_INGREDIENTS = [
 
 export const WEEKLY_MEAL_PLAN = [
   {
-    day: "Monday",
-    date: "Sep 16",
+    day: "Sunday",
+    date: "Oct 25",
     meals: {
-      breakfast: INITIAL_RECIPES[3], // Shakshuka
-      lunch: INITIAL_RECIPES[0],     // Paneer Tikka Bowl
-      snacks: INITIAL_RECIPES[4],    // Chickpea Chaat
-      dinner: INITIAL_RECIPES[2]     // Rosemary Chicken
+      breakfast: {
+        id: "south-dosa-chutney",
+        title: "Dosa, Chutney",
+        description: "Crispy fermented rice crepe with fresh coconut chutney.",
+        image: "/images/meal_planner_images/dosa.jpg",
+        time: 20,
+        calories: 320,
+        protein: "7g",
+        carbs: "48g",
+        fat: "11g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-chicken-biryani",
+        title: "Chicken Biryani (or) Bagara Rice Chicken Curry",
+        description: "Hyderabadi Chicken Dum Biryani or Bagara Rice with Chicken Curry.",
+        image: "/images/meal_planner_images/chicken_biryani.jpg",
+        time: 45,
+        calories: 680,
+        protein: "38g",
+        carbs: "72g",
+        fat: "24g",
+        dietType: "non-veg"
+      },
+      dinner: {
+        id: "south-chapati-veg",
+        title: "Chapati with Vegetable Curry",
+        description: "Soft whole wheat Chapatis served with aromatic spiced vegetable curry.",
+        image: "/images/meal_planner_images/chapati.jpg",
+        time: 25,
+        calories: 390,
+        protein: "11g",
+        carbs: "62g",
+        fat: "11g",
+        dietType: "veg"
+      }
+    }
+  },
+  {
+    day: "Monday",
+    date: "Oct 26",
+    meals: {
+      breakfast: {
+        id: "south-upma",
+        title: "Upma",
+        description: "Savory semolina upma tempered with mustard seeds and curry leaves.",
+        image: "/images/meal_planner_images/upma.jpg",
+        time: 15,
+        calories: 260,
+        protein: "6g",
+        carbs: "42g",
+        fat: "8g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-sambar-rice",
+        title: "Sambar Rice, Full Meals",
+        description: "Traditional Sambar Sadam with lentils, drumsticks, ghee, and Full Meals.",
+        image: "/images/meal_planner_images/sambar_rice.jpg",
+        time: 30,
+        calories: 520,
+        protein: "16g",
+        carbs: "84g",
+        fat: "12g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-rice-dal-carrot",
+        title: "Upma (or) Rice, Dal, Carrot",
+        description: "Light evening dinner of warm Upma or steamed Rice, Dal, and Carrot Poriyal.",
+        image: "/images/meal_planner_images/full_meals.jpg",
+        time: 25,
+        calories: 430,
+        protein: "14g",
+        carbs: "78g",
+        fat: "8g",
+        dietType: "veg"
+      }
     }
   },
   {
     day: "Tuesday",
-    date: "Sep 17",
+    date: "Oct 27",
     meals: {
-      breakfast: INITIAL_RECIPES[1], // Masala Dosa
-      lunch: INITIAL_RECIPES[5],     // Tofu Stir Fry
-      snacks: INITIAL_RECIPES[7],    // Avocado Toast
-      dinner: INITIAL_RECIPES[0]     // Paneer Bowl
+      breakfast: {
+        id: "south-pongal-vada",
+        title: "Pongal, Vada, Chutney",
+        description: "Ghee Ven Pongal with black pepper and cashews, with Medu Vada and Chutney.",
+        image: "/images/meal_planner_images/pongal_vada.jpg",
+        time: 30,
+        calories: 460,
+        protein: "14g",
+        carbs: "56g",
+        fat: "20g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-tomato-rice",
+        title: "Tomato Rice, Full Meals, Lady Finger",
+        description: "Tangy Tomato Rice, Full Meals with Rice, Dal, Curd, and crisp Lady Finger fry.",
+        image: "/images/meal_planner_images/tomato_rice.jpg",
+        time: 30,
+        calories: 510,
+        protein: "14g",
+        carbs: "82g",
+        fat: "14g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-rice-cluster-beans",
+        title: "Dosa (or) Rice, Dal, Cluster Beans",
+        description: "Crispy Dosa with Chutney or Steamed Rice, Dal, and Cluster Beans.",
+        image: "/images/meal_planner_images/dosa.jpg",
+        time: 20,
+        calories: 410,
+        protein: "13g",
+        carbs: "72g",
+        fat: "9g",
+        dietType: "veg"
+      }
     }
   },
   {
     day: "Wednesday",
-    date: "Sep 18",
+    date: "Oct 28",
     meals: {
-      breakfast: INITIAL_RECIPES[7], // Avocado Toast
-      lunch: INITIAL_RECIPES[2],     // Rosemary Chicken
-      snacks: INITIAL_RECIPES[4],    // Chickpea Chaat
-      dinner: INITIAL_RECIPES[5]     // Tofu Stir Fry
+      breakfast: {
+        id: "south-idli-vada",
+        title: "Idli, Vada",
+        description: "Soft steamed fermented rice cakes with crispy Medu Vada, Sambar, and Chutney.",
+        image: "/images/meal_planner_images/idli_vada.jpg",
+        time: 25,
+        calories: 380,
+        protein: "12g",
+        carbs: "52g",
+        fat: "14g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-lemon-rice",
+        title: "Full Meals, Lemon Rice, Brinjal Curry",
+        description: "Zesty Lemon Rice, traditional Full Meals with Gutti Vankaya (Brinjal Curry).",
+        image: "/images/meal_planner_images/lemon_rice.jpg",
+        time: 30,
+        calories: 540,
+        protein: "13g",
+        carbs: "85g",
+        fat: "16g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-roti-aloo",
+        title: "Roti, Aloo Curry",
+        description: "Whole wheat Phulka Rotis served with South Indian spiced Aloo Curry.",
+        image: "/images/meal_planner_images/aloo_curry.jpg",
+        time: 20,
+        calories: 410,
+        protein: "11g",
+        carbs: "71g",
+        fat: "9g",
+        dietType: "veg"
+      }
     }
   },
   {
     day: "Thursday",
-    date: "Sep 19",
+    date: "Oct 29",
     meals: {
-      breakfast: INITIAL_RECIPES[3], // Shakshuka
-      lunch: INITIAL_RECIPES[0],     // Paneer Bowl
-      snacks: INITIAL_RECIPES[4],    // Chickpea Chaat
-      dinner: INITIAL_RECIPES[2]     // Rosemary Chicken
+      breakfast: {
+        id: "south-poori-chutney",
+        title: "Poori, Chutney",
+        description: "Fluffy puffed golden Pooris with coconut chutney and potato sagu.",
+        image: "/images/meal_planner_images/poori.jpg",
+        time: 25,
+        calories: 420,
+        protein: "8g",
+        carbs: "50g",
+        fat: "22g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-bagara-paneer",
+        title: "Full Meals, Bagara Rice, Paneer Curry",
+        description: "Hyderabadi Bagara Rice, Full Meals, and creamy rich Paneer Curry.",
+        image: "/images/meal_planner_images/paneer_curry.jpg",
+        time: 35,
+        calories: 610,
+        protein: "22g",
+        carbs: "78g",
+        fat: "22g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-rice-beetroot",
+        title: "Rice, Dal, Beetroot (or) Chapati with Egg Roast",
+        description: "Steamed Rice, Dal with Beetroot Poriyal or soft Chapati with Egg Roast.",
+        image: "/images/meal_planner_images/full_meals.jpg",
+        time: 25,
+        calories: 440,
+        protein: "16g",
+        carbs: "72g",
+        fat: "11g",
+        dietType: "veg"
+      }
     }
   },
   {
     day: "Friday",
-    date: "Sep 20",
+    date: "Oct 30",
     meals: {
-      breakfast: INITIAL_RECIPES[1], // Masala Dosa
-      lunch: INITIAL_RECIPES[5],     // Tofu Stir Fry
-      snacks: INITIAL_RECIPES[7],    // Avocado Toast
-      dinner: INITIAL_RECIPES[6]     // Biryani
+      breakfast: {
+        id: "south-uggani-bajji",
+        title: "Uggani, Bajji",
+        description: "Rayalaseema spiced puffed rice upma with crispy Mirchi Bajji.",
+        image: "/images/meal_planner_images/uggani_bajji.jpg",
+        time: 25,
+        calories: 480,
+        protein: "11g",
+        carbs: "64g",
+        fat: "21g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-meals-carrot",
+        title: "Full Meals, Carrot",
+        description: "South Indian Thali with Rice, Dal, Curd, Rasam, Papad, and Carrot Poriyal.",
+        image: "/images/meal_planner_images/full_meals.jpg",
+        time: 30,
+        calories: 580,
+        protein: "16g",
+        carbs: "94g",
+        fat: "14g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-rice-aloo-fry",
+        title: "Rice, Dal, Aloo Fry",
+        description: "Steamed hot rice, yellow dal with ghee, and crispy spiced Aloo Fry.",
+        image: "/images/meal_planner_images/aloo_curry.jpg",
+        time: 25,
+        calories: 470,
+        protein: "14g",
+        carbs: "78g",
+        fat: "14g",
+        dietType: "veg"
+      }
     }
   },
   {
     day: "Saturday",
-    date: "Sep 21",
+    date: "Oct 31",
     meals: {
-      breakfast: INITIAL_RECIPES[7], // Avocado Toast
-      lunch: INITIAL_RECIPES[6],     // Biryani
-      snacks: INITIAL_RECIPES[4],    // Chickpea Chaat
-      dinner: INITIAL_RECIPES[3]     // Shakshuka
-    }
-  },
-  {
-    day: "Sunday",
-    date: "Sep 22",
-    meals: {
-      breakfast: INITIAL_RECIPES[1], // Masala Dosa
-      lunch: INITIAL_RECIPES[0],     // Paneer Bowl
-      snacks: INITIAL_RECIPES[4],    // Chickpea Chaat
-      dinner: INITIAL_RECIPES[6]     // Biryani
+      breakfast: {
+        id: "south-pesarattu-chutney",
+        title: "Pesarattu, Chutney",
+        description: "Green moong dal crepe topped with onions, with spicy Allam Chutney.",
+        image: "/images/meal_planner_images/pesarattu.jpg",
+        time: 20,
+        calories: 340,
+        protein: "16g",
+        carbs: "46g",
+        fat: "10g",
+        dietType: "veg"
+      },
+      lunch: {
+        id: "south-meals-pulav",
+        title: "Full Meals, Pulav",
+        description: "Aromatic South Indian vegetable pulav served alongside Full Meals.",
+        image: "/images/meal_planner_images/pulav.jpg",
+        time: 35,
+        calories: 630,
+        protein: "17g",
+        carbs: "102g",
+        fat: "16g",
+        dietType: "veg"
+      },
+      dinner: {
+        id: "south-chapati-tomato",
+        title: "Chapati with Tomato Curry (or) Cabbage Curry",
+        description: "Soft whole wheat Chapatis with choice of Tomato Curry or Cabbage Curry.",
+        image: "/images/meal_planner_images/chapati.jpg",
+        time: 20,
+        calories: 370,
+        protein: "10g",
+        carbs: "60g",
+        fat: "9g",
+        dietType: "veg"
+      }
     }
   }
 ];
