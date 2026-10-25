@@ -349,8 +349,8 @@ export const SOUTH_INDIAN_RECIPES = {
   },
   "sambar-rice": {
     id: "south-sambar-rice",
-    title: "Sambar Rice, Full Meals",
-    subtitle: "Traditional Sambar Sadam Cooked with Lentils, Drumsticks & Ghee, with Full Meals",
+    title: "Sambar Rice",
+    subtitle: "Traditional Sambar Sadam Cooked with Lentils, Drumsticks, Ghee & Crispy Papad",
     image: "/images/meal_planner_images/sambar_rice.jpg",
     mealType: "Lunch",
     cuisine: "South Indian",
@@ -377,7 +377,7 @@ export const SOUTH_INDIAN_RECIPES = {
   },
   "tomato-rice-lady-finger": {
     id: "south-tomato-rice",
-    title: "Tomato Rice, Full Meals, Lady Finger",
+    title: "Tomato Rice with Lady Finger Fry",
     subtitle: "Spiced South Indian Thakkali Sadam with Crisp Bendakaya (Okra) Fry",
     image: "/images/meal_planner_images/tomato_rice.jpg",
     mealType: "Lunch",
@@ -405,7 +405,7 @@ export const SOUTH_INDIAN_RECIPES = {
   },
   "lemon-rice-brinjal": {
     id: "south-lemon-rice",
-    title: "Full Meals, Lemon Rice, Brinjal Curry",
+    title: "Lemon Rice with Brinjal Curry",
     subtitle: "Citrusy Turmeric Chitranna with Spicy Gutti Vankaya (Stuffed Eggplant)",
     image: "/images/meal_planner_images/lemon_rice.jpg",
     mealType: "Lunch",
@@ -433,9 +433,9 @@ export const SOUTH_INDIAN_RECIPES = {
   },
   "bagara-rice-paneer": {
     id: "south-bagara-paneer",
-    title: "Full Meals, Bagara Rice, Paneer Curry",
+    title: "Bagara Rice with Paneer Curry",
     subtitle: "Aromatic Spiced Ghee Rice with Creamy South Indian Paneer Masala",
-    image: "/images/meal_planner_images/paneer_curry.jpg",
+    image: "/images/meal_planner_images/bagara_rice.jpg",
     mealType: "Lunch",
     cuisine: "South Indian",
     dietType: "veg",
@@ -460,11 +460,11 @@ export const SOUTH_INDIAN_RECIPES = {
       "Serve fragrant Bagara Rice paired with decadent Paneer Curry."
     ]
   },
-  "full-meals-carrot": {
+  "rice-dal-carrot-lunch": {
     id: "south-meals-carrot",
-    title: "Full Meals, Carrot",
-    subtitle: "Traditional South Indian Thali with Steamed Rice, Sambar, Curd & Carrot Poriyal",
-    image: "/images/meal_planner_images/full_meals.jpg",
+    title: "Rice, Dal with Carrot Poriyal",
+    subtitle: "Traditional South Indian Steamed Rice, Toor Dal with Ghee, Fresh Carrot Poriyal & Curd",
+    image: "/images/meal_planner_images/rice_dal_carrot.jpg",
     mealType: "Lunch",
     cuisine: "South Indian",
     dietType: "veg",
@@ -488,10 +488,10 @@ export const SOUTH_INDIAN_RECIPES = {
       "Serve alongside hot rice, dal/sambar, cooling curd, and papadam."
     ]
   },
-  "full-meals-pulav": {
+  "veg-pulav": {
     id: "south-meals-pulav",
-    title: "Full Meals, Pulav",
-    subtitle: "Complete Thali Accompanied by Aromatic South Indian Vegetable Pulav",
+    title: "Veg Pulav",
+    subtitle: "Aromatic South Indian Vegetable Pulav Cooked with Whole Spices, Cashews & Mint",
     image: "/images/meal_planner_images/pulav.jpg",
     mealType: "Lunch",
     cuisine: "South Indian",
@@ -512,7 +512,7 @@ export const SOUTH_INDIAN_RECIPES = {
       "Sauté whole spices, green chilies, onions, and mint in ghee until fragrant.",
       "Add mixed vegetables, coconut milk, washed rice, and water.",
       "Cover and cook on low heat for 18 minutes until rice grains are fluffy and distinct.",
-      "Serve hot with vegetable kurma, raita, and full meals accompaniment."
+      "Serve hot with vegetable kurma, raita, and crunchy papad."
     ]
   },
 
@@ -728,10 +728,10 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-chicken-biryani",
-        title: "Chicken Biryani (or) Bagara Rice Chicken Curry",
+        title: "Chicken Biryani (or) Bagara Rice Chicken",
         options: [
-          "Chicken Curry with Bagara Rice",
           "Chicken Biryani",
+          "Chicken Curry with Bagara Rice",
           "Chicken Fry with Bagara Rice",
           "Mutton Biryani",
           "Ragi Rice with Chicken Curry",
@@ -740,8 +740,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
           "Bagara Rice with Egg Curry",
           "Veg: Bagara Rice with Mushroom Curry",
           "Veg: Veg Biryani",
-          "Veg: Brinjal Biryani",
-          "Veg: Full Meals with Brinjal Curry"
+          "Veg: Brinjal Biryani"
         ],
         description: "Royal Hyderabadi Basmati Dum Biryani or spiced Bagara Rice with rich Chicken Curry.",
         image: "/images/meal_planner_images/chicken_biryani.jpg",
@@ -756,14 +755,14 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         recipeId: "south-chapati-veg",
         title: "Chapati with Vegetable Curry (or) Bagara Rice Chicken",
         options: [
+          "Chapati with Vegetable Curry",
           "Non-Veg: Chicken Curry with Bagara Rice",
           "Non-Veg: Chicken Fry with Bagara Rice",
           "Non-Veg: Egg Rice",
-          "Veg: Chapati with Vegetable Curry",
           "Veg: Chapati with Dal",
           "Veg: Chapati with Sambar"
         ],
-        description: "Soft whole wheat Chapatis served with aromatic spiced vegetable curry or chicken curry.",
+        description: "Soft whole wheat Chapatis served with aromatic spiced vegetable kurma or chicken curry.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 25,
         calories: 390,
@@ -791,8 +790,8 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-sambar-rice",
-        title: "Sambar Rice, Full Meals",
-        description: "Comforting Sambar Sadam cooked with lentils, drumsticks, and ghee, with full meals.",
+        title: "Sambar Rice",
+        description: "Comforting Sambar Sadam cooked with lentils, drumsticks, and ghee, served with papadam.",
         image: "/images/meal_planner_images/sambar_rice.jpg",
         time: 30,
         calories: 520,
@@ -805,11 +804,11 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         recipeId: "south-rice-dal-carrot",
         title: "Upma (or) Rice, Dal, Carrot",
         options: [
-          "Upma",
-          "Rice, Dal, Carrot Poriyal"
+          "Rice, Dal, Carrot Poriyal",
+          "Upma"
         ],
         description: "Light evening dinner of warm Upma or steamed Rice, yellow Dal, and fresh Carrot Poriyal.",
-        image: "/images/meal_planner_images/full_meals.jpg",
+        image: "/images/meal_planner_images/rice_dal_carrot.jpg",
         time: 25,
         calories: 430,
         protein: "14g",
@@ -836,8 +835,8 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-tomato-rice",
-        title: "Tomato Rice, Full Meals, Lady Finger",
-        description: "Tangy spiced Tomato Rice, Full Meals with Rice, Dal, Curd, and crisp Lady Finger (Okra) fry.",
+        title: "Tomato Rice with Lady Finger Fry",
+        description: "Tangy spiced Tomato Rice served with crispy spiced Lady Finger (Bendakaya/Okra) fry and raita.",
         image: "/images/meal_planner_images/tomato_rice.jpg",
         time: 30,
         calories: 510,
@@ -848,13 +847,13 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         recipeId: "south-rice-cluster-beans",
-        title: "Dosa (or) Rice, Dal, Cluster Beans",
+        title: "Chapati with Dal (or) Rice, Dal, Goruchikkudu",
         options: [
-          "Crispy Dosa with Chutney",
+          "Chapati with Dal",
           "Rice, Dal, Cluster Beans (Goruchikkudu)"
         ],
-        description: "Golden Dosa with Chutney or healthy Steamed Rice, Dal, and tempered Cluster Beans.",
-        image: "/images/meal_planner_images/dosa.jpg",
+        description: "Soft whole wheat Chapatis with Dal or healthy Steamed Rice, Dal, and tempered Cluster Beans.",
+        image: "/images/meal_planner_images/chapati.jpg",
         time: 20,
         calories: 410,
         protein: "13g",
@@ -881,8 +880,8 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-lemon-rice",
-        title: "Full Meals, Lemon Rice, Brinjal Curry",
-        description: "Zesty Lemon Rice, traditional Full Meals with Gutti Vankaya (Andhra stuffed Brinjal curry).",
+        title: "Lemon Rice with Brinjal Curry",
+        description: "Zesty Lemon Rice (Chitranna) with roasted peanuts, and spicy Andhra Gutti Vankaya stuffed brinjal curry.",
         image: "/images/meal_planner_images/lemon_rice.jpg",
         time: 30,
         calories: 540,
@@ -892,10 +891,14 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         dietType: "veg"
       },
       dinner: {
-        recipeId: "south-roti-aloo",
-        title: "Roti, Aloo Curry",
-        description: "Tender whole wheat Phulka Rotis served with home-style South Indian spiced Potato curry.",
-        image: "/images/meal_planner_images/aloo_curry.jpg",
+        recipeId: "south-chapati-veg",
+        title: "Chapati with Veg Curry (or) Rice, Dal, Aloo Fry",
+        options: [
+          "Chapati with Vegetable Curry",
+          "Rice, Dal, Aloo Fry"
+        ],
+        description: "Warm soft Chapatis with vegetable kurma or steamed rice, comforting yellow dal, and crispy Andhra potato fry.",
+        image: "/images/meal_planner_images/chapati.jpg",
         time: 20,
         calories: 410,
         protein: "11g",
@@ -922,9 +925,9 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-bagara-paneer",
-        title: "Full Meals, Bagara Rice, Paneer Curry",
-        description: "Fragrant Hyderabadi Bagara Rice, Full Meals, and creamy rich South Indian Paneer curry.",
-        image: "/images/meal_planner_images/paneer_curry.jpg",
+        title: "Bagara Rice with Paneer Curry",
+        description: "Fragrant Hyderabadi Bagara Rice served with rich, creamy South Indian Paneer curry.",
+        image: "/images/meal_planner_images/bagara_rice.jpg",
         time: 35,
         calories: 610,
         protein: "22g",
@@ -933,20 +936,19 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         dietType: "veg"
       },
       dinner: {
-        recipeId: "south-rice-beetroot",
-        title: "Rice, Dal, Beetroot (or) Chapati with Egg Roast",
+        recipeId: "south-idli-vada",
+        title: "Idli, Chutney (or) Dosa, Chutney",
         options: [
-          "Rice, Dal, Beetroot Poriyal",
-          "Chapati with Egg Roast",
-          "Chapati with Sundal Curry"
+          "Idli, Chutney",
+          "Dosa, Chutney"
         ],
-        description: "Comforting Rice and Dal with vibrant Beetroot or soft Chapati with South Indian Egg Roast.",
-        image: "/images/meal_planner_images/full_meals.jpg",
-        time: 25,
-        calories: 440,
-        protein: "16g",
-        carbs: "72g",
-        fat: "11g",
+        description: "Light evening dinner of soft steamed Idlis or crispy Dosa served with fresh Coconut Chutney and Sambar.",
+        image: "/images/meal_planner_images/idli_vada.jpg",
+        time: 20,
+        calories: 360,
+        protein: "11g",
+        carbs: "54g",
+        fat: "10g",
         dietType: "veg"
       }
     }
@@ -968,9 +970,9 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-meals-carrot",
-        title: "Full Meals, Carrot",
-        description: "Traditional South Indian Thali with Rice, Dal, Curd, Rasam, Papad, and fresh Carrot Poriyal.",
-        image: "/images/meal_planner_images/full_meals.jpg",
+        title: "Rice, Dal with Carrot Poriyal",
+        description: "Traditional South Indian meal of hot steamed rice, yellow toor dal with ghee, fresh Carrot Poriyal, and curd.",
+        image: "/images/meal_planner_images/rice_dal_carrot.jpg",
         time: 30,
         calories: 580,
         protein: "16g",
@@ -979,15 +981,19 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         dietType: "veg"
       },
       dinner: {
-        recipeId: "south-rice-aloo-fry",
-        title: "Rice, Dal, Aloo Fry",
-        description: "Steamed hot rice, seasoned yellow dal with ghee, and crispy spiced Andhra potato fry.",
-        image: "/images/meal_planner_images/aloo_curry.jpg",
+        recipeId: "south-bagara-paneer",
+        title: "Chapati with Paneer Curry (or) Rice, Dal, Bendakaya Fry",
+        options: [
+          "Chapati with Paneer Curry",
+          "Rice, Dal, Bendakaya (Okra) Fry"
+        ],
+        description: "Soft whole wheat Chapatis with rich Paneer Curry or hot steamed rice, yellow dal, and crisp Okra fry.",
+        image: "/images/meal_planner_images/paneer_curry.jpg",
         time: 25,
-        calories: 470,
-        protein: "14g",
-        carbs: "78g",
-        fat: "14g",
+        calories: 430,
+        protein: "15g",
+        carbs: "68g",
+        fat: "12g",
         dietType: "veg"
       }
     }
@@ -1009,8 +1015,8 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         recipeId: "south-meals-pulav",
-        title: "Full Meals, Pulav",
-        description: "Aromatic South Indian vegetable pulav with coconut milk, served alongside Full Meals.",
+        title: "Veg Pulav",
+        description: "Aromatic South Indian vegetable pulav cooked with whole spices, cashews, and mint, served with raita.",
         image: "/images/meal_planner_images/pulav.jpg",
         time: 35,
         calories: 630,
@@ -1020,20 +1026,19 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
         dietType: "veg"
       },
       dinner: {
-        recipeId: "south-chapati-tomato",
-        title: "Chapati with Tomato Curry (or) Cabbage Curry",
+        recipeId: "south-poori-chutney",
+        title: "Poori with Curry (or) Rice, Dal, Gutti Vankaya",
         options: [
-          "Chapati with Tomato Curry",
-          "Chapati with Cabbage Curry",
-          "Chapati with Cauliflower Curry"
+          "Poori with Curry",
+          "Rice, Dal, Gutti Vankaya (Brinjal Curry)"
         ],
-        description: "Soft whole wheat Chapatis served with choice of tangy Tomato Curry, Cabbage, or Cauliflower curry.",
-        image: "/images/meal_planner_images/chapati.jpg",
-        time: 20,
-        calories: 370,
-        protein: "10g",
-        carbs: "60g",
-        fat: "9g",
+        description: "Puffed golden Pooris with potato curry or steamed rice, comforting yellow dal, and spicy stuffed Brinjal curry.",
+        image: "/images/meal_planner_images/poori.jpg",
+        time: 25,
+        calories: 420,
+        protein: "11g",
+        carbs: "62g",
+        fat: "14g",
         dietType: "veg"
       }
     }

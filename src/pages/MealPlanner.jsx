@@ -32,6 +32,31 @@ export default function MealPlanner() {
   const currentDayData = activePlanList[selectedDayIndex] || activePlanList[0];
   const currentDateInfo = weekDates[selectedDayIndex] || weekDates[0];
 
+  const OPTION_IMAGE_MAP = {
+    "Upma": "/images/meal_planner_images/upma.jpg",
+    "Rice, Dal, Carrot Poriyal": "/images/meal_planner_images/rice_dal_carrot.jpg",
+    "Chicken Biryani": "/images/meal_planner_images/chicken_biryani.jpg",
+    "Chicken Curry with Bagara Rice": "/images/meal_planner_images/bagara_rice.jpg",
+    "Non-Veg: Chicken Curry with Bagara Rice": "/images/meal_planner_images/bagara_rice.jpg",
+    "Mutton Biryani": "/images/meal_planner_images/mutton_biryani.jpg",
+    "Chapati with Vegetable Curry": "/images/meal_planner_images/chapati.jpg",
+    "Veg: Chapati with Vegetable Curry": "/images/meal_planner_images/chapati.jpg",
+    "Chapati with Dal": "/images/meal_planner_images/chapati.jpg",
+    "Veg: Chapati with Dal": "/images/meal_planner_images/chapati.jpg",
+    "Chapati with Paneer Curry": "/images/meal_planner_images/paneer_curry.jpg",
+    "Rice, Dal, Cluster Beans (Goruchikkudu)": "/images/meal_planner_images/rice_dal_carrot.jpg",
+    "Rice, Dal, Aloo Fry": "/images/meal_planner_images/rice_dal_carrot.jpg",
+    "Rice, Dal, Bendakaya (Okra) Fry": "/images/meal_planner_images/tomato_rice.jpg",
+    "Rice, Dal, Gutti Vankaya (Brinjal Curry)": "/images/meal_planner_images/lemon_rice.jpg",
+    "Idli, Chutney": "/images/meal_planner_images/idli_vada.jpg",
+    "Idli with Chutney & Sambar": "/images/meal_planner_images/idli_vada.jpg",
+    "Dosa, Chutney": "/images/meal_planner_images/dosa.jpg",
+    "Crispy Dosa with Chutney": "/images/meal_planner_images/dosa.jpg",
+    "Poori with Curry": "/images/meal_planner_images/poori.jpg",
+    "Poori with Potato Curry": "/images/meal_planner_images/poori.jpg",
+    "Veg Pulav": "/images/meal_planner_images/pulav.jpg"
+  };
+
   // Helper to get active meal object (accounting for option selection)
   const getMealData = (dayIndex, slot) => {
     const day = activePlanList[dayIndex] || activePlanList[0];
@@ -41,11 +66,12 @@ export default function MealPlanner() {
     const optKey = `${day.day}_${slot}`;
     const selectedOpt = selectedMealOption[optKey];
 
-    // If user picked an alternative option, try to adapt title
+    // If user picked an alternative option, try to adapt title and image
     if (selectedOpt && selectedOpt !== baseMeal.title) {
       return {
         ...baseMeal,
-        title: selectedOpt
+        title: selectedOpt,
+        image: OPTION_IMAGE_MAP[selectedOpt] || baseMeal.image
       };
     }
     return baseMeal;
