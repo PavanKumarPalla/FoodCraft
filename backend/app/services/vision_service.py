@@ -1,79 +1,167 @@
 """
-Food Craft AI — Vision Service (YOLOv8 Ingredient Detection)
-─────────────────────────────────────────────────────────────
-Wraps Ultralytics YOLOv8 for real-time food ingredient detection
-from camera snapshots or uploaded images.
-
-Flow:
-    1. Load custom food-domain weights from backend/models/
-    2. If custom weights are missing, fall back to pretrained yolov8n.pt
-    3. Accept a base64-encoded image or raw bytes
-    4. Run inference and return detected ingredient labels + confidence
+Food Craft AI — Enhanced Dual-Engine Vision Service
+────────────────────────────────────────────────────
+Ensemble combining YOLOv8 (FoodSeg103 & custom food weights) for localized
+object bounding boxes with OpenAI CLIP (ViT-B/32) for zero-shot culinary
+scene verification. Accurately detects whole ingredients, chopped produce,
+fridge containers, and cooked dishes (e.g. fried rice, noodles, curry, salad).
 """
 
 import base64
 import io
 import logging
 from pathlib import Path
-
 import numpy as np
 from PIL import Image
+import torch
 
 logger = logging.getLogger(__name__)
 
-# ── Lazy-loaded model singleton ──────────────────────────────
-_model = None
+# ── Global Model Singletons ──────────────────────────────────
+_yolo_model = None
+_clip_model = None
+_clip_preprocess = None
+_clip_text_tokens = None
+_clip_labels = None
+
+# Comprehensive Food/Culinary Vocabulary for Zero-Shot Scene Classification
+CULINARY_VOCABULARY = [
+    # Cooked Dishes & Staples
+    "fried rice", "white rice", "steamed rice", "rice", "pasta", "noodles", "bread",
+    "pizza", "soup", "salad", "sandwich", "curry", "dosa", "idli", "biryani",
+    # Produce & Vegetables
+    "tomato", "cherry tomato", "potato", "sweet potato", "onion", "spring onion",
+    "garlic", "ginger", "carrot", "corn", "green beans", "peas", "bell pepper",
+    "capsicum", "chili pepper", "cucumber", "zucchini", "broccoli", "cauliflower",
+    "spinach", "cabbage", "lettuce", "mushroom", "eggplant", "pumpkin", "avocado",
+    "asparagus", "celery", "radish", "coriander", "mint", "lemon", "lime",
+    # Fruits
+    "orange", "mandarin", "apple", "banana", "strawberry", "blueberry", "raspberry",
+    "cherry", "mango", "pineapple", "watermelon", "melon", "kiwi", "peach", "pear", "grape",
+    # Proteins & Dairy
+    "chicken", "egg", "paneer", "tofu", "cheese", "butter", "milk", "yogurt",
+    "fish", "shrimp", "mutton", "beef", "pork", "almond", "cashew", "peanuts"
+]
+
+# Canonical Culinary Name Normalizer
+CANONICAL_NAMES = {
+    "chicken duck": "Chicken",
+    "fried meat": "Meat",
+    "cheese butter": "Cheese",
+    "french fries": "French Fries",
+    "green beans": "Green Beans",
+    "french beans": "Green Beans",
+    "snow peas": "Peas",
+    "pea": "Peas",
+    "pea food": "Peas",
+    "cilantro mint": "Cilantro",
+    "spring onion": "Spring Onion",
+    "green onion": "Spring Onion",
+    "scallion": "Spring Onion",
+    "white radish": "Radish",
+    "daikon": "Radish",
+    "sweet potato": "Sweet Potato",
+    "cherry tomato": "Cherry Tomato",
+    "cherries": "Cherry",
+    "bell pepper": "Capsicum",
+    "capsicum": "Capsicum",
+    "chili": "Chili",
+    "chilli": "Chili",
+    "cayenne": "Chili",
+    "fried rice": "Fried Rice",
+    "white rice": "Rice",
+    "steamed rice": "Rice",
+    "rice": "Rice",
+    "tofu": "Tofu",
+    "bean curd": "Tofu",
+    "paneer": "Paneer",
+    "corn cob": "Corn",
+    "edible corn": "Corn",
+    "maize": "Corn",
+    "cuke": "Cucumber",
+    "aubergine": "Eggplant",
+    "cocoanut": "Coconut",
+    "garbanzo": "Chickpeas",
+    "chickpea": "Chickpeas",
+    "gingerroot": "Ginger",
+    "ail": "Garlic",
+    "courgette": "Zucchini",
+    "salad": "Salad",
+}
+
+BOX_COLORS = [
+    "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4",
+    "#ec4899", "#3b82f6", "#14b8a6", "#f97316", "#84cc16",
+]
 
 
-def _load_model():
-    """Load the YOLOv8 model once and cache it globally."""
-    global _model
-    if _model is not None:
-        return _model
+def _clean_name(raw_name: str) -> str:
+    """Normalize raw class names from models into clean culinary ingredient labels."""
+    low = raw_name.lower().strip()
+    for k, v in CANONICAL_NAMES.items():
+        if k in low:
+            return v
+    # Fallback cleanup
+    cleaned = low.split("/")[0].split("(")[0].strip()
+    if cleaned in CANONICAL_NAMES:
+        return CANONICAL_NAMES[cleaned]
+    return cleaned.title()
+
+
+def _load_yolo_model():
+    """Load the best available YOLOv8 food weights."""
+    global _yolo_model
+    if _yolo_model is not None:
+        return _yolo_model
 
     from ultralytics import YOLO
     from app.core.config import settings
 
-    custom = Path(settings.YOLO_CUSTOM_WEIGHTS)
-    if not custom.exists():
-        logger.info("Custom food weights not found at %s. Downloading from Hugging Face Hub...", custom)
-        try:
-            from huggingface_hub import hf_hub_download
-            import shutil
-            custom.parent.mkdir(parents=True, exist_ok=True)
-            dl_path = hf_hub_download(
-                repo_id="Senu-12/snapstock-fruit-vegetable-detector",
-                filename="yolov8/fruit_vegetable_yolov8m.pt",
-                local_dir=str(custom.parent),
-            )
-            dl = Path(dl_path)
-            if dl.exists() and dl != custom:
-                shutil.copy2(dl, custom)
-                logger.info("Cached food weights to: %s", custom)
-        except Exception as e:
-            logger.warning("Could not auto-download food weights from Hugging Face: %s", e)
+    models_dir = Path(__file__).resolve().parent.parent.parent / "models"
+    foodseg_path = models_dir / "yolov8_foodseg103.pt"
+    custom_path = Path(settings.YOLO_CUSTOM_WEIGHTS)
 
-    if custom.exists():
-        logger.info("Loading custom YOLOv8 food weights: %s", custom.name)
-        _model = YOLO(str(custom))
+    chosen_weights = None
+    if foodseg_path.exists():
+        chosen_weights = str(foodseg_path)
+        logger.info("Using FoodSeg103 YOLOv8 model: %s", chosen_weights)
+    elif custom_path.exists():
+        chosen_weights = str(custom_path)
+        logger.info("Using custom YOLOv8 model: %s", chosen_weights)
     else:
-        logger.warning(
-            "Custom weights not found at %s — falling back to %s",
-            custom,
-            settings.YOLO_FALLBACK_WEIGHTS,
-        )
-        _model = YOLO(settings.YOLO_FALLBACK_WEIGHTS)
+        chosen_weights = settings.YOLO_FALLBACK_WEIGHTS
+        logger.warning("Falling back to standard YOLO weights: %s", chosen_weights)
 
-    logger.info("YOLOv8 model loaded. Classes: %s", len(_model.names))
-    return _model
+    _yolo_model = YOLO(chosen_weights)
+    return _yolo_model
+
+
+def _load_clip():
+    """Lazy-load OpenAI CLIP model and pre-encode culinary text tokens."""
+    global _clip_model, _clip_preprocess, _clip_text_tokens, _clip_labels
+    if _clip_model is not None:
+        return _clip_model, _clip_preprocess, _clip_text_tokens, _clip_labels
+
+    try:
+        import clip
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        logger.info("Loading CLIP ViT-B/32 on %s...", device)
+        _clip_model, _clip_preprocess = clip.load("ViT-B/32", device=device)
+        _clip_labels = CULINARY_VOCABULARY
+        prompts = [f"a photo of delicious {item}" for item in _clip_labels]
+        _clip_text_tokens = clip.tokenize(prompts).to(device)
+        logger.info("CLIP loaded with %d culinary vocabulary items.", len(_clip_labels))
+    except Exception as e:
+        logger.warning("CLIP model could not be initialized: %s", e)
+        _clip_model = None
+
+    return _clip_model, _clip_preprocess, _clip_text_tokens, _clip_labels
 
 
 def _decode_image(image_data: str) -> Image.Image:
     """Decode a base64-encoded image string into a PIL Image."""
-    # Strip optional data-URI prefix (e.g. "data:image/jpeg;base64,...")
     if "," in image_data:
         image_data = image_data.split(",", 1)[1]
-
     raw_bytes = base64.b64decode(image_data)
     return Image.open(io.BytesIO(raw_bytes)).convert("RGB")
 
@@ -83,30 +171,20 @@ def detect_ingredients(
     confidence_threshold: float | None = None,
 ) -> dict:
     """
-    Run YOLOv8 inference on a base64-encoded image.
-
-    Returns:
-        {
-            "success": True,
-            "detected_ingredients": [
-                {"name": "tomato", "confidence": 0.92, "bbox": [x1,y1,x2,y2]},
-                ...
-            ],
-            "unique_ingredients": ["tomato", "onion", ...],
-            "count": 5,
-            "model": "yolov8n_food_ingredients.pt"
-        }
+    Dual-Engine Food Detection:
+    1. Runs YOLOv8 for spatial bounding box localization of ingredients.
+    2. Runs CLIP Zero-Shot Vision for scene-level and cooked-dish verification.
+    3. Merges and deduplicates into high-confidence recognized food items.
     """
     from app.core.config import settings
 
     if confidence_threshold is None:
-        confidence_threshold = settings.YOLO_CONFIDENCE_THRESHOLD
+        confidence_threshold = settings.YOLO_CONFIDENCE_THRESHOLD or 0.15
 
-    model = _load_model()
     image = _decode_image(image_base64)
     img_w, img_h = image.size
 
-    # If image is unusually small, upscale with high-quality resampling for YOLO feature extraction
+    # Ensure appropriate resolution for feature extraction
     if img_w < 320 or img_h < 320:
         scale = max(1.0, 640.0 / max(img_w, img_h))
         scaled_w = int(img_w * scale)
@@ -115,157 +193,93 @@ def detect_ingredients(
     else:
         infer_img = image
 
-    # Run inference with standardized 640 input resolution and NMS
-    results = model.predict(
-        source=np.array(infer_img),
-        conf=confidence_threshold,
-        iou=0.45,
-        imgsz=640,
-        verbose=False,
-    )
-
-    BOX_COLORS = [
-        "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4",
-        "#ec4899", "#3b82f6", "#14b8a6", "#f97316", "#84cc16",
-    ]
-
+    yolo = _load_yolo_model()
     raw_detections = []
 
-    for result in results:
-        boxes = result.boxes
-        if boxes is None:
-            continue
-        for box in boxes:
-            cls_id = int(box.cls[0])
-            conf = float(box.conf[0])
-            raw_name = model.names.get(cls_id, f"class_{cls_id}").strip().lower()
+    # ── 1. YOLOv8 Inference ──────────────────────────────────────
+    try:
+        results = yolo.predict(
+            source=np.array(infer_img),
+            conf=confidence_threshold,
+            iou=0.45,
+            imgsz=640,
+            verbose=False,
+        )
 
-            # Clean compound label names from LVIS / Food weights into clear culinary names
-            if "kiwi" in raw_name:
-                name = "Kiwi"
-            elif "tomato" in raw_name:
-                name = "Tomato"
-            elif "potato" in raw_name and "sweet" not in raw_name:
-                name = "Potato"
-            elif "sweet potato" in raw_name:
-                name = "Sweet Potato"
-            elif "onion" in raw_name and "green" not in raw_name and "spring" not in raw_name:
-                name = "Onion"
-            elif "spring onion" in raw_name or "green onion" in raw_name or "scallion" in raw_name:
-                name = "Spring Onion"
-            elif "garlic" in raw_name:
-                name = "Garlic"
-            elif "ginger" in raw_name:
-                name = "Ginger"
-            elif "corn" in raw_name or "maize" in raw_name:
-                name = "Corn"
-            elif "cucumber" in raw_name or "cuke" in raw_name:
-                name = "Cucumber"
-            elif "capsicum" in raw_name or "bell pepper" in raw_name:
-                name = "Capsicum"
-            elif "chili" in raw_name or "chilli" in raw_name or "cayenne" in raw_name:
-                name = "Chili"
-            elif "mushroom" in raw_name:
-                name = "Mushroom"
-            elif "tofu" in raw_name or "bean curd" in raw_name:
-                name = "Tofu"
-            elif "lemon" in raw_name:
-                name = "Lemon"
-            elif "lime" in raw_name:
-                name = "Lime"
-            elif "apple" in raw_name:
-                name = "Apple"
-            elif "banana" in raw_name:
-                name = "Banana"
-            elif "orange" in raw_name:
-                name = "Orange"
-            elif "strawberry" in raw_name:
-                name = "Strawberry"
-            elif "blueberry" in raw_name:
-                name = "Blueberry"
-            elif "blackberry" in raw_name:
-                name = "Blackberry"
-            elif "eggplant" in raw_name or "aubergine" in raw_name:
-                name = "Eggplant"
-            elif "watermelon" in raw_name:
-                name = "Watermelon"
-            elif "broccoli" in raw_name:
-                name = "Broccoli"
-            elif "carrot" in raw_name:
-                name = "Carrot"
-            elif "cauliflower" in raw_name:
-                name = "Cauliflower"
-            elif "avocado" in raw_name:
-                name = "Avocado"
-            elif "spinach" in raw_name or "lettuce" in raw_name:
-                name = "Spinach"
-            elif "almond" in raw_name:
-                name = "Almond"
-            elif "asparagus" in raw_name:
-                name = "Asparagus"
-            elif "celery" in raw_name:
-                name = "Celery"
-            elif "cherry" in raw_name:
-                name = "Cherry"
-            elif "coconut" in raw_name:
-                name = "Coconut"
-            elif "grape" in raw_name:
-                name = "Grape"
-            elif "green bean" in raw_name:
-                name = "Green Bean"
-            elif "pea" in raw_name:
-                name = "Peas"
-            elif "peach" in raw_name:
-                name = "Peach"
-            elif "pear" in raw_name:
-                name = "Pear"
-            elif "pineapple" in raw_name:
-                name = "Pineapple"
-            elif "pumpkin" in raw_name:
-                name = "Pumpkin"
-            elif "radish" in raw_name:
-                name = "Radish"
-            elif "zucchini" in raw_name:
-                name = "Zucchini"
-            else:
-                name = raw_name.split("/")[0].strip().title()
+        for result in results:
+            boxes = result.boxes
+            if boxes is None:
+                continue
+            for box in boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                raw_name = yolo.names.get(cls_id, f"class_{cls_id}").strip().lower()
 
-            coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
-            x1, y1, x2, y2 = coords
+                # Ignore non-food background classes
+                if raw_name in ("background", "other ingredients", "dishware", "plate"):
+                    continue
 
-            # Map coordinates back to original image dimensions if infer_img was scaled
-            orig_infer_w = infer_img.size[0]
-            orig_infer_h = infer_img.size[1]
-            scale_x = img_w / orig_infer_w if orig_infer_w > 0 else 1.0
-            scale_y = img_h / orig_infer_h if orig_infer_h > 0 else 1.0
+                name = _clean_name(raw_name)
 
-            real_x1 = max(0.0, x1 * scale_x)
-            real_y1 = max(0.0, y1 * scale_y)
-            real_x2 = min(float(img_w), x2 * scale_x)
-            real_y2 = min(float(img_h), y2 * scale_y)
-            real_w = max(1.0, real_x2 - real_x1)
-            real_h = max(1.0, real_y2 - real_y1)
+                coords = box.xyxy[0].tolist()
+                x1, y1, x2, y2 = coords
 
-            # Compute percentage coordinates relative to original image dimensions
-            x_pct = round((real_x1 / img_w) * 100, 2) if img_w > 0 else 0.0
-            y_pct = round((real_y1 / img_h) * 100, 2) if img_h > 0 else 0.0
-            w_pct = round((real_w / img_w) * 100, 2) if img_w > 0 else 0.0
-            h_pct = round((real_h / img_h) * 100, 2) if img_h > 0 else 0.0
+                # Rescale coordinates to original image size
+                orig_w, orig_h = infer_img.size
+                scale_x = img_w / orig_w if orig_w > 0 else 1.0
+                scale_y = img_h / orig_h if orig_h > 0 else 1.0
 
-            raw_detections.append({
-                "name": name,
-                "confidence": f"{round(conf * 100, 1)}%",
-                "confidence_raw": round(conf, 4),
-                "box": {
-                    "x": x_pct,
-                    "y": y_pct,
-                    "w": w_pct,
-                    "h": h_pct,
-                },
-                "bbox_pixels": [round(real_x1, 1), round(real_y1, 1), round(real_x2, 1), round(real_y2, 1)],
-            })
+                real_x1 = max(0.0, x1 * scale_x)
+                real_y1 = max(0.0, y1 * scale_y)
+                real_x2 = min(float(img_w), x2 * scale_x)
+                real_y2 = min(float(img_h), y2 * scale_y)
+                real_w = max(1.0, real_x2 - real_x1)
+                real_h = max(1.0, real_y2 - real_y1)
 
-    # Sort by raw confidence descending and apply secondary deduplication
+                x_pct = round((real_x1 / img_w) * 100, 2) if img_w > 0 else 0.0
+                y_pct = round((real_y1 / img_h) * 100, 2) if img_h > 0 else 0.0
+                w_pct = round((real_w / img_w) * 100, 2) if img_w > 0 else 0.0
+                h_pct = round((real_h / img_h) * 100, 2) if img_h > 0 else 0.0
+
+                raw_detections.append({
+                    "name": name,
+                    "confidence": f"{round(conf * 100, 1)}%",
+                    "confidence_raw": round(conf, 4),
+                    "box": {
+                        "x": x_pct,
+                        "y": y_pct,
+                        "w": w_pct,
+                        "h": h_pct,
+                    },
+                    "bbox_pixels": [round(real_x1, 1), round(real_y1, 1), round(real_x2, 1), round(real_y2, 1)],
+                })
+    except Exception as e:
+        logger.error("YOLO inference error: %s", e)
+
+    # ── 2. CLIP Zero-Shot Scene & Dish Verification ──────────────
+    clip_scene_items = []
+    try:
+        clip_m, clip_prep, text_tokens, labels = _load_clip()
+        if clip_m is not None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            clip_in = clip_prep(image).unsqueeze(0).to(device)
+            with torch.no_grad():
+                logits, _ = clip_m(clip_in, text_tokens)
+                probs = logits.softmax(dim=-1).cpu().numpy()[0]
+
+            top_idx = probs.argsort()[::-1]
+            for idx in top_idx:
+                prob = float(probs[idx])
+                item_label = _clean_name(labels[idx])
+                # High confidence items or top items
+                if prob >= 0.12 or (len(clip_scene_items) < 3 and prob >= 0.05):
+                    clip_scene_items.append((item_label, prob))
+                if len(clip_scene_items) >= 4:
+                    break
+    except Exception as e:
+        logger.warning("CLIP scene recognition skipped: %s", e)
+
+    # ── 3. Spatial Non-Maximum Suppression on YOLO boxes ─────────
     raw_detections.sort(key=lambda d: d["confidence_raw"], reverse=True)
     detections = []
     seen_names = set()
@@ -290,15 +304,45 @@ def detect_ingredients(
                 break
 
         if not dominated:
-            color = BOX_COLORS[len(detections) % len(BOX_COLORS)]
-            cand["color"] = color
             detections.append(cand)
             seen_names.add(cand["name"])
 
-    unique_list = sorted(seen_names)
+    # ── 4. Fuse CLIP scene detections (Dishes & Overall Ingredients) ──
+    for clip_name, prob in clip_scene_items:
+        # Check if already detected by YOLO
+        already_present = any(
+            d["name"].lower() in clip_name.lower() or clip_name.lower() in d["name"].lower()
+            for d in detections
+        )
+        if not already_present and prob >= 0.08:
+            seen_names.add(clip_name)
+            # Add full-dish / prominent scene region
+            detections.append({
+                "name": clip_name,
+                "confidence": f"{round(prob * 100, 1)}%",
+                "confidence_raw": round(prob, 4),
+                "box": {
+                    "x": 8.0,
+                    "y": 8.0,
+                    "w": 84.0,
+                    "h": 84.0,
+                },
+                "bbox_pixels": [
+                    round(img_w * 0.08, 1),
+                    round(img_h * 0.08, 1),
+                    round(img_w * 0.92, 1),
+                    round(img_h * 0.92, 1),
+                ],
+            })
+
+    # Assign distinct colors to boxes
+    for idx, d in enumerate(detections):
+        d["color"] = BOX_COLORS[idx % len(BOX_COLORS)]
+
+    unique_list = sorted(list(seen_names))
 
     logger.info(
-        "Detected %d objects → %d unique ingredients: %s",
+        "Dual-Engine detected %d boxes → %d unique ingredients: %s",
         len(detections),
         len(unique_list),
         unique_list,
@@ -309,7 +353,5 @@ def detect_ingredients(
         "detected_ingredients": detections,
         "unique_ingredients": unique_list,
         "count": len(unique_list),
-        "model": Path(settings.YOLO_CUSTOM_WEIGHTS).name
-        if Path(settings.YOLO_CUSTOM_WEIGHTS).exists()
-        else settings.YOLO_FALLBACK_WEIGHTS,
+        "model": "YOLOv8 + CLIP Food Intelligence",
     }

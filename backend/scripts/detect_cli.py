@@ -5,10 +5,14 @@ Usage:
     python -m backend.scripts.detect_cli <path_to_image_or_base64_file> [confidence]
 """
 
+import os
 import sys
 import json
 import base64
-from pathlib import Path
+import warnings
+
+warnings.filterwarnings('ignore')
+os.environ['PYTHONWARNINGS'] = 'ignore'
 
 # Add backend directory to path
 backend_dir = Path(__file__).resolve().parent.parent

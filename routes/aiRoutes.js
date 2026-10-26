@@ -10,7 +10,7 @@ const router = express.Router();
  * Execute local Python YOLOv8 CLI directly when FastAPI background daemon is offline.
  * Writes image data to a temporary file to prevent Windows CLI arg length overflows.
  */
-function runPythonYoloCLI(image, confidence = 0.25) {
+function runPythonYoloCLI(image, confidence = 0.20) {
   return new Promise((resolve, reject) => {
     const tempFile = path.join(os.tmpdir(), `fc_img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.txt`);
     try {
@@ -21,8 +21,8 @@ function runPythonYoloCLI(image, confidence = 0.25) {
 
     const py = spawn('python', ['-m', 'backend.scripts.detect_cli', tempFile, String(confidence)], {
       cwd: process.cwd(),
-      timeout: 15000,
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+      timeout: 35000,
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONWARNINGS: 'ignore' }
     });
 
     let stdout = '';
@@ -38,10 +38,24 @@ function runPythonYoloCLI(image, confidence = 0.25) {
 
     py.on('close', code => {
       try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+      
+      // Extract the JSON object from stdout even if Python or PyTorch printed warnings
+      const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.success) {
+            return resolve(parsed);
+          }
+        } catch (parseErr) {
+          console.warn('JSON parse warning:', parseErr.message);
+        }
+      }
+
       if (code === 0 && stdout.trim()) {
         try {
           const parsed = JSON.parse(stdout.trim());
-          resolve(parsed);
+          return resolve(parsed);
         } catch (parseErr) {
           reject(new Error(`Failed to parse YOLO CLI JSON: ${parseErr.message}`));
         }

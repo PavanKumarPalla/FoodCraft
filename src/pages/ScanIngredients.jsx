@@ -26,7 +26,7 @@ export default function ScanIngredients() {
   const [backendError, setBackendError] = useState(null);
   const [backendOnline, setBackendOnline] = useState(null);
   const [sampleImage, setSampleImage] = useState(
-    'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=1000&q=80'
+    'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1000&q=80'
   );
 
   // Live Camera State & Refs
@@ -136,17 +136,17 @@ export default function ScanIngredients() {
     setStatusMessage('Analyzing photo with YOLOv8 neural network vision model...');
 
     try {
-      // 1. Check if backend (FastAPI YOLOv8 with custom food weights) is available
+      // 1. Check if backend (FastAPI YOLOv8 / Express AI proxy) is available
       let backendData = null;
       try {
-        const payload = { image: base64Image, confidence: 0.20 };
+        const payload = { image: base64Image, confidence: 0.15 };
         let res = null;
         try {
           res = await fetch('/api/detect-ingredients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(15000)
+            signal: AbortSignal.timeout(35000)
           });
         } catch (fetchErr) {
           console.warn('Relative backend fetch notice:', fetchErr);
@@ -154,14 +154,27 @@ export default function ScanIngredients() {
 
         if (!res || !res.ok) {
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Try Express server on port 5000
             try {
-              res = await fetch('http://localhost:8000/api/detect-ingredients', {
+              res = await fetch('http://localhost:5000/api/detect-ingredients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(12000)
+                signal: AbortSignal.timeout(30000)
               });
             } catch {}
+
+            // Try direct FastAPI daemon on port 8000
+            if (!res || !res.ok) {
+              try {
+                res = await fetch('http://localhost:8000/api/detect-ingredients', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                  signal: AbortSignal.timeout(30000)
+                });
+              } catch {}
+            }
           }
         }
 
@@ -169,21 +182,21 @@ export default function ScanIngredients() {
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
             const data = await res.json();
-            if (data && data.success && data.detected_ingredients && data.detected_ingredients.length > 0) {
+            if (data && data.success && data.unique_ingredients && data.unique_ingredients.length > 0) {
               backendData = data;
             }
           }
         }
       } catch (err) {
-        console.warn('Backend YOLOv8 detection call:', err);
+        console.warn('Backend detection call notice:', err);
       }
 
-      if (backendData && backendData.detected_ingredients && backendData.detected_ingredients.length > 0) {
+      if (backendData && backendData.unique_ingredients && backendData.unique_ingredients.length > 0) {
         setIsScanning(false);
         setHasScanned(true);
-        setDetectedBoxes(backendData.detected_ingredients);
+        setDetectedBoxes(backendData.detected_ingredients || []);
         setPhotoIngredients(backendData.unique_ingredients);
-        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} (${backendData.detected_ingredients.length} items) with ${backendData.model || 'YOLOv8 Pretrained Food Weights'}`);
+        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} with ${backendData.model || 'AI Vision Engine'}`);
         return;
       }
 
