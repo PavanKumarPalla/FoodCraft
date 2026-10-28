@@ -107,7 +107,7 @@ router.post('/detect-ingredients', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image, confidence }),
-        signal: AbortSignal.timeout(6000)
+        signal: AbortSignal.timeout(35000)
       });
 
       if (pyRes.ok) {
