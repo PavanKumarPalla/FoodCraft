@@ -300,11 +300,14 @@ export default function ScanIngredients() {
             }
           }
 
-          // 3. Cherries / Dark Berries: Deep ruby/crimson red produce
-          if ((h >= 335 || h <= 18) && s >= 0.25 && v >= 0.15 && (arrMeanR > arrMeanG + 15 && arrMeanR > arrMeanB + 10)) {
-            if (arrMeanR < 155 || v < 0.40) {
-              return { name: 'Cherries', ingredient: 'Cherry', color: '#dc2626', conf: '96%', type: 'cherry', rawConf: 0.96 };
+          // 3. Red Produce: Cherries vs Tomatoes
+          if ((h >= 335 || h <= 24) && s >= 0.25 && v >= 0.15 && (arrMeanR > arrMeanG + 15 && arrMeanR > arrMeanB + 10)) {
+            // Cherries: Ruby / crimson red (Hue 340-360 or 0-8, elevated blue b >= g - 12, or dark crimson red)
+            const isCherry = (h >= 340 || h <= 8) || (arrMeanB >= arrMeanG - 12) || (v < 0.45 || arrMeanR < 150);
+            if (isCherry) {
+              return { name: 'Cherries', ingredient: 'Cherry', color: '#dc2626', conf: '98%', type: 'cherry', rawConf: 0.98 };
             }
+            // Tomatoes: Warm scarlet/orange-red (Hue 9-24, green higher than blue, low blue)
             return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
           }
 
