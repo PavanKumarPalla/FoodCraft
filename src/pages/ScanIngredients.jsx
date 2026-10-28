@@ -321,7 +321,13 @@ export default function ScanIngredients() {
             return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
           }
 
-          // 6. Orange / Citrus: Warm round citrus / clementines / apricots
+          // 6. Mango: Tropical mango with golden-yellow, sunset-orange, or blush gradient skin
+          if ((h >= 22 && h <= 54 && s >= 0.38 && v >= 0.35 && arrMeanR >= 145 && arrMeanG >= 80 && arrMeanB < 100) ||
+              (h >= 55 && h <= 75 && s >= 0.35 && v >= 0.35 && arrMeanR >= 130 && arrMeanG >= 130 && arrMeanB < 95)) {
+            return { name: 'Mango', ingredient: 'Mango', color: '#f59e0b', conf: '98%', type: 'mango', rawConf: 0.98 };
+          }
+
+          // 7. Orange / Citrus: Warm round citrus / clementines / apricots
           if (h >= 18 && h <= 44 && s >= 0.40 && v >= 0.35 && (arrMeanR >= 135 && (arrMeanR - arrMeanG) >= 30 && arrMeanG >= 70 && arrMeanR > arrMeanB + 35)) {
             return { name: 'Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
           }
@@ -674,6 +680,18 @@ export default function ScanIngredients() {
             if (box.ingredient === 'Carrot') {
               const nearKiwi = finalBoxes.some(k => k.ingredient === 'Kiwi' && Math.hypot(box.box.x - k.box.x, box.box.y - k.box.y) < 40);
               return !nearKiwi;
+            }
+            return true;
+          });
+        }
+
+        // Post-filter: In mango images, eliminate small false cherry/tomato/orange blush patches on the mango
+        const hasMangoDetected = finalBoxes.some(b => b.ingredient === 'Mango');
+        if (hasMangoDetected) {
+          finalBoxes = finalBoxes.filter(box => {
+            if (['Cherry', 'Tomato', 'Orange'].includes(box.ingredient)) {
+              const nearMango = finalBoxes.some(m => m.ingredient === 'Mango' && Math.hypot(box.box.x - m.box.x, box.box.y - m.box.y) < 45);
+              return !nearMango;
             }
             return true;
           });
