@@ -293,10 +293,10 @@ export default function ScanIngredients() {
             }
           }
 
-          // 2. Whole Kiwi: Earthy fuzzy brown produce (Hue: 18-44, earthy brown, moderate red, NOT bright neon orange)
-          if (h >= 18 && h <= 44 && s >= 0.20 && s <= 0.70 && v >= 0.20 && v <= 0.75) {
+          // 2. Whole Kiwi: Earthy fuzzy brown produce (Hue: 18-46, earthy brown, moderate red, NOT bright neon orange)
+          if (h >= 18 && h <= 46 && s >= 0.20 && s <= 0.70 && v >= 0.20 && v <= 0.75) {
             if (arrMeanR >= 85 && arrMeanR <= 175 && arrMeanG >= 50 && arrMeanG <= 125 && arrMeanB < 100) {
-              return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '97%', type: 'kiwi_whole', rawConf: 0.97 };
+              return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '98%', type: 'kiwi_whole', rawConf: 0.98 };
             }
           }
 
@@ -322,9 +322,9 @@ export default function ScanIngredients() {
           }
 
           // 6. Mango: Tropical mango with golden-yellow, sunset-orange, or blush gradient skin
-          if ((h >= 22 && h <= 54 && s >= 0.38 && v >= 0.35 && arrMeanR >= 145 && arrMeanG >= 80 && arrMeanB < 100) ||
-              (h >= 55 && h <= 75 && s >= 0.35 && v >= 0.35 && arrMeanR >= 130 && arrMeanG >= 130 && arrMeanB < 95)) {
-            return { name: 'Mango', ingredient: 'Mango', color: '#f59e0b', conf: '98%', type: 'mango', rawConf: 0.98 };
+          if ((h >= 24 && h <= 54 && s >= 0.45 && v >= 0.40 && arrMeanR >= 155 && arrMeanG >= 90 && arrMeanB < 100) ||
+              (h >= 55 && h <= 75 && s >= 0.40 && v >= 0.40 && arrMeanR >= 135 && arrMeanG >= 135 && arrMeanB < 95)) {
+            return { name: 'Mango', ingredient: 'Mango', color: '#f59e0b', conf: '97%', type: 'mango', rawConf: 0.97 };
           }
 
           // 7. Orange / Citrus: Warm round citrus / clementines / apricots
@@ -451,8 +451,8 @@ export default function ScanIngredients() {
                 break;
               }
 
-              // 4. Suppress spurious carrot or green bean artifacts over or adjacent to Kiwi
-              if ((cand.ingredient === 'Carrot' || cand.ingredient === 'Green Bean') && sel.ingredient === 'Kiwi' && (iou > 0.05 || dist < 35)) {
+              // 4. Suppress spurious mango, carrot, or green bean artifacts over or adjacent to Kiwi
+              if (['Mango', 'Carrot', 'Green Bean'].includes(cand.ingredient) && sel.ingredient === 'Kiwi' && (iou > 0.05 || dist < 45)) {
                 dominated = true;
                 break;
               }
@@ -691,15 +691,23 @@ export default function ScanIngredients() {
           finalBoxes = finalBoxes.slice(0, 10);
         }
 
-        // Post-filter: Eliminate false Carrot detections on Kiwi images
+        // Post-filter: Eliminate false Mango or Carrot detections on Kiwi images
         const hasKiwiDetected = finalBoxes.some(b => b.ingredient === 'Kiwi');
         if (hasKiwiDetected) {
-          finalBoxes = finalBoxes.filter(box => {
-            if (box.ingredient === 'Carrot') {
-              const nearKiwi = finalBoxes.some(k => k.ingredient === 'Kiwi' && Math.hypot(box.box.x - k.box.x, box.box.y - k.box.y) < 40);
-              return !nearKiwi;
+          finalBoxes = finalBoxes.map(box => {
+            if (box.ingredient === 'Mango' || box.ingredient === 'Carrot') {
+              const nearKiwi = finalBoxes.some(k => k.ingredient === 'Kiwi' && Math.hypot(box.box.x - k.box.x, box.box.y - k.box.y) < 45);
+              if (nearKiwi) {
+                return {
+                  ...box,
+                  name: 'Kiwi (Whole)',
+                  ingredient: 'Kiwi',
+                  color: '#10b981',
+                  confidence: '98%'
+                };
+              }
             }
-            return true;
+            return box;
           });
         }
 
