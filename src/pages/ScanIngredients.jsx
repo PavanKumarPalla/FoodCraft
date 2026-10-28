@@ -500,9 +500,8 @@ export default function ScanIngredients() {
           }
 
           const isContainer = ['bowl', 'cup', 'bottle', 'donut', 'wine glass'].includes(cls);
-          if (isContainer && cocoConf < 0.35) return;
+          if (isContainer && (cocoConf < 0.35 || w > naturalW * 0.85 || h > naturalH * 0.85)) return;
           if (w < naturalW * 0.04 || h < naturalH * 0.04) return;
-          if (w > naturalW * 0.75 && h > naturalH * 0.75) return;
 
           const produce = classifyProduceRegion(x, y, w, h, cls);
           if (produce) {
@@ -654,6 +653,25 @@ export default function ScanIngredients() {
                 });
               }
             }
+          }
+        }
+
+        // Close-up Single Subject Produce Fallback (e.g. single fruit/vegetable filling the frame)
+        if (rawCandidateBoxes.length === 0 && !isPersonDominant) {
+          const cx = Math.floor(naturalW * 0.10);
+          const cy = Math.floor(naturalH * 0.10);
+          const cw = Math.floor(naturalW * 0.80);
+          const ch = Math.floor(naturalH * 0.80);
+          const closeUp = classifyProduceRegion(cx, cy, cw, ch);
+          if (closeUp) {
+            rawCandidateBoxes.push({
+              name: closeUp.name,
+              ingredient: closeUp.ingredient,
+              confidence: closeUp.conf,
+              rawConf: 0.98,
+              color: closeUp.color,
+              box: { x: 8, y: 8, w: 84, h: 84 }
+            });
           }
         }
 
