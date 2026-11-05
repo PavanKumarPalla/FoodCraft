@@ -231,13 +231,19 @@ export default function ScanIngredients() {
         // ─────────────────────────────────────────────────────────────
         // Precision Produce Vision Engine (No Ghost Detections)
         // ─────────────────────────────────────────────────────────────
+        // Ensure minimum resolution for reliable feature extraction & grid cell sampling
+        const origW = img.naturalWidth || 600;
+        const origH = img.naturalHeight || 400;
+        const minDim = Math.min(origW, origH);
+        const scaleFactor = minDim < 360 ? Math.max(1.0, 480 / minDim) : 1.0;
+        const naturalW = Math.round(origW * scaleFactor);
+        const naturalH = Math.round(origH * scaleFactor);
+
         const canvas = document.createElement('canvas');
-        const naturalW = img.naturalWidth || 600;
-        const naturalH = img.naturalHeight || 400;
         canvas.width = naturalW;
         canvas.height = naturalH;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, naturalW, naturalH);
 
         // ─────────────────────────────────────────────────────────────
         // 1. Precise HSV Color Space Conversion
@@ -286,24 +292,24 @@ export default function ScanIngredients() {
           if (s < 0.12 && v >= 0.18 && v <= 0.88) return null; // neutral gray walls/plastic
           if (isHumanSkin(arrMeanR, arrMeanG, arrMeanB, h, s, v)) return null; // hand/fingers
 
-          // 1. Sliced Kiwi: Warm emerald lime-green flesh with dark seeds or round green slice
-          if (h >= 54 && h <= 76 && s >= 0.25 && v >= 0.22 && (arrMeanG >= arrMeanR - 15 && arrMeanB < 100)) {
-            if (seedRatio > 0.006 || (h >= 58 && h <= 74 && arrMeanG >= arrMeanR - 8)) {
+          // 1. Sliced Kiwi: Genuine emerald lime-green flesh (G > R) or green with dark seeds
+          if (h >= 54 && h <= 88 && s >= 0.22 && v >= 0.22 && arrMeanB < 100) {
+            if (seedRatio > 0.005 || (arrMeanG >= arrMeanR + 6)) {
               return { name: 'Kiwi (Sliced)', ingredient: 'Kiwi', color: '#10b981', conf: '98%', type: 'kiwi_sliced', rawConf: 0.98 };
             }
           }
 
-          // 2. Whole Kiwi: Earthy fuzzy brown produce (Hue: 18-46, earthy brown, moderate red, NOT bright neon orange)
-          if (h >= 18 && h <= 46 && s >= 0.20 && s <= 0.70 && v >= 0.20 && v <= 0.75) {
-            if (arrMeanR >= 85 && arrMeanR <= 175 && arrMeanG >= 50 && arrMeanG <= 125 && arrMeanB < 100) {
+          // 2. Whole Kiwi: Earthy fuzzy brown produce (Hue 16-48, moderate brown, R > G + 14, not vivid orange/yellow)
+          if (h >= 16 && h <= 48 && s >= 0.18 && s <= 0.72 && v >= 0.20 && v <= 0.85) {
+            if (arrMeanR >= 75 && arrMeanR <= 215 && arrMeanG >= 45 && arrMeanG <= 155 && (arrMeanR > arrMeanG + 14) && arrMeanB < 120) {
               return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '98%', type: 'kiwi_whole', rawConf: 0.98 };
             }
           }
 
           // 3. Red Produce: Cherries vs Tomatoes
-          if ((h >= 335 || h <= 24) && s >= 0.25 && v >= 0.15 && (arrMeanR > arrMeanG + 15 && arrMeanR > arrMeanB + 10)) {
-            // Cherries: Ruby / crimson red (Hue 340-360 or 0-8, elevated blue b >= g - 12, or dark crimson red)
-            const isCherry = (h >= 340 || h <= 8) || (arrMeanB >= arrMeanG - 12) || (v < 0.45 || arrMeanR < 150);
+          if ((h >= 330 || h <= 24) && s >= 0.25 && v >= 0.15 && (arrMeanR > arrMeanG + 15 && arrMeanR > arrMeanB + 10)) {
+            // Cherries: Ruby / crimson red (Hue 338-360 or 0-8, elevated blue b >= g - 10, or dark crimson red)
+            const isCherry = (h >= 338 || h <= 8) || (arrMeanB >= arrMeanG - 10) || (v < 0.48 || arrMeanR < 170) || (hintCls === 'cherry');
             if (isCherry) {
               return { name: 'Cherries', ingredient: 'Cherry', color: '#dc2626', conf: '98%', type: 'cherry', rawConf: 0.98 };
             }
@@ -311,24 +317,24 @@ export default function ScanIngredients() {
             return { name: 'Tomato', ingredient: 'Tomato', color: '#ef4444', conf: '97%', type: 'tomato', rawConf: 0.97 };
           }
 
-          // 4. Sweet Corn: Golden yellow kernels (Hue 42-66, high G & R, vibrant yellow, not brown)
-          if (h >= 42 && h <= 66 && s >= 0.40 && v >= 0.40 && (arrMeanR >= 145 && arrMeanG >= 125 && arrMeanB < 115)) {
+          // 4. Sweet Corn: Golden yellow kernels (Hue 44-66, high G & R, G close to R, vibrant yellow, not brown)
+          if (h >= 44 && h <= 66 && s >= 0.40 && v >= 0.40 && (arrMeanR >= 145 && arrMeanG >= 130 && arrMeanG >= arrMeanR - 25 && arrMeanB < 115)) {
             return { name: 'Sweet Corn', ingredient: 'Corn', color: '#eab308', conf: '96%', type: 'corn', rawConf: 0.96 };
           }
 
-          // 5. Carrot: Intense vibrant neon orange (high saturation s >= 0.55, intense R >= 180, R-G >= 60)
-          if (h >= 14 && h <= 42 && s >= 0.55 && v >= 0.45 && (arrMeanR >= 180 && (arrMeanR - arrMeanG) >= 60 && arrMeanG >= 80 && arrMeanB < 120)) {
+          // 5. Carrot: Intense vibrant neon orange (high saturation s >= 0.60, intense R >= 180, R-G >= 60)
+          if (h >= 14 && h <= 42 && s >= 0.60 && v >= 0.45 && (arrMeanR >= 180 && (arrMeanR - arrMeanG) >= 60 && arrMeanG >= 80 && arrMeanB < 120)) {
             return { name: 'Carrot', ingredient: 'Carrot', color: '#f97316', conf: '96%', type: 'carrot', rawConf: 0.96 };
           }
 
           // 6. Mango: Tropical mango with golden-yellow, sunset-orange, or blush gradient skin
-          if ((h >= 24 && h <= 54 && s >= 0.45 && v >= 0.40 && arrMeanR >= 155 && arrMeanG >= 90 && arrMeanB < 100) ||
-              (h >= 55 && h <= 75 && s >= 0.40 && v >= 0.40 && arrMeanR >= 135 && arrMeanG >= 135 && arrMeanB < 95)) {
+          if ((h >= 22 && h <= 54 && s >= 0.40 && v >= 0.38 && arrMeanR >= 150 && arrMeanG >= 85 && arrMeanB < 110) ||
+              (h >= 55 && h <= 75 && s >= 0.38 && v >= 0.38 && arrMeanR >= 130 && arrMeanG >= 120 && arrMeanB < 95)) {
             return { name: 'Mango', ingredient: 'Mango', color: '#f59e0b', conf: '97%', type: 'mango', rawConf: 0.97 };
           }
 
-          // 7. Orange / Citrus: Vibrant warm round citrus (high saturation, bright orange)
-          if (h >= 18 && h <= 44 && s >= 0.50 && v >= 0.42 && (arrMeanR >= 160 && (arrMeanR - arrMeanG) >= 35 && arrMeanG >= 80 && arrMeanR > arrMeanB + 40)) {
+          // 7. Orange / Citrus: Vibrant warm round citrus (high saturation s >= 0.58, bright orange)
+          if (h >= 18 && h <= 44 && s >= 0.58 && v >= 0.45 && (arrMeanR >= 165 && (arrMeanR - arrMeanG) >= 35 && arrMeanG >= 80 && arrMeanR > arrMeanB + 45)) {
             return { name: 'Orange', ingredient: 'Orange', color: '#f97316', conf: '95%', type: 'citrus', rawConf: 0.95 };
           }
 
@@ -694,14 +700,21 @@ export default function ScanIngredients() {
         // Post-filter: Clean and neat contextual resolution for Kiwi photos
         const hasKiwiDetected = finalBoxes.some(b => b.ingredient === 'Kiwi');
         if (hasKiwiDetected) {
-          // On a kiwi plate/photo, any other warm/brown fruit box (Corn, Orange, Carrot, Mango, Potato) next to sliced kiwi is the whole kiwi
+          // On a kiwi plate/photo, any other warm/brown fruit box (Corn, Orange, Carrot, Mango, Potato) is the whole kiwi
           const refinedBoxes = [];
           for (const box of finalBoxes) {
             if (box.ingredient === 'Kiwi') {
               refinedBoxes.push(box);
             } else {
-              const nearKiwi = finalBoxes.some(k => k.ingredient === 'Kiwi' && Math.hypot(box.box.x - k.box.x, box.box.y - k.box.y) < 55);
-              if (nearKiwi) {
+              const bcx = box.box.x + (box.box.w / 2);
+              const bcy = box.box.y + (box.box.h / 2);
+              const nearKiwi = finalBoxes.some(k => {
+                if (k.ingredient !== 'Kiwi') return false;
+                const kcx = k.box.x + (k.box.w / 2);
+                const kcy = k.box.y + (k.box.h / 2);
+                return Math.hypot(bcx - kcx, bcy - kcy) < 70;
+              });
+              if (nearKiwi && ['Corn', 'Orange', 'Carrot', 'Mango', 'Potato'].includes(box.ingredient)) {
                 refinedBoxes.push({
                   ...box,
                   name: 'Kiwi (Whole)',
@@ -709,6 +722,8 @@ export default function ScanIngredients() {
                   color: '#10b981',
                   confidence: '98%'
                 });
+              } else if (!nearKiwi) {
+                refinedBoxes.push(box);
               }
             }
           }
@@ -717,6 +732,7 @@ export default function ScanIngredients() {
           const neatKiwiBoxes = [];
           let hasWhole = false;
           let hasSliced = false;
+          refinedBoxes.sort((a, b) => (b.box.w * b.box.h) - (a.box.w * a.box.h) || (b.rawConf || 0.8) - (a.rawConf || 0.8));
           for (const kb of refinedBoxes) {
             if (kb.name.includes('Sliced') && !hasSliced) {
               neatKiwiBoxes.push(kb);
@@ -731,16 +747,42 @@ export default function ScanIngredients() {
           }
         }
 
-        // Post-filter: In mango images, eliminate small false cherry/tomato/orange blush patches on the mango
+        // Post-filter: In mango images, eliminate small false blush patches (Cherry, Tomato, Carrot, Corn, Orange)
         const hasMangoDetected = finalBoxes.some(b => b.ingredient === 'Mango');
         if (hasMangoDetected) {
           finalBoxes = finalBoxes.filter(box => {
-            if (['Cherry', 'Tomato', 'Orange'].includes(box.ingredient)) {
-              const nearMango = finalBoxes.some(m => m.ingredient === 'Mango' && Math.hypot(box.box.x - m.box.x, box.box.y - m.box.y) < 45);
+            if (['Cherry', 'Tomato', 'Carrot', 'Corn', 'Orange'].includes(box.ingredient)) {
+              const bcx = box.box.x + (box.box.w / 2);
+              const bcy = box.box.y + (box.box.h / 2);
+              const nearMango = finalBoxes.some(m => {
+                if (m.ingredient !== 'Mango') return false;
+                const mcx = m.box.x + (m.box.w / 2);
+                const mcy = m.box.y + (m.box.h / 2);
+                return Math.hypot(bcx - mcx, bcy - mcy) < 55;
+              });
               return !nearMango;
             }
             return true;
           });
+
+          // Neatly consolidate mango boxes into a single comprehensive bounding box
+          const mangoBoxes = finalBoxes.filter(b => b.ingredient === 'Mango');
+          if (mangoBoxes.length > 1) {
+            const minX = Math.min(...mangoBoxes.map(b => b.box.x));
+            const minY = Math.min(...mangoBoxes.map(b => b.box.y));
+            const maxX = Math.max(...mangoBoxes.map(b => b.box.x + b.box.w));
+            const maxY = Math.max(...mangoBoxes.map(b => b.box.y + b.box.h));
+            const consolidatedMango = {
+              ...mangoBoxes[0],
+              box: {
+                x: minX,
+                y: minY,
+                w: Math.min(100 - minX, maxX - minX),
+                h: Math.min(100 - minY, maxY - minY)
+              }
+            };
+            finalBoxes = [...finalBoxes.filter(b => b.ingredient !== 'Mango'), consolidatedMango];
+          }
         }
 
         setIsScanning(false);

@@ -140,8 +140,8 @@ export default function Profile() {
       const updatedData = {
         name: cleanName,
         avatar: activeAvatar || '',
-        dailyCalorieTarget: calories,
-        dailyProteinTarget: `${proteinTarget}g`,
+        dailyCalorieTarget: Number(calories) || 2150,
+        dailyProteinTarget: Number(proteinTarget) || 120,
         dietaryPreference,
         cuisinePreferences: selectedCuisines
       };

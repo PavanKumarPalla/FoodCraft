@@ -786,14 +786,9 @@ router.put('/profile', protect, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Permission to update name: sanitize and update display name
     if (name && typeof name === 'string' && name.trim().length > 0) {
       user.name = name.trim();
     }
-
-    // Security Rule: Registered email is strictly fixed and cannot be edited via profile
-    // user.email remains as registered in MongoDB
-
     if (phone !== undefined) {
       const cleanPhone = normalizePhone(phone);
       if (cleanPhone) {
@@ -811,8 +806,8 @@ router.put('/profile', protect, async (req, res) => {
     }
     if (avatar !== undefined) user.avatar = avatar;
     if (profile && typeof profile === 'object') {
-      const existing = user.profile && typeof user.profile.toObject === 'function' 
-        ? user.profile.toObject() 
+      const existing = user.profile && typeof user.profile.toObject === 'function'
+        ? user.profile.toObject()
         : (user.profile || {});
       user.profile = { ...existing, ...profile };
     }

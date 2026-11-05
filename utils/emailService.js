@@ -65,6 +65,7 @@ export async function sendOtpEmail({ email, name, otp, purpose = 'register' }) {
     <html>
       <head>
         <meta charset="utf-8">
+        <title>${title}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f17; color: #f1f5f9; margin: 0; padding: 20px; }
           .container { max-width: 540px; margin: 0 auto; background: #131b2a; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -119,11 +120,13 @@ export async function sendOtpEmail({ email, name, otp, purpose = 'register' }) {
 
 // 2. Send Professional Welcome Email (After Account Creation)
 export async function sendWelcomeEmail({ email, name }) {
+  const title = 'Welcome to Food Craft!';
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
+        <title>${title}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f17; color: #f1f5f9; margin: 0; padding: 20px; }
           .container { max-width: 560px; margin: 0 auto; background: #131b2a; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -205,11 +208,13 @@ export async function sendWelcomeEmail({ email, name }) {
 
 // 3. Send Password Reset Success Notification
 export async function sendPasswordResetSuccessEmail({ email, name }) {
+  const title = 'Password Successfully Changed — Food Craft';
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
+        <title>${title}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f17; color: #f1f5f9; margin: 0; padding: 20px; }
           .container { max-width: 540px; margin: 0 auto; background: #131b2a; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden; }

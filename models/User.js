@@ -1,6 +1,64 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+const profileSchema = new mongoose.Schema(
+  {
+    dietaryType: {
+      type: String,
+      enum: ['Veg', 'Non-Veg', 'Vegan', 'Eggetarian', 'All'],
+      default: 'All',
+    },
+    dietaryPreference: {
+      type: String,
+      default: 'Flexible (Veg + Egg + Lean Meat)',
+    },
+    healthGoals: {
+      type: [String],
+      default: ['High Protein', 'Balanced Nutrition'],
+    },
+    preferredRegions: {
+      type: [String],
+      default: ['South Indian', 'North Indian', 'Continental'],
+    },
+    cuisinePreferences: {
+      type: [String],
+      default: ['North Indian', 'South Indian', 'Mediterranean'],
+    },
+    dailyCalorieTarget: {
+      type: Number,
+      default: 2150,
+    },
+    dailyProteinTarget: {
+      type: Number,
+      default: 135,
+      set: (val) => {
+        if (typeof val === 'string') {
+          const parsed = parseInt(val.replace(/\D/g, ''), 10);
+          return isNaN(parsed) ? 135 : parsed;
+        }
+        return typeof val === 'number' && !isNaN(val) ? val : 135;
+      },
+    },
+    dailyCarbsTarget: {
+      type: Number,
+      default: 220,
+    },
+    dailyFatsTarget: {
+      type: Number,
+      default: 65,
+    },
+    allergies: {
+      type: [String],
+      default: [],
+    },
+    allergens: {
+      type: [String],
+      default: [],
+    },
+  },
+  { _id: false, strict: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -16,7 +74,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/,
         'Please provide a valid email address',
       ],
     },
@@ -42,39 +100,8 @@ const userSchema = new mongoose.Schema(
       select: false, // Do not return password by default in queries
     },
     profile: {
-      dietaryType: {
-        type: String,
-        enum: ['Veg', 'Non-Veg', 'Vegan', 'Eggetarian', 'All'],
-        default: 'All',
-      },
-      healthGoals: {
-        type: [String],
-        default: ['High Protein', 'Balanced Nutrition'],
-      },
-      preferredRegions: {
-        type: [String],
-        default: ['South Indian', 'North Indian', 'Continental'],
-      },
-      dailyCalorieTarget: {
-        type: Number,
-        default: 2150,
-      },
-      dailyProteinTarget: {
-        type: Number,
-        default: 135,
-      },
-      dailyCarbsTarget: {
-        type: Number,
-        default: 220,
-      },
-      dailyFatsTarget: {
-        type: Number,
-        default: 65,
-      },
-      allergies: {
-        type: [String],
-        default: [],
-      },
+      type: profileSchema,
+      default: () => ({}),
     },
     favorites: {
       type: [String], // Array of recipe IDs, e.g. ["rcp-1", "rcp-3"]
