@@ -30,14 +30,15 @@ function PublicAuthRoute({ children }) {
 function LayoutWrapper() {
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isLandingPage = location.pathname === '/';
 
   return (
-    <div className={`app-container ${isAuthPage ? 'auth-layout' : ''}`}>
-      {/* Top Navbar (hidden on auth pages like login and register) */}
-      {!isAuthPage && <Navbar />}
+    <div className={`app-container ${isAuthPage ? 'auth-layout' : ''} ${isLandingPage ? 'landing-layout' : ''}`}>
+      {/* Top Navbar (hidden on auth pages and on custom home page) */}
+      {!isAuthPage && !isLandingPage && <Navbar />}
 
       {/* Main Routed Page Content */}
-      <main className={`main-content ${isAuthPage ? 'auth-main' : ''}`}>
+      <main className={`main-content ${isAuthPage ? 'auth-main' : ''} ${isLandingPage ? 'landing-main' : ''}`}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
