@@ -12,9 +12,10 @@ export default function BottomNav() {
   return (
     <div className="bottom-nav-container">
       <nav className="bottom-nav">
-        {/* Dashboard */}
+        {/* Home */}
         <NavLink 
-          to="/dashboard" 
+          to="/" 
+          end
           className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}
           id="mobile-tab-home"
         >

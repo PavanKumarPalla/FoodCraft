@@ -25,7 +25,7 @@ export default function Navbar() {
     <header className="navbar-header">
       <div className="navbar-container">
         {/* Brand Logo */}
-        <Link to="/dashboard" className="navbar-brand">
+        <Link to="/" className="navbar-brand">
           <div className="brand-icon-wrapper">
             <Utensils className="brand-icon" size={22} />
           </div>
@@ -37,8 +37,8 @@ export default function Navbar() {
 
         {/* Desktop Navigation Links */}
         <nav className="navbar-links">
-          <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Dashboard
+          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Home
           </NavLink>
           <NavLink to="/explore" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             Explore
@@ -50,7 +50,7 @@ export default function Navbar() {
           </NavLink>
           <NavLink to="/meal-plan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Calendar size={16} />
-            <span>7-Day Plan</span>
+            <span>Diet Plan</span>
           </NavLink>
         </nav>
 

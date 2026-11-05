@@ -1,76 +1,111 @@
 // src/pages/Profile.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Shield, Flame, Check, LogOut, Utensils, Camera, CheckCircle2, Trash2, User, LogIn, AlertCircle 
+  Heart, 
+  ChefHat, 
+  Calendar, 
+  Star, 
+  Clock, 
+  Flame, 
+  ArrowRight, 
+  Pencil, 
+  User, 
+  Menu, 
+  Bell, 
+  Dumbbell, 
+  X
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
+import Sidebar from '../components/Sidebar';
 import ImageAdjustModal from '../components/ImageAdjustModal';
 import './Profile.css';
 
+// 3 Default favorite dishes matching Image 4
+const PROFILE_FAVOURITES = [
+  {
+    id: "rcp-pasta-creamy",
+    title: "Creamy Tomato Pasta",
+    time: 25,
+    image: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=600&q=80",
+    isFav: true
+  },
+  {
+    id: "rcp-rice-fried",
+    title: "Veg Fried Rice",
+    time: 20,
+    image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80",
+    isFav: false
+  },
+  {
+    id: "rcp-omelette-veg",
+    title: "Vegetable Omelette",
+    time: 15,
+    image: "https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=600&q=80",
+    isFav: false
+  }
+];
+
+// 3 Frequently Cooked Dishes matching Image 4
+const FREQUENTLY_COOKED = [
+  {
+    id: "cook-1",
+    title: "Quinoa Salad Bowl",
+    time: 20,
+    cookedCount: 3,
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: "cook-2",
+    title: "Grilled Veg Wrap",
+    time: 15,
+    cookedCount: 3,
+    image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: "cook-3",
+    title: "Mixed Vegetable Soup",
+    time: 25,
+    cookedCount: 2,
+    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600&q=80"
+  }
+];
+
 export default function Profile() {
-  const { userProfile, updateProfile, logout, token, currentUser } = useFoodCraft();
+  const { 
+    currentUser, 
+    userProfile, 
+    updateProfile, 
+    favorites, 
+    toggleFavorite, 
+    cookedRecipes, 
+    markCooked,
+    recentActivity 
+  } = useFoodCraft();
+
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
-  const initialName = currentUser?.name || userProfile.name || '';
-  const [name, setName] = useState(initialName);
-  const isNameInitializedRef = useRef(Boolean(initialName));
-  const [nameError, setNameError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
+  // Profile Edit fields
+  const [editName, setEditName] = useState(currentUser?.name || userProfile?.name || 'Murali Krishna');
+  const [editPreference, setEditPreference] = useState(userProfile?.dietaryPreference || 'Vegetarian');
+  const [editCalories, setEditCalories] = useState(userProfile?.dailyCalorieTarget || 2000);
 
-  // Fixed Gmail address: strictly read-only and uneditable
-  const fixedEmail = currentUser?.email || userProfile.email || '';
-
-  // Synchronize name ONLY ONCE when userProfile/currentUser loads asynchronously
-  // Never re-populate if the user intentionally deletes or backspaces all characters
-  useEffect(() => {
-    if (!isNameInitializedRef.current && (currentUser?.name || userProfile.name)) {
-      setName(currentUser?.name || userProfile.name || '');
-      isNameInitializedRef.current = true;
-    }
-  }, [currentUser?.name, userProfile.name]);
-
-  // Sanitize initial avatar to exclude legacy unsplash images
-  const [avatar, setAvatar] = useState(() => {
-    return (userProfile.avatar && !userProfile.avatar.includes('unsplash.com')) 
-      ? userProfile.avatar 
-      : '';
-  });
-  const [avatarMessage, setAvatarMessage] = useState('');
-  const [calories, setCalories] = useState(userProfile.dailyCalorieTarget);
-  const [proteinTarget, setProteinTarget] = useState(parseInt(userProfile.dailyProteinTarget) || 120);
-  const [dietaryPreference, setDietaryPreference] = useState(userProfile.dietaryPreference);
-  const [selectedCuisines, setSelectedCuisines] = useState(userProfile.cuisinePreferences || []);
-  const [savedSuccess, setSavedSuccess] = useState(false);
-
-  // Sync avatar with userProfile if loaded asynchronously from DB
-  useEffect(() => {
-    if (userProfile.avatar && !avatar && !userProfile.avatar.includes('unsplash.com')) {
-      setAvatar(userProfile.avatar);
-    }
-  }, [userProfile.avatar, avatar]);
-
-  // Check whether user has a custom uploaded avatar
-  const hasCustomAvatar = Boolean(
-    (avatar && !avatar.includes('unsplash.com')) || 
-    (userProfile.avatar && !userProfile.avatar.includes('unsplash.com'))
-  );
-  const activeAvatar = hasCustomAvatar ? (avatar || userProfile.avatar) : null;
-
-  // Image Adjust Modal States
+  // Avatar Modal
   const [adjustModalOpen, setAdjustModalOpen] = useState(false);
   const [selectedRawImage, setSelectedRawImage] = useState(null);
 
-  // Handle Profile Photo Selection & Open Professional Adjust Modal
+  const displayName = currentUser?.name || userProfile?.name || 'Murali Krishna';
+  const displayAvatar = userProfile?.avatar && !userProfile.avatar.includes('unsplash.com') 
+    ? userProfile.avatar 
+    : null;
+
   const handleAvatarFileChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-
-    // Reset input value so selecting the same file again triggers onChange
     e.target.value = '';
-
     const reader = new FileReader();
     reader.onload = (event) => {
       setSelectedRawImage(event.target.result);
@@ -79,408 +114,406 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
-  // Handle Apply from Image Adjust Modal
   const handleApplyCroppedAvatar = async (croppedDataUrl) => {
     setAdjustModalOpen(false);
     setSelectedRawImage(null);
-    setAvatar(croppedDataUrl);
-    setAvatarMessage('Saving photo...');
     try {
       await updateProfile({ avatar: croppedDataUrl });
-      setAvatarMessage('✓ Profile photo updated and saved to database!');
-    } catch {
-      setAvatarMessage('✓ Profile photo updated!');
+    } catch (err) {
+      console.warn('Failed to save avatar:', err);
     }
-    setTimeout(() => setAvatarMessage(''), 3500);
   };
 
-  // Handle Cancel from Image Adjust Modal
-  const handleCancelAdjust = () => {
-    setAdjustModalOpen(false);
-    setSelectedRawImage(null);
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    await updateProfile({
+      name: editName,
+      dietaryPreference: editPreference,
+      dailyCalorieTarget: Number(editCalories)
+    });
+    setShowEditProfileModal(false);
   };
 
-  // Remove photo handler
-  const handleRemoveAvatar = (e) => {
-    e.stopPropagation();
-    setAvatar('');
-    updateProfile({ avatar: '' });
-    setAvatarMessage('✓ Profile photo removed');
-    setTimeout(() => setAvatarMessage(''), 2500);
-  };
-
-  // Health toggles
-  const [lowSugar, setLowSugar] = useState(true);
-  const [lowSalt, setLowSalt] = useState(false);
-  const [gymHighProtein, setGymHighProtein] = useState(true);
-
-  const CUISINE_OPTIONS = [
-    "South Indian", "North Indian", "Mediterranean", "Asian Wok", "Italian", "Mexican"
+  // Activity list for Box 4
+  const activityItems = recentActivity && recentActivity.length > 0 ? recentActivity.slice(0, 3) : [
+    { title: "Viewed recipe: Creamy Tomato Pasta", meta: "2 hours ago" },
+    { title: "Added to favourites: Veg Fried Rice", meta: "1 day ago" },
+    { title: "Completed Diet Plan: Weight Loss Plan", meta: "3 days ago" }
   ];
 
-  const toggleCuisine = (c) => {
-    setSelectedCuisines(prev => 
-      prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
-    );
-  };
+  return (
+    <div className="referral-page-layout profile-page-container">
+      {/* Left Sidebar */}
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        docked={true}
+      />
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setNameError('Please enter a valid display name.');
-      return;
-    }
+      {/* Hidden file input for Avatar Upload */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleAvatarFileChange} 
+        accept="image/*" 
+        style={{ display: 'none' }} 
+      />
 
-    setIsSaving(true);
-    setNameError('');
-    setSaveMessage('');
+      {/* Main Right Content */}
+      <div className="referral-main-content">
+        {/* Top bar with mobile hamburger and notification/user icons */}
+        <div className="referral-top-bar">
+          <button 
+            className="mobile-sidebar-toggle"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Toggle Navigation"
+          >
+            <Menu size={22} />
+          </button>
 
-    try {
-      const updatedData = {
-        name: cleanName,
-        avatar: activeAvatar || '',
-        dailyCalorieTarget: Number(calories) || 2150,
-        dailyProteinTarget: Number(proteinTarget) || 120,
-        dietaryPreference,
-        cuisinePreferences: selectedCuisines
-      };
+          <div className="referral-top-actions">
+            <button className="top-notif-btn" title="Notifications">
+              <Bell size={20} />
+              <span className="notif-counter-bubble">2</span>
+            </button>
 
-      await updateProfile(updatedData);
-
-      setSavedSuccess(true);
-      setSaveMessage('Profile changes saved successfully!');
-      setTimeout(() => {
-        setSavedSuccess(false);
-        setSaveMessage('');
-      }, 3500);
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      setSaveMessage('Failed to save profile changes. Please try again.');
-      setTimeout(() => setSaveMessage(''), 3500);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/', { replace: true });
-  };
-
-  if (!token && !currentUser) {
-    return (
-      <div className="profile-page page-wrapper">
-        <div className="profile-hero-card glass-panel" style={{ textAlign: 'center', padding: '3.5rem 1.5rem', maxWidth: '520px', margin: '2rem auto' }}>
-          <div className="auth-logo-icon" style={{ margin: '0 auto 1.25rem', width: '52px', height: '52px' }}>
-            <User size={26} />
-          </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.6rem' }}>You are Signed Out</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '1.75rem', lineHeight: 1.5 }}>
-            Sign in or create an account to view and customize your profile, set personalized nutrition targets, and manage your meal plans.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/login" className="btn-primary btn-glow" style={{ padding: '0.65rem 1.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <LogIn size={16} />
-              <span>Sign In to FoodCraft</span>
-            </Link>
-            <Link to="/" className="btn-secondary" style={{ padding: '0.65rem 1.5rem' }}>
-              Back to Home
-            </Link>
+            <div className="top-avatar-circle" title={displayName}>
+              {displayAvatar ? (
+                <img src={displayAvatar} alt={displayName} className="header-avatar-img" />
+              ) : (
+                <User size={20} />
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="profile-page page-wrapper">
-      {/* Profile Header Card */}
-      <div className="profile-hero-card glass-panel animate-fade-in">
-        <div className="profile-user-left">
-          {/* Interactive Photo Upload Avatar */}
-          <div 
-            className="profile-avatar-container" 
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            title="Click to upload/change your profile picture"
-          >
-            {activeAvatar ? (
-              <img 
-                src={activeAvatar} 
-                alt={name || userProfile.name} 
-                className="profile-main-avatar" 
-              />
-            ) : (
-              <div className="profile-main-avatar profile-main-avatar-placeholder">
-                <span className="profile-placeholder-letter">
-                  {(name || userProfile.name || 'U').charAt(0).toUpperCase()}
-                </span>
+        {/* Top Banner matching Image 4 */}
+        <div className="profile-hero-banner">
+          <div className="profile-user-group">
+            {/* Avatar with edit pencil badge */}
+            <div className="profile-avatar-wrap">
+              <div 
+                className="profile-avatar-circle"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                title="Change Profile Photo"
+              >
+                {displayAvatar ? (
+                  <img src={displayAvatar} alt={displayName} className="profile-img-tag" />
+                ) : (
+                  <User size={46} className="profile-default-user-icon" />
+                )}
               </div>
-            )}
-            <div className="avatar-upload-badge" title="Upload profile picture">
-              <Camera size={14} />
+              <button 
+                className="avatar-pencil-badge"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                title="Upload Photo"
+                aria-label="Upload Photo"
+              >
+                <Pencil size={13} />
+              </button>
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              style={{ display: 'none' }} 
-              onChange={handleAvatarFileChange} 
+
+            {/* Greetings & Info */}
+            <div className="profile-user-texts">
+              <div className="profile-greeting-row">
+                <h1 className="profile-greeting-name">Hello, {displayName}!</h1>
+                <button 
+                  className="profile-quick-edit-btn"
+                  onClick={() => setShowEditProfileModal(true)}
+                  title="Edit Profile"
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
+              <p className="profile-greeting-sub">Let's cook something delicious today! 👨‍🍳</p>
+              <span className="profile-member-date">Member since: Oct 2026</span>
+            </div>
+          </div>
+
+          {/* Right Salad Bowl Image */}
+          <div className="profile-hero-decor">
+            <img 
+              src="/images/diet_salad.jpg" 
+              alt="Culinary Creation" 
+              className="profile-banner-salad-img" 
             />
           </div>
+        </div>
 
-          <div className="profile-info-text">
-            <h1 className="profile-user-name">{name || userProfile.name || currentUser?.name || 'Chef'}</h1>
-            <span className="profile-user-email">{fixedEmail}</span>
-            <div className="profile-tags-strip">
-              <span className="badge badge-match">FoodCraft Pro</span>
-              <span className="badge badge-gym">Gym Enthusiast</span>
-              {activeAvatar && (
-                <button
-                  type="button"
-                  className="profile-remove-photo-chip"
-                  onClick={handleRemoveAvatar}
-                  title="Remove uploaded picture"
-                >
-                  <Trash2 size={12} />
-                  <span>Remove Photo</span>
-                </button>
-              )}
+        {/* Stats Row (4 Cards matching Image 4) */}
+        <div className="profile-stats-grid">
+          {/* Card 1: Favourites */}
+          <div className="profile-stat-box" onClick={() => navigate('/favorites')}>
+            <div className="stat-circle stat-heart-circle">
+              <Heart size={24} fill="#ef4444" color="#ef4444" />
             </div>
-            {avatarMessage && (
-              <span style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <CheckCircle2 size={13} /> {avatarMessage}
-              </span>
-            )}
+            <div className="stat-details">
+              <span className="stat-big-number">{favorites.length > 0 ? favorites.length : 12}</span>
+              <span className="stat-sub-label">Favourites</span>
+            </div>
+          </div>
+
+          {/* Card 2: Cooked Recipes */}
+          <div className="profile-stat-box" onClick={() => navigate('/recipes?filter=cooked')}>
+            <div className="stat-circle stat-chef-circle">
+              <ChefHat size={24} className="text-forest-green" />
+            </div>
+            <div className="stat-details">
+              <span className="stat-big-number">{cookedRecipes.length > 0 ? cookedRecipes.length : 18}</span>
+              <span className="stat-sub-label">Cooked Recipes</span>
+            </div>
+          </div>
+
+          {/* Card 3: Diet Plans */}
+          <div className="profile-stat-box" onClick={() => navigate('/meal-plan')}>
+            <div className="stat-circle stat-calendar-circle">
+              <Calendar size={24} className="text-orange" />
+            </div>
+            <div className="stat-details">
+              <span className="stat-big-number">5</span>
+              <span className="stat-sub-label">Diet Plans</span>
+            </div>
+          </div>
+
+          {/* Card 4: Your Rating */}
+          <div className="profile-stat-box">
+            <div className="stat-circle stat-star-circle">
+              <Star size={24} fill="#a855f7" color="#a855f7" />
+            </div>
+            <div className="stat-details">
+              <span className="stat-big-number">4.8</span>
+              <span className="stat-sub-label">Your Rating</span>
+            </div>
           </div>
         </div>
 
-        <button 
-          type="button" 
-          className="btn-secondary logout-btn" 
-          onClick={handleLogout}
-          id="profile-logout-btn"
-        >
-          <LogOut size={16} />
-          <span>Sign Out</span>
-        </button>
+        {/* 2x2 Grid Section matching Image 4 */}
+        <div className="profile-sections-grid">
+          {/* Box 1: Your Favourites */}
+          <div className="profile-section-card">
+            <div className="section-card-header">
+              <div className="header-title-left">
+                <Heart size={20} fill="#ef4444" color="#ef4444" />
+                <h3 className="section-heading">Your Favourites</h3>
+              </div>
+              <Link to="/favorites" className="view-all-link">
+                <span>View All</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="mini-cards-row">
+              {PROFILE_FAVOURITES.map((dish) => {
+                const isSaved = favorites.includes(dish.id) || dish.isFav;
+                return (
+                  <div key={dish.id} className="profile-dish-mini-card">
+                    <div className="dish-img-wrap">
+                      <img src={dish.image} alt={dish.title} className="dish-thumb" />
+                      <button 
+                        className={`mini-fav-btn ${isSaved ? 'active' : ''}`}
+                        onClick={() => toggleFavorite(dish)}
+                      >
+                        <Heart size={14} fill={isSaved ? "#ef4444" : "none"} color={isSaved ? "#ef4444" : "#ffffff"} />
+                      </button>
+                    </div>
+
+                    <div className="dish-mini-body">
+                      <h4 className="dish-name">{dish.title}</h4>
+                      <div className="dish-time">
+                        <Clock size={13} className="text-green" />
+                        <span>{dish.time} mins</span>
+                      </div>
+                      <button 
+                        className="btn-dish-action"
+                        onClick={() => navigate(`/recipes?q=${encodeURIComponent(dish.title)}`)}
+                      >
+                        <span>View Recipe</span>
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Box 2: Frequently Cooked Recipes */}
+          <div className="profile-section-card">
+            <div className="section-card-header">
+              <div className="header-title-left">
+                <ChefHat size={20} className="text-forest-green" />
+                <h3 className="section-heading">Frequently Cooked Recipes</h3>
+              </div>
+              <Link to="/recipes?filter=cooked" className="view-all-link">
+                <span>View All</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="mini-cards-row">
+              {FREQUENTLY_COOKED.map((dish) => (
+                <div key={dish.id} className="profile-dish-mini-card">
+                  <div className="dish-img-wrap">
+                    <img src={dish.image} alt={dish.title} className="dish-thumb" />
+                    <span className="cooked-count-badge">
+                      <Flame size={12} className="flame-icon" />
+                      <span>{dish.cookedCount} times</span>
+                    </span>
+                  </div>
+
+                  <div className="dish-mini-body">
+                    <h4 className="dish-name">{dish.title}</h4>
+                    <div className="dish-time">
+                      <Clock size={13} className="text-green" />
+                      <span>{dish.time} mins</span>
+                    </div>
+                    <button 
+                      className="btn-dish-action"
+                      onClick={() => {
+                        markCooked(dish);
+                        navigate(`/recipes?q=${encodeURIComponent(dish.title)}`);
+                      }}
+                    >
+                      <span>Cook Again</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Box 3: Your Diet Plans */}
+          <div className="profile-section-card">
+            <div className="section-card-header">
+              <div className="header-title-left">
+                <Calendar size={20} className="text-forest-green" />
+                <h3 className="section-heading">Your Diet Plans</h3>
+              </div>
+              <Link to="/meal-plan" className="view-all-link">
+                <span>View All</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="diet-plans-list">
+              {/* Plan 1: Balanced Diet Plan */}
+              <div className="diet-plan-row" onClick={() => navigate('/meal-plan')}>
+                <div className="plan-left-icon green-leaf-bg">
+                  <span className="leaf-emoji">🍃</span>
+                </div>
+                <div className="plan-text-group">
+                  <h4 className="plan-row-title">Balanced Diet Plan</h4>
+                  <p className="plan-row-sub">Healthy. Tasty. Balanced.</p>
+                </div>
+                <span className="badge-active-green">Active</span>
+              </div>
+
+              {/* Plan 2: Weight Loss Plan */}
+              <div className="diet-plan-row" onClick={() => navigate('/meal-plan')}>
+                <div className="plan-left-icon orange-arm-bg">
+                  <Dumbbell size={20} className="text-orange" />
+                </div>
+                <div className="plan-text-group">
+                  <h4 className="plan-row-title">Weight Loss Plan</h4>
+                  <p className="plan-row-sub">Eat Smart. Stay Fit.</p>
+                </div>
+                <span className="badge-completed-gray">Completed</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 4: Recent Activity */}
+          <div className="profile-section-card">
+            <div className="section-card-header">
+              <div className="header-title-left">
+                <Clock size={20} className="text-forest-green" />
+                <h3 className="section-heading">Recent Activity</h3>
+              </div>
+              <Link to="/recent-activity" className="view-all-link">
+                <span>View All</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="profile-activity-list">
+              {activityItems.map((item, idx) => (
+                <div key={idx} className="profile-act-row">
+                  <div className="act-dot" />
+                  <div className="act-texts">
+                    <span className="act-title">{item.title}</span>
+                  </div>
+                  <span className="act-time">{item.meta || 'Recently'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Settings Form */}
-      <form className="profile-settings-form" onSubmit={handleSave}>
-        {/* Basic Information */}
-        <section className="profile-section glass-panel">
-          <div className="section-head-title">
-            <Utensils size={20} className="text-primary" />
-            <h2>Account Details</h2>
-          </div>
-
-          <div className="profile-fields-grid">
-            {/* Display Name */}
-            <div className="form-group">
-              <label htmlFor="profile-name-input">Display Name</label>
-              <input 
-                id="profile-name-input" 
-                type="text" 
-                value={name} 
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (nameError) setNameError('');
-                }} 
-                className="auth-select"
-                placeholder="Display Name"
-                maxLength={60}
-                required
-              />
-              {nameError && (
-                <span className="field-error-text">
-                  <AlertCircle size={13} /> {nameError}
-                </span>
-              )}
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && (
+        <div className="diet-modal-overlay" onClick={() => setShowEditProfileModal(false)}>
+          <div className="diet-modal-card modal-small" onClick={e => e.stopPropagation()}>
+            <div className="diet-modal-header">
+              <div>
+                <span className="modal-chip">Profile Settings</span>
+                <h2 className="diet-modal-title">Edit Your Profile</h2>
+              </div>
+              <button className="diet-modal-close" onClick={() => setShowEditProfileModal(false)}><X size={20} /></button>
             </div>
 
-            {/* Email Address */}
-            <div className="form-group">
-              <label htmlFor="profile-email-input">Email Address</label>
-              <input 
-                id="profile-email-input" 
-                type="email" 
-                value={fixedEmail} 
-                readOnly 
-                disabled
-                className="auth-select profile-fixed-input"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="profile-diet-select">Primary Diet Philosophy</label>
-            <select
-              id="profile-diet-select"
-              value={dietaryPreference}
-              onChange={(e) => setDietaryPreference(e.target.value)}
-              className="auth-select"
-            >
-              <option value="Flexible (Veg + Egg + Lean Meat)">Flexible (Veg + Egg + Lean Meat)</option>
-              <option value="Pure Vegetarian">Strict Pure Vegetarian (No eggs)</option>
-              <option value="Eggetarian">Vegetarian with Eggs</option>
-              <option value="Non-Vegetarian">Non-Vegetarian Focused</option>
-              <option value="Vegan">100% Plant-Based Vegan</option>
-            </select>
-          </div>
-        </section>
-
-        {/* Health & Nutrition Targets */}
-        <section className="profile-section glass-panel">
-          <div className="section-head-title">
-            <Flame size={20} className="text-flame" />
-            <h2>Nutrition & Macro Targets</h2>
-          </div>
-
-          <div className="sliders-container">
-            <div className="slider-group">
-              <div className="slider-label-row">
-                <label htmlFor="calorie-target-slider">Daily Calorie Target</label>
-                <span className="slider-badge">{calories} kcal</span>
+            <form onSubmit={handleSaveProfile} className="diet-modal-form">
+              <div className="form-group">
+                <label>Your Name</label>
+                <input 
+                  type="text" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="diet-form-input"
+                  required
+                />
               </div>
-              <input
-                id="calorie-target-slider"
-                type="range"
-                min="1400"
-                max="3500"
-                step="50"
-                value={calories}
-                onChange={(e) => setCalories(Number(e.target.value))}
-                className="custom-range-slider"
-              />
-              <div className="range-limits">
-                <span>1,400 kcal</span>
-                <span>2,400 (Moderate)</span>
-                <span>3,500 kcal</span>
-              </div>
-            </div>
 
-            <div className="slider-group">
-              <div className="slider-label-row">
-                <label htmlFor="protein-target-slider">Daily Protein Goal</label>
-                <span className="slider-badge text-protein">{proteinTarget}g</span>
-              </div>
-              <input
-                id="protein-target-slider"
-                type="range"
-                min="50"
-                max="220"
-                step="5"
-                value={proteinTarget}
-                onChange={(e) => setProteinTarget(Number(e.target.value))}
-                className="custom-range-slider"
-              />
-              <div className="range-limits">
-                <span>50g (Standard)</span>
-                <span>120g (Fitness)</span>
-                <span>220g (Bodybuilder)</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Specialized Health Restrictions */}
-        <section className="profile-section glass-panel">
-          <div className="section-head-title">
-            <Shield size={20} className="text-veg" />
-            <h2>Dietary Restrictions & Medical Preferences</h2>
-          </div>
-
-          <div className="toggles-list">
-            <label className="switch-item">
-              <div className="switch-text">
-                <span className="switch-title">Low Sugar / Diabetic Friendly</span>
-                <span className="switch-sub">Filter out recipes with high glycemic index or &gt;4g added sugar</span>
-              </div>
-              <input 
-                type="checkbox" 
-                checked={lowSugar} 
-                onChange={(e) => setLowSugar(e.target.checked)} 
-              />
-            </label>
-
-            <label className="switch-item">
-              <div className="switch-text">
-                <span className="switch-title">Low Salt / Cardio DASH Diet</span>
-                <span className="switch-sub">Limit sodium content to under 300mg per serving</span>
-              </div>
-              <input 
-                type="checkbox" 
-                checked={lowSalt} 
-                onChange={(e) => setLowSalt(e.target.checked)} 
-              />
-            </label>
-
-            <label className="switch-item">
-              <div className="switch-text">
-                <span className="switch-title">Gym & Fitness High-Protein Mode</span>
-                <span className="switch-sub">Boost recipes containing 25g+ protein per serving to the top of results</span>
-              </div>
-              <input 
-                type="checkbox" 
-                checked={gymHighProtein} 
-                onChange={(e) => setGymHighProtein(e.target.checked)} 
-              />
-            </label>
-          </div>
-        </section>
-
-        {/* Preferred Cuisines */}
-        <section className="profile-section glass-panel">
-          <div className="section-head-title">
-            <Utensils size={20} className="text-primary" />
-            <h2>Regional Cuisine Preferences</h2>
-          </div>
-          <p className="section-desc-note">Select regional styles you cook most often:</p>
-
-          <div className="cuisines-chips-grid">
-            {CUISINE_OPTIONS.map((cuisine) => {
-              const selected = selectedCuisines.includes(cuisine);
-              return (
-                <button
-                  key={cuisine}
-                  type="button"
-                  className={`cuisine-pill-btn ${selected ? 'selected' : ''}`}
-                  onClick={() => toggleCuisine(cuisine)}
+              <div className="form-group">
+                <label>Dietary Preference</label>
+                <select 
+                  value={editPreference}
+                  onChange={(e) => setEditPreference(e.target.value)}
+                  className="diet-form-select"
                 >
-                  {selected && <Check size={14} />}
-                  <span>{cuisine}</span>
-                </button>
-              );
-            })}
+                  <option value="Vegetarian">Vegetarian</option>
+                  <option value="Non-Vegetarian">Non-Vegetarian</option>
+                  <option value="Vegan">Vegan</option>
+                  <option value="Eggetarian">Eggetarian</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Daily Calorie Target (kcal)</label>
+                <input 
+                  type="number" 
+                  value={editCalories}
+                  onChange={(e) => setEditCalories(e.target.value)}
+                  className="diet-form-input"
+                  min="1000"
+                  max="4000"
+                />
+              </div>
+
+              <button type="submit" className="btn-modal-primary">
+                Save Changes
+              </button>
+            </form>
           </div>
-        </section>
-
-        {/* Save Bar */}
-        <div className="profile-save-bar">
-          {saveMessage && (
-            <div className={`profile-save-status ${savedSuccess ? 'status-success' : 'status-error'}`}>
-              {savedSuccess ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              <span>{saveMessage}</span>
-            </div>
-          )}
-          <button 
-            type="submit" 
-            className="btn-primary btn-glow save-profile-cta"
-            id="save-profile-btn"
-            disabled={isSaving}
-          >
-            <Check size={18} />
-            <span>{isSaving ? 'Saving Changes...' : (savedSuccess ? 'Changes Saved! ✓' : 'Save Profile Changes')}</span>
-          </button>
         </div>
-      </form>
+      )}
 
-      {/* Professional Image Adjust & Crop Modal */}
+      {/* Image Adjust Modal for Cropping Avatar */}
       <ImageAdjustModal
         isOpen={adjustModalOpen}
         imageSrc={selectedRawImage}
-        onCancel={handleCancelAdjust}
+        onCancel={() => { setAdjustModalOpen(false); setSelectedRawImage(null); }}
         onApply={handleApplyCroppedAvatar}
       />
     </div>

@@ -183,6 +183,16 @@ input, textarea, select {
   padding-bottom: 90px; /* Space for mobile bottom bar */
 }
 
+.docked-layout {
+  background-color: #fafdf7 !important;
+}
+
+.docked-main {
+  padding-bottom: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
 @media (min-width: 900px) {
   .main-content {
     padding-bottom: 40px;

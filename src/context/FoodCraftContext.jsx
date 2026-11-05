@@ -23,7 +23,27 @@ export function FoodCraftProvider({ children }) {
 
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('foodcraft_favorites');
-    return saved ? JSON.parse(saved) : ['rcp-1', 'rcp-3', 'rcp-7'];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Clear any legacy mock initial favorites ['rcp-1', 'rcp-3', 'rcp-7']
+          const cleaned = parsed.filter(id => !['rcp-1', 'rcp-3', 'rcp-7'].includes(id));
+          return cleaned;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [cookedRecipes, setCookedRecipes] = useState(() => {
+    const saved = localStorage.getItem('foodcraft_cooked_recipes');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [recentActivity, setRecentActivity] = useState(() => {
+    const saved = localStorage.getItem('foodcraft_recent_activity');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [userProfile, setUserProfile] = useState(() => {
@@ -91,6 +111,14 @@ export function FoodCraftProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('foodcraft_favorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem('foodcraft_cooked_recipes', JSON.stringify(cookedRecipes));
+  }, [cookedRecipes]);
+
+  useEffect(() => {
+    localStorage.setItem('foodcraft_recent_activity', JSON.stringify(recentActivity));
+  }, [recentActivity]);
 
   useEffect(() => {
     localStorage.setItem('foodcraft_profile', JSON.stringify(userProfile));
@@ -300,13 +328,78 @@ export function FoodCraftProvider({ children }) {
     localStorage.removeItem('foodcraft_favorites');
   };
 
+  // Log real user interaction into Recent Activity
+  const logActivity = ({ type = 'viewed', title, meta = 'Just now', image = '/images/diet_salad.jpg', link = '/recipes' }) => {
+    if (!title) return;
+    const entry = {
+      id: 'act-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      type,
+      title,
+      meta,
+      image,
+      link,
+      timestamp: Date.now()
+    };
+    setRecentActivity(prev => {
+      const filtered = prev.filter(p => p.title !== title);
+      const updated = [entry, ...filtered].slice(0, 40);
+      localStorage.setItem('foodcraft_recent_activity', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Mark a recipe as cooked
+  const markCooked = (recipeOrId) => {
+    const isObj = typeof recipeOrId === 'object' && recipeOrId !== null;
+    const rId = isObj ? recipeOrId.id : recipeOrId;
+    const rTitle = isObj ? recipeOrId.title : 'Recipe';
+    const rImg = isObj ? recipeOrId.image : '/images/diet_salad.jpg';
+
+    setCookedRecipes(prev => {
+      const existing = prev.find(p => p.id === rId);
+      let updated;
+      if (existing) {
+        updated = prev.map(p => p.id === rId ? { ...p, count: (p.count || 1) + 1, lastCooked: Date.now() } : p);
+      } else {
+        updated = [...prev, { id: rId, title: rTitle, image: rImg, count: 1, lastCooked: Date.now() }];
+      }
+      localStorage.setItem('foodcraft_cooked_recipes', JSON.stringify(updated));
+      return updated;
+    });
+
+    logActivity({
+      type: 'cooked',
+      title: `Cooked recipe: ${rTitle}`,
+      meta: 'Just now',
+      image: rImg,
+      link: `/recipe/${rId}`
+    });
+  };
+
   // Toggle favorite (syncs to MongoDB if logged in)
-  const toggleFavorite = async (recipeId) => {
-    setFavorites(prev =>
-      prev.includes(recipeId)
+  const toggleFavorite = async (recipeOrId) => {
+    const isObj = typeof recipeOrId === 'object' && recipeOrId !== null;
+    const recipeId = isObj ? recipeOrId.id : recipeOrId;
+    const recipeTitle = isObj ? recipeOrId.title : null;
+    const recipeImg = isObj ? recipeOrId.image : null;
+
+    setFavorites(prev => {
+      const isFav = prev.includes(recipeId);
+      const next = isFav
         ? prev.filter(id => id !== recipeId)
-        : [...prev, recipeId]
-    );
+        : [...prev, recipeId];
+
+      if (!isFav && recipeTitle) {
+        logActivity({
+          type: 'favorite',
+          title: `Added to favourites: ${recipeTitle}`,
+          meta: 'Just now',
+          image: recipeImg || '/images/diet_salad.jpg',
+          link: `/recipe/${recipeId}`
+        });
+      }
+      return next;
+    });
 
     if (token) {
       try {
@@ -406,6 +499,12 @@ export function FoodCraftProvider({ children }) {
       favorites,
       isFavorite,
       toggleFavorite,
+      cookedRecipes,
+      setCookedRecipes,
+      markCooked,
+      recentActivity,
+      setRecentActivity,
+      logActivity,
       userProfile,
       setUserProfile,
       updateProfile,

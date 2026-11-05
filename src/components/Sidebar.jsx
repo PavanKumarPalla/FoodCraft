@@ -1,26 +1,27 @@
 // src/components/Sidebar.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
+  User,
   Heart, 
-  ChefHat, 
-  ClipboardList, 
+  Calendar, 
   History, 
   Settings, 
   HelpCircle, 
   LogOut, 
   X, 
-  Utensils 
+  Utensils,
+  ChefHat
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Sidebar.css';
 
-export default function Sidebar({ isOpen, onClose }) {
-  const { favorites, logout, token } = useFoodCraft();
+export default function Sidebar({ isOpen, onClose, hideAccountOption = false, docked = false }) {
+  const { favorites, logout, token, currentUser } = useFoodCraft();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   const handleLogout = () => {
     if (logout) {
@@ -35,9 +36,19 @@ export default function Sidebar({ isOpen, onClose }) {
   };
 
   const navItems = [
+    ...(!hideAccountOption ? [{
+      id: 'account',
+      label: 'Your Account',
+      icon: User,
+      path: '/profile',
+      action: () => {
+        navigate('/profile');
+        if (onClose) onClose();
+      }
+    }] : []),
     {
       id: 'favourites',
-      label: 'Your Favourites',
+      label: 'Favourites',
       icon: Heart,
       path: '/favorites',
       badge: favorites.length > 0 ? favorites.length : null,
@@ -47,19 +58,9 @@ export default function Sidebar({ isOpen, onClose }) {
       }
     },
     {
-      id: 'cooked',
-      label: 'Cooked Recipes',
-      icon: ChefHat,
-      path: '/recipes?filter=cooked',
-      action: () => {
-        navigate('/recipes?filter=cooked');
-        if (onClose) onClose();
-      }
-    },
-    {
-      id: 'diet-plans',
-      label: 'Your Diet Plans',
-      icon: ClipboardList,
+      id: 'diet-plan',
+      label: 'Diet Plan',
+      icon: Calendar,
       path: '/meal-plan',
       action: () => {
         navigate('/meal-plan');
@@ -67,11 +68,13 @@ export default function Sidebar({ isOpen, onClose }) {
       }
     },
     {
-      id: 'history',
-      label: 'Recipe History',
+      id: 'recent-activity',
+      label: 'Recent Activity',
       icon: History,
+      path: '/recent-activity',
       action: () => {
-        setShowHistoryModal(true);
+        navigate('/recent-activity');
+        if (onClose) onClose();
       }
     },
     {
@@ -95,13 +98,15 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <>
       {/* Backdrop for mobile / drawer */}
-      {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
+      {isOpen && !docked && <div className="sidebar-backdrop" onClick={onClose} />}
 
-      <aside className={`foodcraft-sidebar ${isOpen ? 'open' : ''}`} id="foodcraft-left-sidebar">
+      <aside className={`foodcraft-sidebar ${isOpen ? 'open' : ''} ${docked ? 'docked-desktop' : ''}`} id="foodcraft-left-sidebar">
         {/* Close Button for drawer view */}
-        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close Sidebar">
-          <X size={20} />
-        </button>
+        {!docked && (
+          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close Sidebar">
+            <X size={20} />
+          </button>
+        )}
 
         {/* Top Logo & Branding */}
         <div className="sidebar-header">
@@ -121,10 +126,16 @@ export default function Sidebar({ isOpen, onClose }) {
         <nav className="sidebar-menu">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isItemActive = item.path && (
+              location.pathname === item.path || 
+              (item.path === '/meal-plan' && location.pathname === '/meal-planner') ||
+              (item.path === '/profile' && location.pathname === '/account')
+            );
+
             return (
               <button
                 key={item.id}
-                className="sidebar-menu-item"
+                className={`sidebar-menu-item ${isItemActive ? 'active' : ''}`}
                 onClick={item.action}
                 id={`sidebar-nav-${item.id}`}
               >
@@ -138,7 +149,7 @@ export default function Sidebar({ isOpen, onClose }) {
           })}
 
           {/* Logout Action (or Login if logged out) */}
-          {token ? (
+          {token || currentUser ? (
             <button
               className="sidebar-menu-item sidebar-logout-item"
               onClick={handleLogout}
@@ -158,7 +169,7 @@ export default function Sidebar({ isOpen, onClose }) {
               <div className="item-icon-wrapper">
                 <Utensils size={20} className="menu-icon" />
               </div>
-              <span className="item-label">Sign In / Register</span>
+              <span className="item-label">Sign In</span>
             </button>
           )}
         </nav>
@@ -236,30 +247,6 @@ export default function Sidebar({ isOpen, onClose }) {
               <div className="faq-item">
                 <h4>✉️ Need Direct Assistance?</h4>
                 <p>Email our chef support team at <strong>foodcraft975@gmail.com</strong>.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recipe History Modal */}
-      {showHistoryModal && (
-        <div className="sidebar-modal-overlay" onClick={() => setShowHistoryModal(false)}>
-          <div className="sidebar-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Recipe History</h3>
-              <button className="modal-close" onClick={() => setShowHistoryModal(false)}><X size={18} /></button>
-            </div>
-            <div className="modal-body">
-              <div className="history-empty">
-                <History size={36} className="text-muted" />
-                <p>Your recently explored and cooked recipes will be automatically archived here.</p>
-                <button 
-                  className="btn-primary" 
-                  onClick={() => { setShowHistoryModal(false); if (onClose) onClose(); navigate('/dashboard'); }}
-                >
-                  Browse Recipes
-                </button>
               </div>
             </div>
           </div>

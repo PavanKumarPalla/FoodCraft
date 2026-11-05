@@ -85,8 +85,8 @@ export default function Login() {
           });
         }, 600);
       } else {
-        // Existing user in DB → direct dashboard access
-        navigate('/dashboard', { replace: true });
+        // Existing user in DB → direct home access
+        navigate('/', { replace: true });
       }
     } catch (err) {
       console.error('Google profile fetch error:', err);
@@ -167,7 +167,7 @@ export default function Login() {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     } else {
       setErrorMessage(result.message || 'Invalid email or password.');
     }
