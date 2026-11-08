@@ -98,6 +98,42 @@ export function FoodCraftProvider({ children }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
+  // Global sidebar open/close state shared across all pages
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('foodcraft_sidebar_open');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('foodcraft_sidebar_open', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+    try {
+      localStorage.setItem('foodcraft_sidebar_open', 'false');
+    } catch (e) {}
+  };
+
+  const openSidebar = () => {
+    setIsSidebarOpen(true);
+    try {
+      localStorage.setItem('foodcraft_sidebar_open', 'true');
+    } catch (e) {}
+  };
+
   // Auth & MongoDB User State
   const [token, setToken] = useState(() => localStorage.getItem('foodcraft_token') || null);
   const [currentUser, setCurrentUser] = useState(() => {
@@ -520,6 +556,12 @@ export function FoodCraftProvider({ children }) {
       setSearchQuery,
       activeFilter,
       setActiveFilter,
+      // Global sidebar navigation
+      isSidebarOpen,
+      setIsSidebarOpen,
+      toggleSidebar,
+      closeSidebar,
+      openSidebar,
       // Auth state & methods
       currentUser,
       setCurrentUser,

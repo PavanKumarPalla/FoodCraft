@@ -13,7 +13,6 @@ import {
   Menu
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
-import Sidebar from '../components/Sidebar';
 import './Favorites.css';
 
 // Curated popular items matching the referral design
@@ -57,14 +56,16 @@ const POPULAR_SUGGESTIONS = [
 ];
 
 export default function Favorites() {
-  const { recipes, favorites, toggleFavorite, currentUser, userProfile } = useFoodCraft();
+  const { 
+    recipes, 
+    favorites, 
+    toggleFavorite, 
+    currentUser, 
+    userProfile,
+    isSidebarOpen,
+    toggleSidebar
+  } = useFoodCraft();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1024;
-    }
-    return true;
-  });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Recently Added');
 
@@ -108,22 +109,16 @@ export default function Favorites() {
 
   return (
     <div className="referral-page-layout favorites-page-container">
-      {/* Left Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        docked={true}
-      />
-
       {/* Main Right Content */}
       <div className="referral-main-content">
-        {/* Top bar with mobile hamburger and notification/user icons */}
+        {/* Top bar with hamburger toggle and notification/user icons */}
         <div className="referral-top-bar">
           <button 
-            className="mobile-sidebar-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle Navigation"
-            title={sidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
+            onClick={toggleSidebar}
+            aria-label="Toggle Navigation Sidebar"
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            id="fav-sidebar-toggle-btn"
           >
             <Menu size={22} />
           </button>

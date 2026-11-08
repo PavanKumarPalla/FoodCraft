@@ -24,14 +24,9 @@
 }
 
 @media (min-width: 1024px) {
-  .home-layout-wrapper.sidebar-open .home-main-column {
-    margin-left: 240px;
-    width: calc(100% - 240px);
-  }
-
-  .home-layout-wrapper.sidebar-closed .home-main-column {
-    margin-left: 0;
-    width: 100%;
+  .home-main-column {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 }
 

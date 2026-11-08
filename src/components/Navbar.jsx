@@ -1,12 +1,12 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Heart, Search, ChefHat, Calendar, Camera, LogIn } from 'lucide-react';
+import { Heart, Search, ChefHat, Calendar, Camera, LogIn, Menu } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { favorites, userProfile, searchQuery, setSearchQuery, token, currentUser } = useFoodCraft();
+  const { favorites, userProfile, searchQuery, setSearchQuery, token, currentUser, isSidebarOpen, toggleSidebar } = useFoodCraft();
   const navigate = useNavigate();
 
   const handleSearchSubmit = (e) => {
@@ -24,20 +24,32 @@ export default function Navbar() {
   return (
     <header className="navbar-header">
       <div className="navbar-container">
-        {/* Brand Logo */}
-        <Link to="/" className="navbar-brand">
-          <div className="navbar-logo-icon">
-            <ChefHat size={22} className="chef-icon" />
-            <span className="leaf-accent">🌿</span>
-          </div>
-          <div className="brand-text-wrapper">
-            <span className="brand-title">
-              <span className="brand-food">Food</span>
-              <span className="brand-craft">Craft</span>
-            </span>
-            <span className="brand-badge">AI 2.2M+</span>
-          </div>
-        </Link>
+        {/* Left: Hamburger Toggle & Brand Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button 
+            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
+            onClick={toggleSidebar}
+            aria-label="Toggle Navigation Sidebar"
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            id="navbar-sidebar-toggle-btn"
+          >
+            <Menu size={22} />
+          </button>
+
+          <Link to="/" className="navbar-brand">
+            <div className="navbar-logo-icon">
+              <ChefHat size={22} className="chef-icon" />
+              <span className="leaf-accent">🌿</span>
+            </div>
+            <div className="brand-text-wrapper">
+              <span className="brand-title">
+                <span className="brand-food">Food</span>
+                <span className="brand-craft">Craft</span>
+              </span>
+              <span className="brand-badge">AI 2.2M+</span>
+            </div>
+          </Link>
+        </div>
 
         {/* Desktop Navigation Links */}
         <nav className="navbar-links">

@@ -16,8 +16,10 @@ import {
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Sidebar.css';
 
-export default function Sidebar({ isOpen, onClose, hideAccountOption = false, docked = false }) {
-  const { favorites, logout, token, currentUser } = useFoodCraft();
+export default function Sidebar({ isOpen: propIsOpen, onClose: propOnClose, docked = true }) {
+  const { favorites, logout, token, currentUser, isSidebarOpen, closeSidebar } = useFoodCraft();
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isSidebarOpen;
+  const onClose = propOnClose || closeSidebar;
   const navigate = useNavigate();
   const location = useLocation();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -46,13 +48,13 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
   };
 
   const navItems = [
-    ...(!hideAccountOption ? [{
+    {
       id: 'account',
       label: 'Your Account',
       icon: User,
       path: '/profile',
       action: () => handleNavClick('/profile')
-    }] : []),
+    },
     {
       id: 'favourites',
       label: 'Favourites',

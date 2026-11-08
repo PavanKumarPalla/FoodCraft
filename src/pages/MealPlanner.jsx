@@ -14,17 +14,10 @@ import {
   getDynamicWeekDates 
 } from '../data/mealPlanData';
 import { useFoodCraft } from '../context/FoodCraftContext';
-import Sidebar from '../components/Sidebar';
 import './MealPlanner.css';
 
 export default function MealPlanner() {
-  const { currentUser, userProfile, logActivity } = useFoodCraft();
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1024;
-    }
-    return true;
-  });
+  const { currentUser, userProfile, logActivity, isSidebarOpen, toggleSidebar } = useFoodCraft();
 
   // Active Plan States
   const [activePlanName, setActivePlanName] = useState('Weight Loss Plan');
@@ -173,22 +166,16 @@ export default function MealPlanner() {
 
   return (
     <div className="referral-page-layout diet-page-container">
-      {/* Left Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        docked={true}
-      />
-
       {/* Main Right Content */}
       <div className="referral-main-content">
-        {/* Top bar with mobile hamburger and notification/user icons */}
+        {/* Top bar with hamburger toggle and notification/user icons */}
         <div className="referral-top-bar">
           <button 
-            className="mobile-sidebar-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle Navigation"
-            title={sidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
+            onClick={toggleSidebar}
+            aria-label="Toggle Navigation Sidebar"
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            id="diet-sidebar-toggle-btn"
           >
             <Menu size={22} />
           </button>

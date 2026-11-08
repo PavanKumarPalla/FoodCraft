@@ -25,21 +25,23 @@ import {
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import { matchRecipeIngredients } from '../utils/ingredientMatcher';
-import Sidebar from '../components/Sidebar';
 import RecipeCard from '../components/RecipeCard';
 import './Landing.css';
 
 export default function Landing() {
-  const { recipes, favorites, token, currentUser, userProfile, setScannedIngredients } = useFoodCraft();
+  const { 
+    recipes, 
+    favorites, 
+    token, 
+    currentUser, 
+    userProfile, 
+    setScannedIngredients,
+    isSidebarOpen,
+    toggleSidebar
+  } = useFoodCraft();
   const navigate = useNavigate();
 
-  // Navigation & Drawer States - open by default on desktop (>=1024px), collapsed on mobile
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1024;
-    }
-    return true;
-  });
+  // Navigation & Drawer States
   const [activeNav, setActiveNav] = useState('home');
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showTipsModal, setShowTipsModal] = useState(false);
@@ -212,13 +214,6 @@ export default function Landing() {
 
   return (
     <div className={`home-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* ── Left Navigation Sidebar (matching Image 1) ── */}
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
-        docked={true}
-      />
-
       {/* ── Main Home Column (Header + Content + Footer) ── */}
       <div className="home-main-column">
         {/* ── Top Header Navigation (matching referral Image 1) ── */}
@@ -228,7 +223,7 @@ export default function Landing() {
             <div className="home-brand-group">
               <button 
                 className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={toggleSidebar}
                 title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
                 aria-label="Toggle Navigation Sidebar"
                 id="home-sidebar-toggle-btn"
