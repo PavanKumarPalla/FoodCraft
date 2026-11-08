@@ -99,7 +99,7 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
       {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
 
       <aside className={`foodcraft-sidebar ${isOpen ? 'open' : ''} ${docked ? 'docked-desktop' : ''}`} id="foodcraft-left-sidebar">
-        {/* Top Logo & Branding with Close Button */}
+        {/* Top Logo & Branding */}
         <div className="sidebar-header">
           <div 
             className="sidebar-brand-wrapper" 
@@ -115,17 +115,6 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
               <span className="brand-craft">Craft</span>
             </div>
           </div>
-
-          {/* Close Sidebar Button (Always available for open & close toggle) */}
-          <button 
-            className="sidebar-close-btn" 
-            onClick={onClose} 
-            aria-label="Close Sidebar"
-            title="Close Sidebar"
-            id="sidebar-close-btn"
-          >
-            <X size={18} />
-          </button>
         </div>
 
         {/* Navigation Menu List */}
