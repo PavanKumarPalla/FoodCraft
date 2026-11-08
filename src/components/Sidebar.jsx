@@ -23,6 +23,14 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  const handleNavClick = (path) => {
+    navigate(path);
+    // On mobile devices, close the drawer after selection; on desktop keep docked sidebar
+    if (onClose && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onClose();
+    }
+  };
+
   const handleLogout = () => {
     if (logout) {
       logout();
@@ -31,7 +39,9 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
       localStorage.removeItem('foodcraft_user');
       window.location.reload();
     }
-    if (onClose) onClose();
+    if (onClose && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onClose();
+    }
     navigate('/');
   };
 
@@ -41,10 +51,7 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
       label: 'Your Account',
       icon: User,
       path: '/profile',
-      action: () => {
-        navigate('/profile');
-        if (onClose) onClose();
-      }
+      action: () => handleNavClick('/profile')
     }] : []),
     {
       id: 'favourites',
@@ -52,30 +59,21 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
       icon: Heart,
       path: '/favorites',
       badge: favorites.length > 0 ? favorites.length : null,
-      action: () => {
-        navigate('/favorites');
-        if (onClose) onClose();
-      }
+      action: () => handleNavClick('/favorites')
     },
     {
       id: 'diet-plan',
       label: 'Diet Plan',
       icon: Calendar,
       path: '/meal-plan',
-      action: () => {
-        navigate('/meal-plan');
-        if (onClose) onClose();
-      }
+      action: () => handleNavClick('/meal-plan')
     },
     {
       id: 'recent-activity',
       label: 'Recent Activity',
       icon: History,
       path: '/recent-activity',
-      action: () => {
-        navigate('/recent-activity');
-        if (onClose) onClose();
-      }
+      action: () => handleNavClick('/recent-activity')
     },
     {
       id: 'settings',
@@ -98,19 +96,16 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
   return (
     <>
       {/* Backdrop for mobile / drawer */}
-      {isOpen && !docked && <div className="sidebar-backdrop" onClick={onClose} />}
+      {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
 
       <aside className={`foodcraft-sidebar ${isOpen ? 'open' : ''} ${docked ? 'docked-desktop' : ''}`} id="foodcraft-left-sidebar">
-        {/* Close Button for drawer view */}
-        {!docked && (
-          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close Sidebar">
-            <X size={20} />
-          </button>
-        )}
-
-        {/* Top Logo & Branding */}
+        {/* Top Logo & Branding with Close Button */}
         <div className="sidebar-header">
-          <div className="sidebar-brand-wrapper" onClick={() => { navigate('/'); if (onClose) onClose(); }}>
+          <div 
+            className="sidebar-brand-wrapper" 
+            onClick={() => { navigate('/'); if (onClose && window.innerWidth < 1024) onClose(); }}
+            title="Go to Home"
+          >
             <div className="sidebar-logo-icon">
               <ChefHat size={26} className="chef-icon" />
               <span className="leaf-accent">🌿</span>
@@ -120,6 +115,17 @@ export default function Sidebar({ isOpen, onClose, hideAccountOption = false, do
               <span className="brand-craft">Craft</span>
             </div>
           </div>
+
+          {/* Close Sidebar Button (Always available for open & close toggle) */}
+          <button 
+            className="sidebar-close-btn" 
+            onClick={onClose} 
+            aria-label="Close Sidebar"
+            title="Close Sidebar"
+            id="sidebar-close-btn"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Navigation Menu List */}

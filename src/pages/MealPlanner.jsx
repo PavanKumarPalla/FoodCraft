@@ -19,7 +19,12 @@ import './MealPlanner.css';
 
 export default function MealPlanner() {
   const { currentUser, userProfile, logActivity } = useFoodCraft();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
 
   // Active Plan States
   const [activePlanName, setActivePlanName] = useState('Weight Loss Plan');
@@ -181,8 +186,9 @@ export default function MealPlanner() {
         <div className="referral-top-bar">
           <button 
             className="mobile-sidebar-toggle"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle Navigation"
+            title={sidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
           >
             <Menu size={22} />
           </button>

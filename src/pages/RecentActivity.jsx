@@ -58,7 +58,12 @@ const DEFAULT_INITIAL_ACTIVITIES = [
 export default function RecentActivity() {
   const { recentActivity, favorites, currentUser, userProfile } = useFoodCraft();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
 
   const displayName = currentUser?.name || userProfile?.name || 'User';
 
@@ -86,8 +91,9 @@ export default function RecentActivity() {
         <div className="referral-top-bar">
           <button 
             className="mobile-sidebar-toggle"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle Navigation"
+            title={sidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
           >
             <Menu size={22} />
           </button>

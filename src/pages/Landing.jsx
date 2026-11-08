@@ -33,8 +33,13 @@ export default function Landing() {
   const { recipes, favorites, token, currentUser, userProfile, setScannedIngredients } = useFoodCraft();
   const navigate = useNavigate();
 
-  // Navigation & Drawer States
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Navigation & Drawer States - open by default on desktop (>=1024px), collapsed on mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
   const [activeNav, setActiveNav] = useState('home');
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showTipsModal, setShowTipsModal] = useState(false);
@@ -206,24 +211,30 @@ export default function Landing() {
   const firstName = displayName.trim().split(' ')[0] || 'Chef';
 
   return (
-    <div className="home-layout-wrapper">
-      {/* ── Left Navigation Sidebar (from Image 2, without Account item) ── */}
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+    <div className={`home-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* ── Left Navigation Sidebar (matching Image 1) ── */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        docked={true}
+      />
 
-      {/* ── Top Header Navigation (matching referral Image 1) ── */}
-      <header className="home-header">
-        <div className="home-header-container">
-          {/* Left: Sidebar Toggle & Brand Logo */}
-          <div className="home-brand-group">
-            <button 
-              className="sidebar-toggle-btn" 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              title="Open Navigation Menu"
-              aria-label="Open Navigation Sidebar"
-              id="home-sidebar-toggle-btn"
-            >
-              <Menu size={22} />
-            </button>
+      {/* ── Main Home Column (Header + Content + Footer) ── */}
+      <div className="home-main-column">
+        {/* ── Top Header Navigation (matching referral Image 1) ── */}
+        <header className="home-header">
+          <div className="home-header-container">
+            {/* Left: Sidebar Toggle & Brand Logo */}
+            <div className="home-brand-group">
+              <button 
+                className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+                aria-label="Toggle Navigation Sidebar"
+                id="home-sidebar-toggle-btn"
+              >
+                <Menu size={22} />
+              </button>
 
             <Link to="/" className="home-logo-link">
               <div className="home-logo-badge">
@@ -875,6 +886,7 @@ export default function Landing() {
           </div>
         </div>
       )}
+      </div> {/* end home-main-column */}
     </div>
   );
 }
