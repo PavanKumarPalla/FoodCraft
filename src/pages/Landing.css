@@ -8,8 +8,14 @@
   display: flex;
   flex-direction: row;
   position: relative;
-  overflow-x: hidden;
   width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1023px) {
+  .home-layout-wrapper {
+    flex-direction: column;
+  }
 }
 
 .home-main-column {
@@ -18,6 +24,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-x: hidden;
 }
@@ -431,8 +438,8 @@
 
 .hero-dish-image-wrapper {
   position: relative;
-  width: 340px;
-  height: 340px;
+  width: clamp(260px, 26vw, 360px);
+  height: clamp(260px, 26vw, 360px);
   border-radius: 50%;
   padding: 10px;
   background: #ffffff;
@@ -446,8 +453,8 @@
 
 @media (min-width: 768px) {
   .hero-dish-image-wrapper {
-    width: 380px;
-    height: 380px;
+    width: clamp(280px, 26vw, 380px);
+    height: clamp(280px, 26vw, 380px);
   }
 }
 
@@ -473,7 +480,7 @@
 /* Delicious Results Script Badge */
 .delicious-results-badge {
   position: absolute;
-  right: -10px;
+  right: 0;
   bottom: 15px;
   background: #ffffff;
   border: 1.5px solid #fed7aa;
