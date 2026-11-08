@@ -1,4 +1,4 @@
-/* src/components/BottomNav.css */
+/* src/components/BottomNav.css — Clean Botanical Light Aesthetic */
 
 .bottom-nav-container {
   position: fixed;
@@ -21,12 +21,12 @@
   max-width: 480px;
   margin: 0 auto;
   height: 64px;
-  background: rgba(14, 20, 32, 0.88);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 107, 53, 0.12);
+  border: 1.5px solid #e2ebd8;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -39,28 +39,28 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: var(--text-muted);
+  color: #64748b;
   text-decoration: none;
   font-size: 0.72rem;
-  font-weight: 500;
+  font-weight: 600;
   padding: 6px 12px;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border-radius: 14px;
+  transition: all 0.2s ease;
   position: relative;
 }
 
 .tab-icon-wrapper {
-  transition: transform var(--transition-fast);
+  transition: transform 0.2s ease;
 }
 
 .bottom-tab:hover,
 .bottom-tab:active {
-  color: var(--text-main);
+  color: #15803d;
 }
 
 .bottom-tab.active {
-  color: var(--primary);
-  font-weight: 600;
+  color: #15803d;
+  font-weight: 700;
 }
 
 .bottom-tab.active .tab-icon-wrapper {
@@ -73,9 +73,8 @@
   bottom: 2px;
   width: 14px;
   height: 3px;
-  background: var(--primary);
-  border-radius: var(--radius-full);
-  box-shadow: 0 0 8px var(--primary);
+  background: #15803d;
+  border-radius: 9999px;
 }
 
 /* Center Prominent AI Scan Button */
@@ -91,28 +90,24 @@
 .center-button-glow {
   width: 52px;
   height: 52px;
-  border-radius: var(--radius-full);
-  background: var(--primary-gradient);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
-  border: 3px solid #0a0e17;
-  transition: all var(--transition-spring);
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.35);
+  transition: transform 0.2s ease;
+  border: 3px solid #ffffff;
 }
 
-.bottom-tab-center:hover .center-button-glow,
-.bottom-tab-center.active .center-button-glow {
-  transform: scale(1.08) translateY(-3px);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.8);
+.bottom-tab-center:hover .center-button-glow {
+  transform: scale(1.06);
 }
 
 .tab-label-center {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--primary-light);
-  margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: #15803d;
+  margin-top: 2px;
 }

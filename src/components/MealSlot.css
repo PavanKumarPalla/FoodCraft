@@ -139,7 +139,7 @@
 }
 
 .macro-protein {
-  color: #c4b5fd;
+  color: #16a34a;
   font-weight: 600;
 }
 
@@ -155,7 +155,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.05);
+  background: #f8fafc;
   border: 1px solid var(--border-glass);
   color: var(--text-secondary);
   display: flex;
@@ -165,9 +165,9 @@
 }
 
 .slot-swap-btn:hover {
-  background: rgba(255, 107, 53, 0.15);
+  background: rgba(22, 163, 74, 0.12);
   color: var(--primary);
-  border-color: rgba(255, 107, 53, 0.3);
+  border-color: rgba(22, 163, 74, 0.3);
   transform: rotate(90deg);
 }
 

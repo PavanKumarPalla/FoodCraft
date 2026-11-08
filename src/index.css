@@ -1,55 +1,55 @@
 /* ==========================================================================
-   Food Craft Design System — Modern Dark Glassmorphism & High Aesthetic
+   Food Craft Design System — Modern Light Botanical Aesthetic
    ========================================================================== */
 
 :root {
-  /* Color Palette */
-  --bg-main: #0a0e17;
-  --bg-surface: #111827;
-  --bg-surface-elevated: #1a2234;
-  --bg-glass: rgba(22, 30, 46, 0.72);
-  --bg-glass-card: rgba(18, 25, 39, 0.65);
-  --bg-glass-input: rgba(15, 23, 42, 0.6);
-  --bg-glow-amber: rgba(245, 158, 11, 0.12);
-  --bg-glow-primary: rgba(255, 107, 53, 0.15);
+  /* Color Palette — Fresh Light Botanical */
+  --bg-main: #fafdf7;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f4f9f1;
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --bg-glass-card: #ffffff;
+  --bg-glass-input: #ffffff;
+  --bg-glow-amber: rgba(234, 179, 8, 0.12);
+  --bg-glow-primary: rgba(22, 163, 74, 0.12);
 
   /* Borders & Dividers */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-glass: rgba(255, 255, 255, 0.12);
-  --border-focus: #ff6b35;
-  --border-glow: rgba(255, 107, 53, 0.4);
+  --border-subtle: #e2ebd8;
+  --border-glass: #e2ebd8;
+  --border-focus: #16a34a;
+  --border-glow: rgba(22, 163, 74, 0.35);
 
-  /* Primary Brand Accents */
-  --primary: #ff6b35;
-  --primary-light: #ff8552;
-  --primary-dark: #e8551e;
-  --primary-gradient: linear-gradient(135deg, #ff6b35 0%, #ff8e53 50%, #ffa500 100%);
-  --accent-secondary: #f59e0b;
-  --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  /* Primary Brand Accents — Lush Greens */
+  --primary: #16a34a;
+  --primary-light: #22c55e;
+  --primary-dark: #15803d;
+  --primary-gradient: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  --accent-secondary: #eab308;
+  --accent-gradient: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
 
   /* Status & Dietary Accents */
-  --veg-color: #10b981;
-  --veg-bg: rgba(16, 185, 129, 0.15);
-  --veg-border: rgba(16, 185, 129, 0.35);
+  --veg-color: #15803d;
+  --veg-bg: #dcfce7;
+  --veg-border: #bbf7d0;
 
   --nonveg-color: #ef4444;
-  --nonveg-bg: rgba(239, 68, 68, 0.15);
-  --nonveg-border: rgba(239, 68, 68, 0.35);
+  --nonveg-bg: #fee2e2;
+  --nonveg-border: #fecaca;
 
   --gym-color: #8b5cf6;
-  --gym-bg: rgba(139, 92, 246, 0.15);
-  --gym-border: rgba(139, 92, 246, 0.35);
+  --gym-bg: #f3e8ff;
+  --gym-border: #e9d5ff;
 
-  --lowsugar-color: #06b6d4;
-  --lowsugar-bg: rgba(6, 182, 212, 0.15);
-  --lowsugar-border: rgba(6, 182, 212, 0.35);
+  --lowsugar-color: #0284c7;
+  --lowsugar-bg: #e0f2fe;
+  --lowsugar-border: #bae6fd;
 
   /* Typography Colors */
-  --text-main: #f8fafc;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-main: #0f172a;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
   --text-muted: #64748b;
-  --text-primary-bright: #ff824d;
+  --text-primary-bright: #15803d;
 
   /* Fonts */
   --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -59,14 +59,14 @@
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 25px rgba(255, 107, 53, 0.3);
-  --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(22, 163, 74, 0.2);
+  --shadow-glass: 0 10px 30px rgba(0, 0, 0, 0.05);
 
   /* Transitions */
   --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
@@ -95,15 +95,15 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Background Ambient Lights */
+/* Background Subtle Botanical Accent */
 body::before {
   content: '';
   position: fixed;
-  top: -150px;
-  left: 20%;
+  top: -120px;
+  left: 15%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -115,7 +115,7 @@ body::after {
   right: 10%;
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(134, 239, 172, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -214,18 +214,14 @@ input, textarea, select {
 
 /* Glassmorphism Card Style */
 .glass-panel {
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #ffffff;
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
 .glass-panel-interactive {
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #ffffff;
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
@@ -234,8 +230,8 @@ input, textarea, select {
 
 .glass-panel-interactive:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 107, 53, 0.35);
-  box-shadow: var(--shadow-card), 0 0 20px rgba(255, 107, 53, 0.15);
+  border-color: #86efac;
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.12);
 }
 
 /* Buttons */
@@ -246,17 +242,17 @@ input, textarea, select {
   gap: 0.5rem;
   background: var(--primary-gradient);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
   padding: 0.75rem 1.4rem;
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 18px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
   transition: all var(--transition-fast);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(255, 107, 53, 0.5);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.38);
   filter: brightness(1.05);
 }
 
@@ -269,19 +265,20 @@ input, textarea, select {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: #ffffff;
   color: var(--text-main);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
   padding: 0.75rem 1.4rem;
-  border: 1px solid var(--border-glass);
+  border: 1.5px solid var(--border-glass);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
   transform: translateY(-2px);
 }
 

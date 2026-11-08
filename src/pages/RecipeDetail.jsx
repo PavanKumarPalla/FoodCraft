@@ -12,7 +12,7 @@ import './RecipeDetail.css';
 export default function RecipeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { recipes, isFavorite, toggleFavorite, setMealPlan, scannedIngredients } = useFoodCraft();
+  const { recipes, isFavorite, toggleFavorite, setMealPlan, scannedIngredients, logActivity } = useFoodCraft();
 
   const recipe = recipes.find(r => r.id === id) || recipes[0];
   const favorite = isFavorite(recipe.id);
@@ -23,6 +23,19 @@ export default function RecipeDetail() {
   // Step completion state
   const [completedSteps, setCompletedSteps] = useState({});
   const [showPlanSuccess, setShowPlanSuccess] = useState(false);
+
+  // Log recipe viewed activity once
+  React.useEffect(() => {
+    if (recipe && logActivity) {
+      logActivity({
+        type: 'viewed',
+        title: `Viewed recipe: ${recipe.title}`,
+        meta: 'Just now',
+        image: recipe.image || '/images/diet_salad.jpg',
+        link: `/recipe/${recipe.id}`
+      });
+    }
+  }, [recipe?.id]);
 
 
   const toggleStep = (idx) => {
@@ -70,7 +83,7 @@ export default function RecipeDetail() {
           <button 
             type="button"
             className={`detail-fav-btn ${favorite ? 'active' : ''}`}
-            onClick={() => toggleFavorite(recipe.id)}
+            onClick={() => toggleFavorite(recipe)}
             aria-label={favorite ? "Remove favorite" : "Add to favorites"}
             id="detail-favorite-btn"
           >

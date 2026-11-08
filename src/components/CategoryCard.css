@@ -1,20 +1,20 @@
-/* src/components/CategoryCard.css */
+/* src/components/CategoryCard.css — Clean Botanical Light Aesthetic */
 
 .category-card {
   position: relative;
-  border-radius: var(--radius-lg);
+  border-radius: 20px;
   overflow: hidden;
   height: 180px;
   cursor: pointer;
-  border: 1px solid var(--border-glass);
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-smooth);
+  border: 1px solid #e2ebd8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
 }
 
 .category-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 107, 53, 0.4);
-  box-shadow: var(--shadow-card), 0 0 20px rgba(255, 107, 53, 0.2);
+  transform: translateY(-4px);
+  border-color: #86efac;
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.15);
 }
 
 .category-bg-img {
@@ -23,22 +23,22 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  transition: transform 0.4s ease;
 }
 
 .category-card:hover .category-bg-img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .category-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10, 14, 23, 0.3) 0%, rgba(10, 14, 23, 0.9) 85%);
-  transition: opacity var(--transition-fast);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(15, 23, 42, 0.8) 85%);
+  transition: background 0.2s ease;
 }
 
 .category-card:hover .category-overlay {
-  background: linear-gradient(180deg, rgba(10, 14, 23, 0.2) 0%, rgba(10, 14, 23, 0.92) 80%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(20, 83, 45, 0.88) 85%);
 }
 
 .category-content {
@@ -54,32 +54,30 @@
 .category-badge {
   align-self: flex-start;
   margin-bottom: auto;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 107, 53, 0.85);
-  color: #ffffff;
-  backdrop-filter: blur(4px);
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.95);
+  color: #15803d;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .category-title {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: #ffffff;
-  margin-bottom: 0.2rem;
+  margin: 0 0 0.2rem;
+  line-height: 1.2;
 }
 
-.category-subtitle {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.75rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.category-desc {
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  margin: 0 0 0.5rem;
+  line-height: 1.35;
 }
 
 .category-footer {
@@ -88,25 +86,18 @@
   justify-content: space-between;
 }
 
-.category-count {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent-secondary);
+.category-recipes-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #86efac;
 }
 
-.category-arrow-circle {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.category-arrow-icon {
   color: #ffffff;
-  transition: all var(--transition-fast);
+  transition: transform 0.2s ease;
 }
 
-.category-card:hover .category-arrow-circle {
-  background: var(--primary);
-  transform: translateX(3px);
+.category-card:hover .category-arrow-icon {
+  transform: translateX(4px);
+  color: #86efac;
 }

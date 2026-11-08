@@ -1,278 +1,221 @@
-/* src/components/RecipeCard.css */
+/* src/components/RecipeCard.css — Clean Light Botanical Aesthetic */
 
-.recipe-card.text-first-card {
+.botanical-recipe-card {
+  background: #ffffff;
+  border: 1px solid #e2ebd8;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all var(--transition-smooth);
-  background: var(--bg-glass-card);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.25rem;
-  gap: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
+}
+
+.botanical-recipe-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.12);
+  border-color: #86efac;
+}
+
+.card-image-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 62%;
+  background: #f1f5f9;
   overflow: hidden;
 }
 
-.recipe-card.text-first-card::before {
-  content: '';
+.card-dish-img {
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 100%;
   height: 100%;
-  background: var(--primary-gradient);
-  opacity: 0.8;
-  transition: opacity var(--transition-fast);
+  object-fit: cover;
+  transition: transform 0.35s ease;
 }
 
-.recipe-card.text-first-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 107, 53, 0.45);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45), 0 0 15px rgba(255, 107, 53, 0.15);
+.botanical-recipe-card:hover .card-dish-img {
+  transform: scale(1.05);
 }
 
-.recipe-card.text-first-card:hover::before {
-  opacity: 1;
-}
-
-/* Card Top Bar */
-.card-top-bar {
+.card-heart-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  z-index: 2;
 }
 
-.card-pill-group {
+.card-heart-btn:hover {
+  transform: scale(1.12);
+}
+
+.card-heart-btn.active {
+  background: #ffffff;
+}
+
+.card-diet-chip {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.card-diet-chip.veg {
+  background: rgba(220, 252, 231, 0.95);
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.card-diet-chip.non-veg {
+  background: rgba(254, 226, 226, 0.95);
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.card-diet-chip.egg {
+  background: rgba(254, 243, 199, 0.95);
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.card-content-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-meta-tags {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
 }
 
 .card-cuisine-tag {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.card-favorite-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.card-favorite-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* Card Title Section */
-.card-title-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.recipe-title {
-  font-size: 1.18rem;
   font-weight: 700;
-  color: var(--text-main);
+  text-transform: uppercase;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+}
+
+.card-meal-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
   line-height: 1.35;
-  margin: 0;
-  transition: color var(--transition-fast);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.recipe-card:hover .recipe-title {
-  color: var(--primary-light);
-}
-
-.recipe-description {
+.card-desc {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #64748b;
+  margin: 0 0 0.85rem;
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin: 0;
 }
 
-/* Ingredients Breakdown: Have vs Missing */
-.card-ingredients-breakdown {
+.card-health-tags {
   display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.ing-status-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.ing-status-label {
-  display: flex;
-  align-items: center;
   gap: 0.35rem;
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.have-row .ing-status-label {
-  color: #10b981;
-}
-
-.missing-row .ing-status-label {
-  color: #f59e0b;
-}
-
-.ing-mini-tags {
-  display: flex;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: 0.35rem;
 }
 
-.mini-tag {
-  font-size: 0.76rem;
-  font-weight: 600;
-  padding: 0.18rem 0.5rem;
-  border-radius: 4px;
-  line-height: 1.2;
-}
-
-.tag-have {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.tag-missing {
-  background: rgba(245, 158, 11, 0.14);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.28);
-}
-
-.tag-more {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
-}
-
-.tag-muted {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.total-ingredients-note {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-/* Tags List */
-.recipe-tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.tag-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.18rem 0.5rem;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.health-tag-pill {
   display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.tag-gym {
-  background: rgba(139, 92, 246, 0.15);
-  color: #a78bfa;
-  border-color: rgba(139, 92, 246, 0.3);
-}
-
-.tag-lowsugar {
-  background: rgba(6, 182, 212, 0.15);
-  color: #22d3ee;
-  border-color: rgba(6, 182, 212, 0.3);
-}
-
-/* Card Footer */
-.recipe-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  margin-top: auto;
-  gap: 0.5rem;
-}
-
-.footer-metrics-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.metric-item {
-  display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  font-weight: 500;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
 }
 
-.metric-icon {
-  color: var(--text-muted);
-}
-
-.text-flame {
-  color: #ff6b35;
-}
-
-.highlight-protein {
-  color: #a78bfa;
+.card-footer-metrics {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: auto;
+  margin-bottom: 1rem;
+  color: #64748b;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
-.card-cta-link {
-  display: inline-flex;
+.card-metric {
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--primary-light);
-  white-space: nowrap;
-  transition: transform var(--transition-fast);
+  gap: 0.35rem;
 }
 
-.recipe-card:hover .card-cta-link {
-  transform: translateX(3px);
+.metric-icon-green {
+  color: #16a34a;
+}
+
+.metric-icon-flame {
+  color: #ea580c;
+}
+
+.card-view-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: #ffffff;
+  border: 1.5px solid #16a34a;
+  color: #15803d;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.botanical-recipe-card:hover .card-view-btn {
+  background: #15803d;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.25);
 }

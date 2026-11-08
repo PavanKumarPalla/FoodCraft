@@ -8,8 +8,13 @@
 
 .scan-header {
   text-align: center;
-  max-width: 680px;
+  max-width: 720px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f7fee7 100%);
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  border-radius: 20px;
+  padding: 2rem 2.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 
 .scan-badge {
@@ -22,9 +27,9 @@
   letter-spacing: 0.05em;
   padding: 0.35rem 0.9rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 107, 53, 0.15);
-  border: 1px solid rgba(255, 107, 53, 0.35);
-  color: var(--primary-light);
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
   margin-bottom: 0.75rem;
 }
 
@@ -68,9 +73,9 @@
 }
 
 .scan-tab-btn.active {
-  background: var(--primary-gradient);
+  background: #14532d;
   color: #ffffff;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 4px 14px rgba(20, 83, 45, 0.25);
 }
 
 /* Content Grid */
@@ -152,8 +157,8 @@
 .laser-beam {
   width: 100%;
   height: 3px;
-  background: #ff6b35;
-  box-shadow: 0 0 15px 4px rgba(255, 107, 53, 0.9), 0 0 30px 10px rgba(255, 107, 53, 0.4);
+  background: #22c55e;
+  box-shadow: 0 0 15px 4px rgba(34, 197, 94, 0.9), 0 0 30px 10px rgba(34, 197, 94, 0.4);
 }
 
 @keyframes laserScan {
@@ -253,8 +258,8 @@
 
 .manual-input-form input:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
 }
 
 .quick-suggestions-section {
@@ -267,7 +272,7 @@
 .suggestions-title {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -281,18 +286,18 @@
 .suggestion-chip {
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  background: #f8fafc;
+  border: 1px solid #e2ebd8;
+  color: #475569;
   font-size: 0.82rem;
   font-weight: 500;
   transition: all var(--transition-fast);
 }
 
 .suggestion-chip:hover {
-  background: rgba(255, 107, 53, 0.15);
-  color: var(--primary-light);
-  border-color: rgba(255, 107, 53, 0.35);
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #86efac;
   transform: translateY(-1px);
 }
 
@@ -347,8 +352,8 @@
   gap: 0.5rem;
   min-height: 80px;
   padding: 0.85rem;
-  background: rgba(10, 14, 23, 0.5);
-  border: 1px solid var(--border-subtle);
+  background: #ffffff;
+  border: 1.5px solid #e2ebd8;
   border-radius: var(--radius-md);
 }
 
@@ -358,9 +363,9 @@
   gap: 0.4rem;
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 107, 53, 0.15);
-  border: 1px solid rgba(255, 107, 53, 0.35);
-  color: #ffffff;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -435,8 +440,9 @@
   gap: 0.75rem;
   padding: 1rem;
   border-radius: var(--radius-lg);
-  background: rgba(10, 14, 23, 0.6);
-  border: 1px solid rgba(255, 107, 53, 0.25);
+  background: #ffffff;
+  border: 1.5px solid #e2ebd8;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
 }
 
 .matched-preview-header {
@@ -454,16 +460,16 @@
 .preview-header-title h4 {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
 }
 
 .live-match-badge {
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
   padding: 2px 7px;
   border-radius: var(--radius-full);
 }
@@ -477,8 +483,8 @@
 .preview-recipe-card {
   padding: 0.75rem 0.85rem;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
+  background: #f8fafc;
+  border: 1px solid #e2ebd8;
   cursor: pointer;
   transition: all var(--transition-fast);
   display: flex;
@@ -487,8 +493,8 @@
 }
 
 .preview-recipe-card:hover {
-  background: rgba(255, 107, 53, 0.08);
-  border-color: rgba(255, 107, 53, 0.35);
+  background: #f0fdf4;
+  border-color: #86efac;
   transform: translateY(-2px);
 }
 
@@ -502,15 +508,16 @@
 .preview-recipe-title {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   line-height: 1.3;
 }
 
 .preview-match-pill {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--primary-light);
-  background: rgba(255, 107, 53, 0.15);
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   white-space: nowrap;
@@ -600,7 +607,7 @@
   position: absolute;
   width: 28px;
   height: 28px;
-  border-color: #ff6b35;
+  border-color: #22c55e;
   border-style: solid;
 }
 
@@ -741,12 +748,12 @@
   cursor: pointer;
   padding: 4px;
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 0 25px rgba(255, 107, 53, 0.5), 0 4px 15px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .camera-shutter-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 35px rgba(255, 107, 53, 0.8), 0 6px 20px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 35px rgba(34, 197, 94, 0.8), 0 6px 20px rgba(0, 0, 0, 0.6);
 }
 
 .camera-shutter-btn:active {

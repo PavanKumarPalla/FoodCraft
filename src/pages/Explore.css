@@ -1,15 +1,23 @@
-/* src/pages/Explore.css */
+/* src/pages/Explore.css — Clean Botanical Light Aesthetic */
 
 .explore-page {
   display: flex;
   flex-direction: column;
   gap: 2.25rem;
+  background-color: #fafdf7;
+  min-height: 100vh;
+  padding-bottom: 5rem;
 }
 
 .explore-header {
   text-align: center;
   max-width: 720px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f7fee7 100%);
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  border-radius: 20px;
+  padding: 2rem 2.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 
 .explore-badge {
@@ -20,26 +28,64 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--primary-light);
-  margin-bottom: 0.5rem;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
 }
 
 .explore-title {
   font-size: 2.1rem;
   font-weight: 800;
+  color: #0f172a;
   margin-bottom: 0.4rem;
+  letter-spacing: -0.5px;
 }
 
 .explore-subtitle {
   font-size: 0.95rem;
-  color: var(--text-secondary);
+  color: #475569;
   line-height: 1.5;
+  margin: 0;
 }
 
 .explore-section {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
+}
+
+.section-header {
+  margin-bottom: 0.25rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.2rem;
+}
+
+.text-primary {
+  color: #16a34a;
+}
+
+.text-flame {
+  color: #ea580c;
+}
+
+.text-veg {
+  color: #15803d;
+}
+
+.section-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
 }
 
 .categories-grid {

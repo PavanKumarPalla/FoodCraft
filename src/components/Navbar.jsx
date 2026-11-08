@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Heart, Search, Utensils, Calendar, Camera, LogIn } from 'lucide-react';
+import { Heart, Search, ChefHat, Calendar, Camera, LogIn } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Navbar.css';
 
@@ -26,11 +26,15 @@ export default function Navbar() {
       <div className="navbar-container">
         {/* Brand Logo */}
         <Link to="/" className="navbar-brand">
-          <div className="brand-icon-wrapper">
-            <Utensils className="brand-icon" size={22} />
+          <div className="navbar-logo-icon">
+            <ChefHat size={22} className="chef-icon" />
+            <span className="leaf-accent">🌿</span>
           </div>
           <div className="brand-text-wrapper">
-            <span className="brand-title">Food<span className="brand-accent">Craft</span></span>
+            <span className="brand-title">
+              <span className="brand-food">Food</span>
+              <span className="brand-craft">Craft</span>
+            </span>
             <span className="brand-badge">AI 2.2M+</span>
           </div>
         </Link>

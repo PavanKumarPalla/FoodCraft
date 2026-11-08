@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Utensils, Mail, Lock, ArrowRight, 
+  ChefHat, Mail, Lock, ArrowRight, 
   AlertCircle, KeyRound, ShieldCheck, CheckCircle2 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
@@ -255,7 +255,8 @@ export default function Login() {
         {/* Brand */}
         <div className="auth-header">
           <div className="auth-logo-icon">
-            <Utensils size={24} />
+            <ChefHat size={24} />
+            <span className="auth-leaf-badge">🌿</span>
           </div>
           <h1 className="auth-title">
             {isResetMode ? 'Reset Password' : 'Sign In'}

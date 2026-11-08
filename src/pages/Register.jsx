@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Utensils, Mail, Lock, User, Phone, ArrowRight, AlertCircle, 
+  ChefHat, Mail, Lock, User, Phone, ArrowRight, AlertCircle, 
   CheckCircle2, ShieldCheck, KeyRound 
 } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
@@ -189,7 +189,8 @@ export default function Register() {
         {/* Header */}
         <div className="auth-header">
           <div className="auth-logo-icon">
-            <Utensils size={24} />
+            <ChefHat size={24} />
+            <span className="auth-leaf-badge">🌿</span>
           </div>
           <h1 className="auth-title">Join Food Craft</h1>
           <p className="auth-subtitle">
