@@ -213,25 +213,27 @@ export default function Register() {
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.82rem', color: '#4285F4', fontWeight: 600
+              fontSize: '0.82rem', color: '#16a34a', fontWeight: 600
             }}>
               <span style={{
                 width: '24px', height: '24px', borderRadius: '50%',
-                background: 'rgba(66, 133, 244, 0.2)',
-                border: '1px solid #4285F4',
+                background: '#dcfce7',
+                border: '1.5px solid #16a34a',
+                color: '#15803d',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>✓</span>
               Google
             </div>
-            <div style={{ width: '20px', height: '1px', background: '#4285F4' }} />
+            <div style={{ width: '24px', height: '2px', background: '#16a34a' }} />
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.82rem', color: '#10b981', fontWeight: 600
+              fontSize: '0.82rem', color: '#15803d', fontWeight: 700
             }}>
               <span style={{
                 width: '24px', height: '24px', borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid #10b981',
+                background: '#15803d',
+                color: '#ffffff',
+                border: '1.5px solid #15803d',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>2</span>
               Complete Profile
@@ -248,38 +250,41 @@ export default function Register() {
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.82rem', color: step >= 1 ? '#10b981' : '#64748b', fontWeight: 600
+              fontSize: '0.82rem', color: step >= 1 ? '#15803d' : '#64748b', fontWeight: 600
             }}>
               <span style={{
                 width: '24px', height: '24px', borderRadius: '50%',
-                background: step >= 1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                border: `1px solid ${step >= 1 ? '#10b981' : '#64748b'}`,
+                background: step >= 1 ? '#dcfce7' : '#f1f5f9',
+                border: `1.5px solid ${step >= 1 ? '#16a34a' : '#cbd5e1'}`,
+                color: step >= 1 ? '#15803d' : '#64748b',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>1</span>
               Details
             </div>
-            <div style={{ width: '20px', height: '1px', background: step >= 2 ? '#10b981' : '#334155' }} />
+            <div style={{ width: '20px', height: '2px', background: step >= 2 ? '#16a34a' : '#e2e8f0' }} />
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.82rem', color: step >= 2 ? '#10b981' : '#64748b', fontWeight: 600
+              fontSize: '0.82rem', color: step >= 2 ? '#15803d' : '#64748b', fontWeight: 600
             }}>
               <span style={{
                 width: '24px', height: '24px', borderRadius: '50%',
-                background: step >= 2 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                border: `1px solid ${step >= 2 ? '#10b981' : '#64748b'}`,
+                background: step >= 2 ? '#dcfce7' : '#f1f5f9',
+                border: `1.5px solid ${step >= 2 ? '#16a34a' : '#cbd5e1'}`,
+                color: step >= 2 ? '#15803d' : '#64748b',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>2</span>
               Verify OTP
             </div>
-            <div style={{ width: '20px', height: '1px', background: step >= 3 ? '#10b981' : '#334155' }} />
+            <div style={{ width: '20px', height: '2px', background: step >= 3 ? '#16a34a' : '#e2e8f0' }} />
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.82rem', color: step >= 3 ? '#10b981' : '#64748b', fontWeight: 600
+              fontSize: '0.82rem', color: step >= 3 ? '#15803d' : '#64748b', fontWeight: 600
             }}>
               <span style={{
                 width: '24px', height: '24px', borderRadius: '50%',
-                background: step >= 3 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                border: `1px solid ${step >= 3 ? '#10b981' : '#64748b'}`,
+                background: step >= 3 ? '#dcfce7' : '#f1f5f9',
+                border: `1.5px solid ${step >= 3 ? '#16a34a' : '#cbd5e1'}`,
+                color: step >= 3 ? '#15803d' : '#64748b',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>3</span>
               Password
@@ -290,13 +295,14 @@ export default function Register() {
         {/* Global Feedback Alerts */}
         {errorMessage && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            color: '#f87171',
-            padding: '0.85rem 1rem',
-            borderRadius: 'var(--radius-md)',
+            background: '#fef2f2',
+            border: '1.5px solid #fecaca',
+            color: '#b91c1c',
+            padding: '0.75rem 1rem',
+            borderRadius: '12px',
             marginBottom: '1rem',
-            fontSize: '0.88rem',
+            fontSize: '0.86rem',
+            fontWeight: '500',
             display: 'flex',
             alignItems: 'flex-start',
             gap: '0.6rem',
@@ -309,13 +315,14 @@ export default function Register() {
 
         {successMessage && (
           <div style={{
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
-            color: '#34d399',
-            padding: '0.85rem 1rem',
-            borderRadius: 'var(--radius-md)',
+            background: '#f0fdf4',
+            border: '1.5px solid #bbf7d0',
+            color: '#15803d',
+            padding: '0.75rem 1rem',
+            borderRadius: '12px',
             marginBottom: '1rem',
-            fontSize: '0.88rem',
+            fontSize: '0.86rem',
+            fontWeight: '500',
             display: 'flex',
             alignItems: 'center',
             gap: '0.6rem',

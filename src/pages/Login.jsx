@@ -273,13 +273,14 @@ export default function Login() {
         {/* Global Feedback Alerts */}
         {errorMessage && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            color: '#f87171',
-            padding: '0.6rem 0.85rem',
-            borderRadius: 'var(--radius-md)',
+            background: '#fef2f2',
+            border: '1.5px solid #fecaca',
+            color: '#b91c1c',
+            padding: '0.65rem 0.9rem',
+            borderRadius: '12px',
             marginBottom: '0.75rem',
             fontSize: '0.85rem',
+            fontWeight: '500',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -291,13 +292,14 @@ export default function Login() {
 
         {successMessage && (
           <div style={{
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
-            color: '#34d399',
-            padding: '0.6rem 0.85rem',
-            borderRadius: 'var(--radius-md)',
+            background: '#f0fdf4',
+            border: '1.5px solid #bbf7d0',
+            color: '#15803d',
+            padding: '0.65rem 0.9rem',
+            borderRadius: '12px',
             marginBottom: '0.75rem',
             fontSize: '0.85rem',
+            fontWeight: '500',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
