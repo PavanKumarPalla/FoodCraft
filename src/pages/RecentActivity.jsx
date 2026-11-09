@@ -73,30 +73,6 @@ export default function RecentActivity() {
     <div className="referral-page-layout activity-page-container">
       {/* Main Right Content */}
       <div className="referral-main-content">
-        {/* Top bar with hamburger toggle and notification/user icons */}
-        <div className="referral-top-bar">
-          <button 
-            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-            onClick={toggleSidebar}
-            aria-label="Toggle Navigation Sidebar"
-            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            id="activity-sidebar-toggle-btn"
-          >
-            <Menu size={22} />
-          </button>
-
-          <div className="referral-top-actions">
-            <button className="top-notif-btn" title="Notifications">
-              <Bell size={20} />
-              <span className="notif-counter-bubble">2</span>
-            </button>
-
-            <Link to="/profile" className="top-avatar-circle" title={`Signed in as ${displayName}`}>
-              <User size={20} />
-            </Link>
-          </div>
-        </div>
-
         {/* Header Hero Banner */}
         <div className="activity-hero-banner">
           <div className="activity-hero-info">

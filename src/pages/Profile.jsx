@@ -154,34 +154,6 @@ export default function Profile() {
 
       {/* Main Right Content */}
       <div className="referral-main-content">
-        {/* Top bar with hamburger toggle and notification/user icons */}
-        <div className="referral-top-bar">
-          <button 
-            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-            onClick={toggleSidebar}
-            aria-label="Toggle Navigation Sidebar"
-            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            id="profile-sidebar-toggle-btn"
-          >
-            <Menu size={22} />
-          </button>
-
-          <div className="referral-top-actions">
-            <button className="top-notif-btn" title="Notifications">
-              <Bell size={20} />
-              <span className="notif-counter-bubble">2</span>
-            </button>
-
-            <div className="top-avatar-circle" title={displayName}>
-              {displayAvatar ? (
-                <img src={displayAvatar} alt={displayName} className="header-avatar-img" />
-              ) : (
-                <User size={20} />
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Top Banner matching Image 4 */}
         <div className="profile-hero-banner">
           <div className="profile-user-group">

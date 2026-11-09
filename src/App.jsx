@@ -33,22 +33,9 @@ function LayoutWrapper() {
   const location = useLocation();
   const { isSidebarOpen, closeSidebar } = useFoodCraft();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-  
-  // Custom docked sidebar pages matching referral designs
-  const isCustomDockedPage = [
-    '/', 
-    '/favorites', 
-    '/recent-activity', 
-    '/activity', 
-    '/diet-plan',
-    '/meal-plan', 
-    '/meal-planner', 
-    '/profile',
-    '/account'
-  ].includes(location.pathname);
 
   return (
-    <div className={`app-container ${isAuthPage ? 'auth-layout' : ''} ${isCustomDockedPage ? 'docked-layout' : ''} ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    <div className={`app-container ${isAuthPage ? 'auth-layout' : 'docked-layout'} ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
       {/* Universal Left Sidebar - Rendered on ALL pages except /login and /register */}
       {!isAuthPage && (
         <Sidebar 
@@ -60,10 +47,10 @@ function LayoutWrapper() {
 
       {/* Main Routed Page Content */}
       <div className={`app-content-body ${!isAuthPage && isSidebarOpen ? 'with-sidebar' : 'full-width'}`}>
-        {/* Top Navbar (hidden on auth pages and custom docked referral pages) */}
-        {!isAuthPage && !isCustomDockedPage && <Navbar />}
+        {/* Universal Top Header - Rendered on ALL pages except /login and /register */}
+        {!isAuthPage && <Navbar />}
 
-        <main className={`main-content ${isAuthPage ? 'auth-main' : ''} ${isCustomDockedPage ? 'docked-main' : ''}`}>
+        <main className={`main-content ${isAuthPage ? 'auth-main' : 'docked-main'}`}>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
@@ -99,8 +86,8 @@ function LayoutWrapper() {
           </Routes>
         </main>
 
-        {/* Mobile Floating Bottom Bar (hidden on auth pages and docked pages where sidebar is primary) */}
-        {!isAuthPage && !isCustomDockedPage && <BottomNav />}
+        {/* Mobile Floating Bottom Bar (hidden on auth pages) */}
+        {!isAuthPage && <BottomNav />}
       </div>
     </div>
   );

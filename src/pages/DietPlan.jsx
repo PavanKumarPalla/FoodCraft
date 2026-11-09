@@ -269,37 +269,6 @@ export default function DietPlan() {
     <div className="referral-page-layout diet-page-container">
       {/* Main Right Content */}
       <div className="referral-main-content">
-        {/* Top bar with hamburger toggle and notification/user icons */}
-        <div className="referral-top-bar">
-          <button 
-            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-            onClick={toggleSidebar}
-            aria-label="Toggle Navigation Sidebar"
-            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            id="diet-sidebar-toggle-btn"
-          >
-            <Menu size={22} />
-          </button>
-
-          {/* Quick link to the separate Daily Meal Planner */}
-          <Link to="/meal-planner" className="top-meal-planner-pill" title="Open Daily Meal Planner">
-            <Calendar size={15} />
-            <span>Daily Meal Planner</span>
-            <ArrowRight size={14} />
-          </Link>
-
-          <div className="referral-top-actions">
-            <button className="top-notif-btn" title="Notifications">
-              <Bell size={20} />
-              <span className="notif-counter-bubble">2</span>
-            </button>
-
-            <Link to="/profile" className="top-avatar-circle" title={`Signed in as ${displayName}`}>
-              <User size={20} />
-            </Link>
-          </div>
-        </div>
-
         {/* Success Toast */}
         {showSuccessToast && (
           <div className="diet-toast-message">
@@ -710,3 +679,4 @@ export default function DietPlan() {
     </div>
   );
 }
+

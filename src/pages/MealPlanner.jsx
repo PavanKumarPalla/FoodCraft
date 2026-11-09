@@ -360,37 +360,6 @@ export default function MealPlanner() {
     <div className="referral-page-layout planner-referral-container">
       {/* Main Content Area */}
       <div className="referral-main-content">
-        {/* Top Bar with hamburger toggle and quick link to Diet Plan */}
-        <div className="referral-top-bar">
-          <button 
-            className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-            onClick={toggleSidebar}
-            aria-label="Toggle Navigation Sidebar"
-            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            id="planner-sidebar-toggle-btn"
-          >
-            <Menu size={22} />
-          </button>
-
-          {/* Quick link navigating to the separate Diet Plan page */}
-          <Link to="/diet-plan" className="top-diet-plan-pill" title="Open Diet Plan & Goals">
-            <Leaf size={15} />
-            <span>Go to Diet Plan & Goals</span>
-            <ArrowRight size={14} />
-          </Link>
-
-          <div className="referral-top-actions">
-            <button className="top-notif-btn" title="Notifications">
-              <Bell size={20} />
-              <span className="notif-counter-bubble">2</span>
-            </button>
-
-            <Link to="/profile" className="top-avatar-circle" title={`Signed in as ${displayName}`}>
-              <User size={20} />
-            </Link>
-          </div>
-        </div>
-
         {/* Hero Banner for Daily Meal Planner */}
         <div className="planner-hero-banner">
           <div className="planner-hero-info">

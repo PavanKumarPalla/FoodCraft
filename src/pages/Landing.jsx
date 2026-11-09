@@ -214,94 +214,10 @@ export default function Landing() {
 
   return (
     <div className={`home-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* ── Main Home Column (Header + Content + Footer) ── */}
+      {/* ── Main Home Column (Content + Footer) ── */}
       <div className="home-main-column">
-        {/* ── Top Header Navigation (matching referral Image 1) ── */}
-        <header className="home-header">
-          <div className="home-header-container">
-            {/* Left: Sidebar Toggle & Brand Logo */}
-            <div className="home-brand-group">
-              <button 
-                className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
-                onClick={toggleSidebar}
-                title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-                aria-label="Toggle Navigation Sidebar"
-                id="home-sidebar-toggle-btn"
-              >
-                <Menu size={22} />
-              </button>
-
-            <Link to="/" className="home-logo-link">
-              <div className="home-logo-badge">
-                <ChefHat size={22} className="logo-chef" />
-                <span className="logo-leaf">🌿</span>
-              </div>
-              <span className="home-logo-text">Food<span className="logo-accent">Craft</span></span>
-            </Link>
-          </div>
-
-          {/* Center: Main Navigation Links */}
-          <nav className="home-nav-links">
-            <button 
-              className={`nav-pill ${activeNav === 'home' ? 'active' : ''}`}
-              onClick={() => { setActiveNav('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-            >
-              <Utensils size={15} />
-              <span>Home</span>
-            </button>
-            <button 
-              className={`nav-link-item ${activeNav === 'about' ? 'active' : ''}`}
-              onClick={() => setShowAboutModal(true)}
-            >
-              <Info size={15} />
-              <span>About</span>
-            </button>
-            <button 
-              className={`nav-link-item ${activeNav === 'features' ? 'active' : ''}`}
-              onClick={() => {
-                const el = document.getElementById('feature-cards-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <Sparkles size={15} />
-              <span>Features</span>
-            </button>
-            <button 
-              className={`nav-link-item ${activeNav === 'tips' ? 'active' : ''}`}
-              onClick={() => setShowTipsModal(true)}
-            >
-              <Leaf size={15} />
-              <span>Tips</span>
-            </button>
-            <button 
-              className={`nav-link-item ${activeNav === 'contact' ? 'active' : ''}`}
-              onClick={() => setShowContactModal(true)}
-            >
-              <span>Contact</span>
-            </button>
-          </nav>
-
-          {/* Right: Sign In / Account Chip */}
-          <div className="home-auth-actions">
-            {isLoggedIn ? (
-              <Link to="/profile" className="home-user-chip" id="home-profile-btn" title="View Profile">
-                <div className="user-avatar-circle">
-                  {firstName.charAt(0).toUpperCase()}
-                </div>
-                <span className="user-name-text">{firstName}</span>
-              </Link>
-            ) : (
-              <Link to="/login" className="home-signin-btn" id="home-signin-btn" title="Sign In to FoodCraft">
-                <User size={16} />
-                <span>Sign In</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* ── Main Home Body Content ── */}
-      <main className="home-main-content">
+        {/* ── Main Home Body Content ── */}
+        <main className="home-main-content">
         {/* ── 1. Hero Section ── */}
         <section className="home-hero-section">
           <div className="hero-grid-container">
