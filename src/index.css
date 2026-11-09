@@ -199,6 +199,61 @@ input, textarea, select {
   }
 }
 
+/* Core Brand Logo Utilities (Matching media_1794225845591_5f7423af.png across all pages) */
+.home-logo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.home-logo-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.home-logo-link:hover .home-logo-badge {
+  transform: scale(1.05);
+}
+
+.logo-chef {
+  color: #ffffff;
+}
+
+.logo-leaf {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.home-logo-text {
+  font-family: var(--font-heading);
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #0f172a;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.logo-accent {
+  color: #16a34a;
+}
+
 /* Core Reusable Utilities */
 .page-wrapper {
   max-width: 1240px;

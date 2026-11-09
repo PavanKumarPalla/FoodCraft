@@ -62,18 +62,12 @@ export default function Navbar() {
             <Menu size={22} />
           </button>
 
-          <Link to="/" className="navbar-brand" title="FoodCraft Home">
-            <div className="navbar-logo-icon">
-              <ChefHat size={22} className="chef-icon" />
-              <span className="leaf-accent">🌿</span>
+          <Link to="/" className="home-logo-link" title="FoodCraft Home">
+            <div className="home-logo-badge">
+              <ChefHat size={22} className="logo-chef" />
+              <span className="logo-leaf">🌿</span>
             </div>
-            <div className="brand-text-wrapper">
-              <span className="brand-title">
-                <span className="brand-food">Food</span>
-                <span className="brand-craft">Craft</span>
-              </span>
-              <span className="brand-badge">AI 2.2M+</span>
-            </div>
+            <span className="home-logo-text">Food<span className="logo-accent">Craft</span></span>
           </Link>
         </div>
 
