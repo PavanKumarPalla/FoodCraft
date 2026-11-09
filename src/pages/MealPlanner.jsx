@@ -1,11 +1,11 @@
 // src/pages/MealPlanner.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Coffee, Sun, Moon, 
-  ChevronRight, BookOpen, 
-  X, Heart, TrendingUp, Utensils, Target, Plus,
-  Bell, User, Menu, Check
+  Calendar, Coffee, Sun, Moon, Clock, Flame, Dumbbell, 
+  ChevronRight, BookOpen, CheckCircle2, Database, AlertCircle, 
+  Sparkles, Layers, X, Menu, Bell, User, Utensils, Check, ArrowRight,
+  Leaf
 } from 'lucide-react';
 import { 
   SOUTH_INDIAN_7_DAY_PLAN, 
@@ -18,25 +18,35 @@ import './MealPlanner.css';
 
 export default function MealPlanner() {
   const { currentUser, userProfile, logActivity, isSidebarOpen, toggleSidebar } = useFoodCraft();
-
-  // Active Plan States
-  const [activePlanName, setActivePlanName] = useState('Weight Loss Plan');
-  const [activePlanCalories, setActivePlanCalories] = useState('1200 – 1500 kcal/day');
-  const [activePlanGoal, setActivePlanGoal] = useState('Weight Loss');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [newPlanName, setNewPlanName] = useState('');
-  const [newPlanGoal, setNewPlanGoal] = useState('Weight Loss');
-  const [newPlanCalories, setNewPlanCalories] = useState('1200 - 1500 kcal/day');
-  const [newPlanDiet, setNewPlanDiet] = useState('Vegetarian');
+  const navigate = useNavigate();
 
   const [cuisineRegion, setCuisineRegion] = useState('south'); // 'south' | 'north'
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
+    // Default to today's day of week
+    const todayIndex = new Date().getDay(); // 0 is Sunday
+    return todayIndex >= 0 && todayIndex <= 6 ? todayIndex : 0;
+  });
   const [viewMode, setViewMode] = useState('daily'); // 'daily' | 'weekly'
   const [activePreparationRecipe, setActivePreparationRecipe] = useState(null);
-  const [selectedMealOption] = useState({});
+  const [showDatasetReport, setShowDatasetReport] = useState(false);
 
-  // Dynamic week dates
+  // Persistent user-selected meal options across days & slots
+  const [selectedMealOption, setSelectedMealOption] = useState(() => {
+    try {
+      const saved = localStorage.getItem('foodcraft_selected_meals');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('foodcraft_selected_meals', JSON.stringify(selectedMealOption));
+    } catch (e) {}
+  }, [selectedMealOption]);
+
+  // Dynamic live week dates
   const weekDates = useMemo(() => getDynamicWeekDates(), []);
 
   // Determine active plan based on cuisine region
@@ -44,33 +54,228 @@ export default function MealPlanner() {
     return cuisineRegion === 'south' ? SOUTH_INDIAN_7_DAY_PLAN : NORTH_INDIAN_7_DAY_PLAN;
   }, [cuisineRegion]);
 
-  // Helper to get active meal object
+  const currentDayData = activePlanList[selectedDayIndex] || activePlanList[0];
+  const currentDateInfo = weekDates[selectedDayIndex] || weekDates[0];
+
+  // Dynamic dish image resolver ensuring every dish option receives its authentic photo
+  const resolveDishImage = (dishTitle, fallbackImage) => {
+    if (!dishTitle) return fallbackImage;
+    const clean = dishTitle.toLowerCase().replace(/^(non-veg|veg):\s*/i, '').trim();
+
+    // Mutton specialties
+    if (clean.includes('mutton biryani') || clean.includes('mutton curry') || clean.includes('mutton')) {
+      return '/images/meal_planner_images/mutton_biryani.jpg';
+    }
+    // Ragi Sangati / Ragi Rice
+    if (clean.includes('ragi')) {
+      return '/images/meal_planner_images/ragi_sankati.jpg';
+    }
+    // Fish specialties
+    if (clean.includes('fish')) {
+      return '/images/meal_planner_images/fish_curry.jpg';
+    }
+    // Egg specialties
+    if (clean.includes('egg')) {
+      return '/images/meal_planner_images/egg_curry.jpg';
+    }
+    // Chicken varieties
+    if (clean.includes('chicken fry')) {
+      return '/images/meal_planner_images/chicken_curry.jpg';
+    }
+    if (clean.includes('chicken biryani')) {
+      return '/images/meal_planner_images/chicken_biryani.jpg';
+    }
+    if (clean.includes('chicken') && clean.includes('bagara')) {
+      return '/images/meal_planner_images/bagara_rice.jpg';
+    }
+    if (clean.includes('chicken curry') || clean.includes('chicken')) {
+      return '/images/meal_planner_images/chicken_curry.jpg';
+    }
+    // Bagara Rice variations
+    if (clean.includes('bagara rice')) {
+      return '/images/meal_planner_images/bagara_rice.jpg';
+    }
+    // Biryani & Pulav
+    if (clean.includes('brinjal biryani') || clean.includes('gutti vankaya')) {
+      return '/images/meal_planner_images/brinjal_curry.jpg';
+    }
+    if (clean.includes('veg biryani') || clean.includes('pulav') || clean.includes('pulao')) {
+      return '/images/meal_planner_images/pulav.jpg';
+    }
+    // Paneer
+    if (clean.includes('paneer')) {
+      return '/images/meal_planner_images/paneer_curry.jpg';
+    }
+    // Sambar
+    if (clean.includes('sambar')) {
+      return '/images/meal_planner_images/sambar_rice.jpg';
+    }
+    // Aloo Fry / Potato / Sabzi
+    if (clean.includes('aloo fry') || clean.includes('potato') || clean.includes('aloo')) {
+      return '/images/meal_planner_images/aloo_curry.jpg';
+    }
+    // Bendakaya / Okra / Bhindi
+    if (clean.includes('bendakaya') || clean.includes('okra') || clean.includes('bhindi')) {
+      return '/images/meal_planner_images/tomato_rice.jpg';
+    }
+    // Cluster beans (Goruchikkudu) or Full Meals
+    if (clean.includes('cluster beans') || clean.includes('goruchikkudu') || clean.includes('full meals') || clean.includes('kadhi')) {
+      return '/images/meal_planner_images/full_meals.jpg';
+    }
+    // Carrot Poriyal
+    if (clean.includes('carrot')) {
+      return '/images/meal_planner_images/rice_dal_carrot.jpg';
+    }
+    // Chapati / Roti / Phulka / Naan
+    if (clean.includes('chapati') || clean.includes('phulka') || clean.includes('roti') || clean.includes('naan') || clean.includes('thepla')) {
+      return '/images/meal_planner_images/chapati.jpg';
+    }
+    // Paratha
+    if (clean.includes('paratha')) {
+      return '/images/meal_planner_images/paratha.jpg';
+    }
+    // Chole Bhature
+    if (clean.includes('chole') || clean.includes('bhature')) {
+      return '/images/meal_planner_images/chole_bhature.jpg';
+    }
+    // Rajma Chawal
+    if (clean.includes('rajma')) {
+      return '/images/meal_planner_images/rajma_chawal.jpg';
+    }
+    // Dal Makhani
+    if (clean.includes('dal makhani')) {
+      return '/images/meal_planner_images/dal_makhani.jpg';
+    }
+    // Poha
+    if (clean.includes('poha')) {
+      return '/images/meal_planner_images/poha.jpg';
+    }
+    // Dosa
+    if (clean.includes('dosa') || clean.includes('dosai')) {
+      return '/images/meal_planner_images/dosa.jpg';
+    }
+    // Idli
+    if (clean.includes('idli')) {
+      return '/images/meal_planner_images/idli_vada.jpg';
+    }
+    // Pongal
+    if (clean.includes('pongal')) {
+      return '/images/meal_planner_images/pongal_vada.jpg';
+    }
+    // Poori
+    if (clean.includes('poori') || clean.includes('puri')) {
+      return '/images/meal_planner_images/poori.jpg';
+    }
+    // Uggani / Bajji
+    if (clean.includes('uggani') || clean.includes('bajji')) {
+      return '/images/meal_planner_images/uggani_bajji.jpg';
+    }
+    // Pesarattu
+    if (clean.includes('pesarattu')) {
+      return '/images/meal_planner_images/pesarattu.jpg';
+    }
+    // Upma
+    if (clean.includes('upma')) {
+      return '/images/meal_planner_images/upma.jpg';
+    }
+    // Rice & Dal
+    if (clean.includes('rice') && clean.includes('dal')) {
+      return '/images/meal_planner_images/rice_dal_carrot.jpg';
+    }
+    // Lemon Rice
+    if (clean.includes('lemon rice')) {
+      return '/images/meal_planner_images/lemon_rice.jpg';
+    }
+    // Tomato Rice
+    if (clean.includes('tomato rice')) {
+      return '/images/meal_planner_images/tomato_rice.jpg';
+    }
+
+    return fallbackImage;
+  };
+
+  // Recipe ID resolver for dynamic options
+  const resolveRecipeId = (dishTitle, fallbackId) => {
+    if (!dishTitle) return fallbackId;
+    const clean = dishTitle.toLowerCase().replace(/^(non-veg|veg):\s*/i, '').trim();
+
+    if (clean.includes('mutton biryani') || clean.includes('mutton')) return 'south-mutton-biryani';
+    if (clean.includes('chicken biryani')) return 'south-chicken-biryani';
+    if (clean.includes('chicken') || clean.includes('bagara rice')) return 'south-bagara-chicken';
+    if (clean.includes('egg')) return 'south-bagara-chicken';
+    if (clean.includes('ragi')) return 'south-bagara-chicken';
+    if (clean.includes('fish')) return 'south-bagara-chicken';
+    if (clean.includes('veg biryani') || clean.includes('pulav')) return 'south-meals-pulav';
+    if (clean.includes('paneer')) return 'south-bagara-paneer';
+    if (clean.includes('upma')) return 'south-upma';
+    if (clean.includes('dosa')) return 'south-dosa-chutney';
+    if (clean.includes('idli')) return 'south-idli-vada';
+    if (clean.includes('pongal')) return 'south-pongal-vada';
+    if (clean.includes('poori')) return 'south-poori-chutney';
+    if (clean.includes('uggani')) return 'south-uggani-bajji';
+    if (clean.includes('pesarattu')) return 'south-pesarattu-chutney';
+    if (clean.includes('aloo fry') || clean.includes('aloo')) return 'south-rice-aloo-fry';
+    if (clean.includes('carrot')) return 'south-rice-dal-carrot';
+    if (clean.includes('cluster beans') || clean.includes('goruchikkudu')) return 'south-rice-cluster-beans';
+    if (clean.includes('bendakaya') || clean.includes('okra')) return 'south-tomato-rice';
+    if (clean.includes('gutti vankaya') || clean.includes('brinjal')) return 'south-lemon-rice';
+    if (clean.includes('sambar')) return 'south-sambar-rice';
+    if (clean.includes('chapati') || clean.includes('roti') || clean.includes('phulka')) return 'south-chapati-veg';
+
+    return fallbackId;
+  };
+
+  // Diet indicator resolver (veg vs non-veg)
+  const resolveDietType = (dishTitle, fallbackDiet) => {
+    if (!dishTitle) return fallbackDiet;
+    const lower = dishTitle.toLowerCase();
+    if (lower.startsWith('veg:')) return 'veg';
+    if (lower.startsWith('non-veg:')) return 'non-veg';
+    if (lower.includes('chicken') || lower.includes('mutton') || lower.includes('fish') || lower.includes('egg')) {
+      return 'non-veg';
+    }
+    return fallbackDiet || 'veg';
+  };
+
+  // Helper to get active meal object accounting for user's chosen option
   const getMealData = (dayIndex, slot) => {
     const day = activePlanList[dayIndex] || activePlanList[0];
     const baseMeal = day?.meals?.[slot];
     if (!baseMeal) return null;
 
-    const optKey = `${dayIndex}_${slot}`;
-    const chosenOptionName = selectedMealOption[optKey];
+    const optKey = `${cuisineRegion}_${day.day}_${slot}`;
+    const selectedOpt = selectedMealOption[optKey];
 
-    if (chosenOptionName && baseMeal.options && baseMeal.options.length > 0) {
-      const match = baseMeal.options.find(o => o.title === chosenOptionName);
-      if (match) {
-        return {
-          ...baseMeal,
-          title: match.title,
-          image: match.image || baseMeal.image,
-          time: match.time || baseMeal.time,
-          calories: match.calories || baseMeal.calories,
-          protein: match.protein || baseMeal.protein,
-          carbs: match.carbs || baseMeal.carbs,
-          fat: match.fat || baseMeal.fat,
-          dietType: match.dietType || baseMeal.dietType,
-          description: match.description || baseMeal.description
-        };
-      }
+    if (selectedOpt) {
+      return {
+        ...baseMeal,
+        title: selectedOpt,
+        image: resolveDishImage(selectedOpt, baseMeal.image),
+        recipeId: resolveRecipeId(selectedOpt, baseMeal.recipeId),
+        dietType: resolveDietType(selectedOpt, baseMeal.dietType)
+      };
     }
     return baseMeal;
+  };
+
+  const handleSelectOption = (dayIndex, slot, optTitle, e) => {
+    if (e) e.stopPropagation();
+    const day = activePlanList[dayIndex] || activePlanList[0];
+    const optKey = `${cuisineRegion}_${day.day}_${slot}`;
+    setSelectedMealOption(prev => ({
+      ...prev,
+      [optKey]: optTitle
+    }));
+
+    if (logActivity) {
+      logActivity({
+        type: 'meal_planner',
+        title: `Selected ${slot}: ${optTitle}`,
+        meta: `${day.day}`,
+        image: resolveDishImage(optTitle, '/images/meal_planner_images/dosa.jpg'),
+        link: '/meal-planner'
+      });
+    }
   };
 
   const currentMeals = {
@@ -79,106 +284,100 @@ export default function MealPlanner() {
     dinner: getMealData(selectedDayIndex, 'dinner')
   };
 
-  const totalCalories = (currentMeals.breakfast?.calories || 0) +
-    (currentMeals.lunch?.calories || 0) +
-    (currentMeals.dinner?.calories || 0);
+  // Calculate dynamic day nutrition totals
+  const dayMealsList = [currentMeals.breakfast, currentMeals.lunch, currentMeals.dinner].filter(Boolean);
+  const totalCalories = dayMealsList.reduce((sum, r) => sum + (r.calories || 0), 0);
+  const totalProtein = dayMealsList.reduce((sum, r) => sum + (parseInt(r.protein) || 0), 0);
+  const totalCarbs = dayMealsList.reduce((sum, r) => sum + (parseInt(r.carbs) || 0), 0);
+  const totalFat = dayMealsList.reduce((sum, r) => sum + (parseInt(r.fat) || 0), 0);
 
-  const totalProtein = (parseInt(currentMeals.breakfast?.protein) || 0) +
-    (parseInt(currentMeals.lunch?.protein) || 0) +
-    (parseInt(currentMeals.dinner?.protein) || 0);
-
-  const totalCarbs = (parseInt(currentMeals.breakfast?.carbs) || 0) +
-    (parseInt(currentMeals.lunch?.carbs) || 0) +
-    (parseInt(currentMeals.dinner?.carbs) || 0);
-
-  const totalFat = (parseInt(currentMeals.breakfast?.fat) || 0) +
-    (parseInt(currentMeals.lunch?.fat) || 0) +
-    (parseInt(currentMeals.dinner?.fat) || 0);
-
-  const handleSelectOption = (dayIndex, slot, optTitle, e) => {
-    if (e) e.stopPropagation();
-    setSelectedMealOption(prev => ({
-      ...prev,
-      [`${dayIndex}_${slot}`]: optTitle
-    }));
-  };
-
+  // Handle recipe card click to open preparation instructions
   const handleOpenPreparation = (meal) => {
     if (!meal) return;
-    const recipeId = meal.id;
-    let recipeDetails = SOUTH_INDIAN_RECIPES[recipeId];
+    let recipeDetails = null;
+
+    if (meal.recipeId) {
+      if (SOUTH_INDIAN_RECIPES[meal.recipeId]) {
+        recipeDetails = SOUTH_INDIAN_RECIPES[meal.recipeId];
+      } else {
+        const found = Object.values(SOUTH_INDIAN_RECIPES).find(r => r.id === meal.recipeId);
+        if (found) recipeDetails = found;
+      }
+    }
 
     if (!recipeDetails) {
+      const key = Object.keys(SOUTH_INDIAN_RECIPES).find(k => 
+        meal.title.toLowerCase().includes(k.split('-')[0])
+      );
+      if (key) {
+        recipeDetails = SOUTH_INDIAN_RECIPES[key];
+      }
+    }
+
+    if (recipeDetails) {
+      recipeDetails = {
+        ...recipeDetails,
+        title: meal.title,
+        image: meal.image || recipeDetails.image
+      };
+    } else {
       recipeDetails = {
         title: meal.title,
-        description: meal.description || "Authentic freshly prepared nutritious balanced meal.",
+        subtitle: meal.description,
+        image: meal.image,
+        mealType: meal.slotTitle || "Meal",
+        cuisine: cuisineRegion === 'south' ? "South Indian" : "North Indian",
+        dietType: meal.dietType || "veg",
         time: meal.time || 25,
         calories: meal.calories || 420,
         protein: meal.protein || "14g",
         carbs: meal.carbs || "68g",
         fat: meal.fat || "12g",
-        datasetStatus: "Authentic Culinary Guide",
+        datasetStatus: "Authentic Regional Culinary Guide",
         ingredients: [
-          { name: "Main Grains / Rice / Wheat", amount: "1.5 cups" },
-          { name: "Lentils / Dal / Protein", amount: "1 cup" },
-          { name: "Seasoning & Spices (Mustard, Cumin, Curry Leaves)", amount: "1 tbsp" },
-          { name: "Fresh Produce / Vegetables", amount: "1.5 cups" },
+          { name: "Main Grains / Rice / Wheat / Flour", amount: "1.5 cups" },
+          { name: "Lentils / Dal / Paneer / Protein", amount: "1 cup" },
+          { name: "Traditional Spices (Mustard, Cumin, Turmeric, Garam Masala)", amount: "1 tbsp" },
+          { name: "Fresh Produce / Vegetables / Aromatics", amount: "1.5 cups" },
           { name: "Ghee / Healthy Cooking Oil", amount: "1.5 tbsp" }
         ],
         instructions: [
-          "Wash and prepare the fresh vegetables, grains, and protein components.",
-          "Heat oil or ghee in a pan; temper with mustard seeds, cumin, and curry leaves.",
-          "Add aromatics (onions, ginger, garlic, green chilies) and sauté until golden.",
-          "Incorporate spices, salt, and water; cook covered on medium-low flame until tender.",
-          "Finish with fresh coriander leaves, a squeeze of lemon or a dollop of ghee, and serve hot."
+          "Wash and prep the fresh vegetables, grains, and protein components thoroughly.",
+          "Heat oil or ghee in a heavy-bottomed vessel; temper with mustard seeds, cumin, and whole spices.",
+          "Add aromatics (onions, ginger, garlic, green chilies) and sauté until golden and fragrant.",
+          "Incorporate ground spices, salt, and water/broth; cook covered on medium flame until tender and flavors meld.",
+          "Finish with freshly chopped coriander leaves, a squeeze of fresh lemon or a dollop of ghee, and serve steaming hot."
         ]
       };
     }
+
     setActivePreparationRecipe(recipeDetails);
-  };
-
-  const handleCreatePlanSubmit = (e) => {
-    e.preventDefault();
-    const finalName = newPlanName.trim() || `${newPlanGoal} Plan`;
-    setActivePlanName(finalName);
-    setActivePlanGoal(newPlanGoal);
-    setActivePlanCalories(newPlanCalories);
-    setShowCreateModal(false);
-
-    if (logActivity) {
-      logActivity({
-        type: 'diet_plan',
-        title: `Added to diet plan: ${finalName}`,
-        meta: 'Just now',
-        image: '/images/diet_salad.jpg',
-        link: '/meal-plan'
-      });
-    }
-  };
-
-  const handleGoalSubmit = (e) => {
-    e.preventDefault();
-    setActivePlanGoal(newPlanGoal);
-    setShowGoalModal(false);
   };
 
   const displayName = currentUser?.name || userProfile?.name || 'User';
 
   return (
-    <div className="referral-page-layout diet-page-container">
-      {/* Main Right Content */}
+    <div className="referral-page-layout planner-referral-container">
+      {/* Main Content Area */}
       <div className="referral-main-content">
-        {/* Top bar with hamburger toggle and notification/user icons */}
+        {/* Top Bar with hamburger toggle and quick link to Diet Plan */}
         <div className="referral-top-bar">
           <button 
             className={`sidebar-toggle-btn ${isSidebarOpen ? 'active' : ''}`}
             onClick={toggleSidebar}
             aria-label="Toggle Navigation Sidebar"
             title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            id="diet-sidebar-toggle-btn"
+            id="planner-sidebar-toggle-btn"
           >
             <Menu size={22} />
           </button>
+
+          {/* Quick link navigating to the separate Diet Plan page */}
+          <Link to="/diet-plan" className="top-diet-plan-pill" title="Open Diet Plan & Goals">
+            <Leaf size={15} />
+            <span>Go to Diet Plan & Goals</span>
+            <ArrowRight size={14} />
+          </Link>
 
           <div className="referral-top-actions">
             <button className="top-notif-btn" title="Notifications">
@@ -192,538 +391,642 @@ export default function MealPlanner() {
           </div>
         </div>
 
-        {/* Hero Banner matching Image 3 */}
-        <div className="diet-hero-banner">
-          <div className="diet-hero-info">
-            <div className="diet-leaf-badge">
-              <span className="diet-leaf-emoji">🍃</span>
+        {/* Hero Banner for Daily Meal Planner */}
+        <div className="planner-hero-banner">
+          <div className="planner-hero-info">
+            <div className="planner-hero-badge">
+              <Utensils size={20} />
             </div>
             <div>
-              <h1 className="diet-hero-title">Your Diet Plan</h1>
-              <p className="diet-hero-subtitle">Eat healthy. Live better.</p>
+              <h1 className="planner-hero-title">Daily Meal Planner</h1>
+              <p className="planner-hero-subtitle">
+                Choose what to cook for morning, afternoon, or night with multi-recipe choices and step-by-step preparation guides
+              </p>
             </div>
           </div>
 
-          <div className="diet-hero-actions">
+          <div className="planner-hero-actions">
             <button 
-              className="btn-create-plan"
-              onClick={() => setShowCreateModal(true)}
-              id="btn-create-new-plan"
+              type="button" 
+              className="btn-dataset-report"
+              onClick={() => setShowDatasetReport(true)}
+              id="view-dataset-report-btn"
             >
-              <Plus size={18} />
-              <span>Create New Plan</span>
+              <Database size={15} />
+              <span>Dataset Report</span>
             </button>
 
-            <div className="diet-hero-salad-wrap">
-              <img 
-                src="/images/diet_salad.jpg" 
-                alt="Healthy Diet Salad" 
-                className="diet-hero-salad-img"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 3 Referral Cards: Active Plan, Plan Overview, Diet Goals */}
-        <div className="diet-cards-grid">
-          {/* Card 1: Active Plan */}
-          <div className="diet-card active-plan-card">
-            <div className="active-plan-content">
-              <div className="active-status-badge">
-                <Check size={14} className="check-icon" />
-                <span>Active Plan</span>
-              </div>
-
-              <h2 className="active-plan-name">{activePlanName}</h2>
-              <span className="active-plan-calories">{activePlanCalories}</span>
-
-              <button 
-                className="btn-view-plan-details"
-                onClick={() => {
-                  const scheduleElem = document.getElementById('diet-weekly-schedule-anchor');
-                  if (scheduleElem) scheduleElem.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <span>View Plan Details</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {/* Healthy Silhouette Wellness Graphic */}
-            <div className="active-plan-figure-graphic">
-              <svg viewBox="0 0 100 150" className="figure-svg" fill="none">
-                {/* Silhouette Figure */}
-                <circle cx="50" cy="14" r="10" fill="#22c55e" />
-                <path 
-                  d="M44 28 C40 36 38 46 41 58 C43 64 42 74 39 84 C37 94 38 106 41 120 L38 148 C40 150 43 150 45 149 L47 114 L53 114 L55 149 C57 150 60 150 62 148 L59 120 C62 106 63 94 61 84 C58 74 57 64 59 58 C62 46 60 36 56 28 C53 25 47 25 44 28 Z" 
-                  fill="url(#figureGreenGrad)" 
-                />
-                {/* Leaves around silhouette */}
-                <path d="M28 118 C22 108 18 114 20 128 C25 128 27 124 28 118 Z" fill="#86efac" />
-                <path d="M72 112 C79 104 84 110 80 125 C75 124 73 118 72 112 Z" fill="#4ade80" />
-                <path d="M68 85 C76 80 80 88 74 98 C70 96 69 90 68 85 Z" fill="#bbf7d0" />
-                <defs>
-                  <linearGradient id="figureGreenGrad" x1="50" y1="4" x2="50" y2="150" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#4ade80" />
-                    <stop offset="0.6" stopColor="#22c55e" />
-                    <stop offset="1" stopColor="#15803d" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-
-          {/* Card 2: Plan Overview */}
-          <div className="diet-card plan-overview-card">
-            <h3 className="card-section-title">Plan Overview</h3>
-
-            <div className="overview-items-row">
-              <div className="overview-item">
-                <div className="overview-icon-circle">
-                  <Utensils size={24} className="text-forest-green" />
-                </div>
-                <span className="overview-item-label">3 Meals</span>
-                <span className="overview-item-sub">+ Snacks</span>
-              </div>
-
-              <div className="overview-item">
-                <div className="overview-icon-circle">
-                  <Heart size={24} className="text-forest-green" />
-                </div>
-                <span className="overview-item-label">Balanced</span>
-                <span className="overview-item-sub">Nutrition</span>
-              </div>
-
-              <div className="overview-item">
-                <div className="overview-icon-circle">
-                  <TrendingUp size={24} className="text-forest-green" />
-                </div>
-                <span className="overview-item-label">Track</span>
-                <span className="overview-item-sub">Progress</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Diet Goals */}
-          <div className="diet-card diet-goals-card">
-            <h3 className="card-section-title">Diet Goals</h3>
-
-            <div className="goals-center-content">
-              <div className="goal-target-circle">
-                <Target size={38} className="text-target-red" />
-              </div>
-              <span className="goal-name-text">{activePlanGoal}</span>
-
-              <button 
-                className="btn-edit-goal"
-                onClick={() => { setNewPlanGoal(activePlanGoal); setShowGoalModal(true); }}
-              >
-                <span>Edit Goal</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 7-Day Meal Schedule Header */}
-        <div className="diet-schedule-section" id="diet-weekly-schedule-anchor">
-          <div className="schedule-header-row">
-            <div>
-              <h2 className="schedule-title">7-Day Culinary Routine</h2>
-              <p className="schedule-subtitle">Handcrafted breakfast, lunch, and dinner recipes tailored to your nutrition</p>
-            </div>
-
-            <div className="schedule-controls">
-              {/* Regional selector */}
-              <div className="cuisine-toggle-pill">
-                <button 
-                  className={`region-pill-btn ${cuisineRegion === 'south' ? 'active' : ''}`}
-                  onClick={() => { setCuisineRegion('south'); setSelectedDayIndex(0); }}
-                >
-                  South Indian
-                </button>
-                <button 
-                  className={`region-pill-btn ${cuisineRegion === 'north' ? 'active' : ''}`}
-                  onClick={() => { setCuisineRegion('north'); setSelectedDayIndex(0); }}
-                >
-                  North Indian
-                </button>
-              </div>
-
-              {/* View mode toggle */}
-              <div className="view-mode-pill">
-                <button 
-                  className={`mode-btn ${viewMode === 'daily' ? 'active' : ''}`}
-                  onClick={() => setViewMode('daily')}
-                >
-                  Daily
-                </button>
-                <button 
-                  className={`mode-btn ${viewMode === 'weekly' ? 'active' : ''}`}
-                  onClick={() => setViewMode('weekly')}
-                >
-                  7-Day Grid
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 7 Day Pills */}
-          <div className="day-pills-bar">
-            {weekDates.map((dayItem, idx) => (
+            <div className="planner-view-toggle">
               <button
-                key={dayItem.day}
-                className={`schedule-day-pill ${selectedDayIndex === idx ? 'active' : ''}`}
-                onClick={() => setSelectedDayIndex(idx)}
+                type="button"
+                className={`toggle-btn ${viewMode === 'daily' ? 'active' : ''}`}
+                onClick={() => setViewMode('daily')}
+                id="planner-view-daily"
               >
-                <span className="pill-day-label">{dayItem.day.slice(0, 3)}</span>
-                <span className="pill-date-label">{dayItem.date}</span>
-                {dayItem.isToday && <span className="pill-today-dot" title="Today" />}
+                Daily View
               </button>
-            ))}
+              <button
+                type="button"
+                className={`toggle-btn ${viewMode === 'weekly' ? 'active' : ''}`}
+                onClick={() => setViewMode('weekly')}
+                id="planner-view-weekly"
+              >
+                7-Day Grid
+              </button>
+            </div>
           </div>
+        </div>
 
-          {/* Daily View Slots */}
-          {viewMode === 'daily' ? (
-            <div className="daily-schedule-layout">
-              {/* Daily Macro Bar */}
-              <div className="daily-macro-strip">
-                <div className="macro-strip-item">
-                  <span className="strip-label">Daily Calories</span>
-                  <span className="strip-value strip-calories">{totalCalories} kcal</span>
+        {/* Cuisine Region Selector Tabs */}
+        <div className="cuisine-region-selector">
+          <button
+            type="button"
+            className={`region-tab-btn ${cuisineRegion === 'south' ? 'active' : ''}`}
+            onClick={() => { setCuisineRegion('south'); setSelectedDayIndex(0); }}
+            id="select-south-indian-tab"
+          >
+            <span className="region-emoji">🌴</span>
+            <div className="region-text">
+              <span className="region-title">South Indian Menu</span>
+              <span className="region-subtitle">Dosa, Idli, Pongal, Biryani, Full Meals, Sambar Sadam, Ragi</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`region-tab-btn ${cuisineRegion === 'north' ? 'active' : ''}`}
+            onClick={() => { setCuisineRegion('north'); setSelectedDayIndex(0); }}
+            id="select-north-indian-tab"
+          >
+            <span className="region-emoji">🏔️</span>
+            <div className="region-text">
+              <span className="region-title">North Indian Menu</span>
+              <span className="region-subtitle">Paratha, Chole Bhature, Rajma Chawal, Dal Makhani, Phulka</span>
+            </div>
+          </button>
+        </div>
+
+        {/* 7-Day Day Selector Track */}
+        <div className="day-selector-track">
+          {weekDates.map((dayItem, idx) => (
+            <button
+              key={dayItem.day}
+              type="button"
+              className={`day-pill-card ${selectedDayIndex === idx ? 'active' : ''} ${dayItem.isToday ? 'is-today' : ''}`}
+              onClick={() => setSelectedDayIndex(idx)}
+              id={`day-pill-${dayItem.day.toLowerCase()}`}
+            >
+              <div className="day-pill-top">
+                <span className="day-name">{dayItem.day.slice(0, 3)}</span>
+                {dayItem.isToday && <span className="today-chip">Today</span>}
+              </div>
+              <span className="day-date">{dayItem.date}</span>
+            </button>
+          ))}
+        </div>
+
+        {viewMode === 'daily' ? (
+          /* Daily View Layout */
+          <div className="daily-view-layout">
+            {/* Day Macros & Nutrition Summary Card */}
+            <div className="day-macros-summary">
+              <div className="day-meta-left">
+                <div className="day-date-tag">
+                  <Calendar size={14} />
+                  <span>{currentDateInfo.fullDate}</span>
                 </div>
-                <div className="macro-strip-item">
-                  <span className="strip-label">Protein</span>
-                  <span className="strip-value strip-protein">{totalProtein}g</span>
-                </div>
-                <div className="macro-strip-item">
-                  <span className="strip-label">Carbs</span>
-                  <span className="strip-value">{totalCarbs}g</span>
-                </div>
-                <div className="macro-strip-item">
-                  <span className="strip-label">Healthy Fats</span>
-                  <span className="strip-value">{totalFat}g</span>
-                </div>
+                <h2 className="current-day-heading">{currentDayData.day}'s Schedule</h2>
+                <span className="current-day-sub">
+                  {cuisineRegion === 'south' 
+                    ? 'Authentic South Indian Daily Culinary Plan — Select your dishes below' 
+                    : 'Classic North Indian Daily Homestyle Plan — Select your dishes below'}
+                </span>
               </div>
 
-              {/* 3 Main Meals Cards */}
-              <div className="meals-cards-grid">
-                {/* Breakfast */}
-                <div 
-                  className="meal-slot-card"
-                  onClick={() => handleOpenPreparation(currentMeals.breakfast)}
-                >
-                  <div className="meal-slot-image-wrap">
-                    <img 
-                      src={currentMeals.breakfast?.image || "/images/diet_salad.jpg"} 
-                      alt={currentMeals.breakfast?.title} 
-                      className="meal-slot-image"
-                    />
-                    <span className="meal-time-tag">
-                      <Coffee size={13} /> 08:30 AM
-                    </span>
-                  </div>
-
-                  <div className="meal-slot-body">
-                    <div className="slot-badge-row">
-                      <span className="meal-type-chip">Breakfast</span>
-                      <span className="meal-cal-chip">{currentMeals.breakfast?.calories} kcal</span>
-                    </div>
-
-                    <h4 className="meal-title">{currentMeals.breakfast?.title}</h4>
-                    <p className="meal-desc">{currentMeals.breakfast?.description}</p>
-
-                    <div className="meal-action-footer">
-                      <button className="btn-view-steps">
-                        <BookOpen size={14} />
-                        <span>Cooking Recipe</span>
-                      </button>
-                    </div>
-                  </div>
+              <div className="day-macros-right">
+                <div className="day-macro-stat">
+                  <span className="macro-stat-label">Daily Calories</span>
+                  <span className="macro-stat-val text-flame">{totalCalories} kcal</span>
                 </div>
-
-                {/* Lunch */}
-                <div 
-                  className="meal-slot-card"
-                  onClick={() => handleOpenPreparation(currentMeals.lunch)}
-                >
-                  <div className="meal-slot-image-wrap">
-                    <img 
-                      src={currentMeals.lunch?.image || "/images/diet_salad.jpg"} 
-                      alt={currentMeals.lunch?.title} 
-                      className="meal-slot-image"
-                    />
-                    <span className="meal-time-tag">
-                      <Sun size={13} /> 01:15 PM
-                    </span>
-                  </div>
-
-                  <div className="meal-slot-body">
-                    <div className="slot-badge-row">
-                      <span className="meal-type-chip">Lunch</span>
-                      <span className="meal-cal-chip">{currentMeals.lunch?.calories} kcal</span>
-                    </div>
-
-                    <h4 className="meal-title">{currentMeals.lunch?.title}</h4>
-                    <p className="meal-desc">{currentMeals.lunch?.description}</p>
-
-                    <div className="meal-action-footer">
-                      <button className="btn-view-steps">
-                        <BookOpen size={14} />
-                        <span>Cooking Recipe</span>
-                      </button>
-                    </div>
-                  </div>
+                <div className="day-macro-stat">
+                  <span className="macro-stat-label">Protein</span>
+                  <span className="macro-stat-val text-protein">{totalProtein}g</span>
                 </div>
-
-                {/* Dinner */}
-                <div 
-                  className="meal-slot-card"
-                  onClick={() => handleOpenPreparation(currentMeals.dinner)}
-                >
-                  <div className="meal-slot-image-wrap">
-                    <img 
-                      src={currentMeals.dinner?.image || "/images/diet_salad.jpg"} 
-                      alt={currentMeals.dinner?.title} 
-                      className="meal-slot-image"
-                    />
-                    <span className="meal-time-tag">
-                      <Moon size={13} /> 08:00 PM
-                    </span>
-                  </div>
-
-                  <div className="meal-slot-body">
-                    <div className="slot-badge-row">
-                      <span className="meal-type-chip">Dinner</span>
-                      <span className="meal-cal-chip">{currentMeals.dinner?.calories} kcal</span>
-                    </div>
-
-                    <h4 className="meal-title">{currentMeals.dinner?.title}</h4>
-                    <p className="meal-desc">{currentMeals.dinner?.description}</p>
-
-                    <div className="meal-action-footer">
-                      <button className="btn-view-steps">
-                        <BookOpen size={14} />
-                        <span>Cooking Recipe</span>
-                      </button>
-                    </div>
-                  </div>
+                <div className="day-macro-stat">
+                  <span className="macro-stat-label">Carbs</span>
+                  <span className="macro-stat-val">{totalCarbs}g</span>
+                </div>
+                <div className="day-macro-stat">
+                  <span className="macro-stat-label">Fats</span>
+                  <span className="macro-stat-val">{totalFat}g</span>
                 </div>
               </div>
             </div>
-          ) : (
-            /* Weekly 7-Day Grid View */
-            <div className="weekly-schedule-grid">
-              {activePlanList.map((dayItem, dIdx) => (
-                <div key={dayItem.day} className="weekly-day-card">
-                  <div className="weekly-day-header">
-                    <span className="weekly-day-name">{dayItem.day}</span>
-                    <span className="weekly-day-date">{weekDates[dIdx]?.date}</span>
+
+            {/* 3 Main Meal Slots: Breakfast (Morning), Lunch (Afternoon), Dinner (Night) */}
+            <div className="daily-slots-container">
+              {/* 1. Morning Breakfast */}
+              {currentMeals.breakfast && (
+                <div 
+                  className="meal-card-premium"
+                  onClick={() => handleOpenPreparation(currentMeals.breakfast)}
+                  id="meal-slot-breakfast"
+                >
+                  <div className="meal-card-img-wrap">
+                    <img 
+                      key={`bf_${currentMeals.breakfast.title}_${currentMeals.breakfast.image}`}
+                      src={currentMeals.breakfast.image} 
+                      alt={currentMeals.breakfast.title} 
+                      className="meal-card-img" 
+                    />
+                    <span className="meal-time-badge">
+                      <Coffee size={13} /> Morning • 08:30 AM
+                    </span>
+                    <span className={`slot-diet-indicator ${currentMeals.breakfast.dietType}`}></span>
                   </div>
-                  <div className="weekly-meals-stack">
-                    {['breakfast', 'lunch', 'dinner'].map((slot) => {
+
+                  <div className="meal-card-content">
+                    <div className="meal-card-header">
+                      <span className="slot-badge-label">Morning Breakfast</span>
+                      <div className="card-macros-inline">
+                        <span className="macro-pill"><Clock size={11} /> {currentMeals.breakfast.time}m</span>
+                        <span className="macro-pill text-flame"><Flame size={11} /> {currentMeals.breakfast.calories} kcal</span>
+                        <span className="macro-pill text-protein"><Dumbbell size={11} /> {currentMeals.breakfast.protein}</span>
+                      </div>
+                    </div>
+
+                    <h3 className="meal-card-title">{currentMeals.breakfast.title}</h3>
+                    <p className="meal-card-desc">{currentMeals.breakfast.description}</p>
+
+                    {/* Multi-recipe choices switcher if multiple recipes are available for morning */}
+                    {currentMeals.breakfast.options && currentMeals.breakfast.options.length > 0 && (
+                      <div className="meal-options-box" onClick={e => e.stopPropagation()}>
+                        <div className="options-header-row">
+                          <span className="options-hint">✨ Available Recipes to Cook:</span>
+                          <span className="options-count-badge">{currentMeals.breakfast.options.length} options</span>
+                        </div>
+                        <div className="options-chip-row">
+                          {currentMeals.breakfast.options.map((opt) => {
+                            const isSelected = currentMeals.breakfast.title === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={`opt-chip ${isSelected ? 'active' : ''}`}
+                                onClick={(e) => handleSelectOption(selectedDayIndex, 'breakfast', opt, e)}
+                                title={`Click to choose ${opt}`}
+                              >
+                                {isSelected && <Check size={12} className="opt-check-icon" />}
+                                <span>{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="meal-card-footer">
+                      <button type="button" className="recipe-prep-cta">
+                        <BookOpen size={13} />
+                        <span>View Preparation & Ingredients</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Afternoon Lunch */}
+              {currentMeals.lunch && (
+                <div 
+                  className="meal-card-premium"
+                  onClick={() => handleOpenPreparation(currentMeals.lunch)}
+                  id="meal-slot-lunch"
+                >
+                  <div className="meal-card-img-wrap">
+                    <img 
+                      key={`lu_${currentMeals.lunch.title}_${currentMeals.lunch.image}`}
+                      src={currentMeals.lunch.image} 
+                      alt={currentMeals.lunch.title} 
+                      className="meal-card-img" 
+                    />
+                    <span className="meal-time-badge">
+                      <Sun size={13} /> Afternoon • 01:15 PM
+                    </span>
+                    <span className={`slot-diet-indicator ${currentMeals.lunch.dietType}`}></span>
+                  </div>
+
+                  <div className="meal-card-content">
+                    <div className="meal-card-header">
+                      <span className="slot-badge-label">Afternoon Lunch</span>
+                      <div className="card-macros-inline">
+                        <span className="macro-pill"><Clock size={11} /> {currentMeals.lunch.time}m</span>
+                        <span className="macro-pill text-flame"><Flame size={11} /> {currentMeals.lunch.calories} kcal</span>
+                        <span className="macro-pill text-protein"><Dumbbell size={11} /> {currentMeals.lunch.protein}</span>
+                      </div>
+                    </div>
+
+                    <h3 className="meal-card-title">{currentMeals.lunch.title}</h3>
+                    <p className="meal-card-desc">{currentMeals.lunch.description}</p>
+
+                    {/* Multi-recipe choices switcher if multiple recipes are available for afternoon */}
+                    {currentMeals.lunch.options && currentMeals.lunch.options.length > 0 && (
+                      <div className="meal-options-box" onClick={e => e.stopPropagation()}>
+                        <div className="options-header-row">
+                          <span className="options-hint">✨ Available Recipes to Cook:</span>
+                          <span className="options-count-badge">{currentMeals.lunch.options.length} options</span>
+                        </div>
+                        <div className="options-chip-row">
+                          {currentMeals.lunch.options.map((opt) => {
+                            const isSelected = currentMeals.lunch.title === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={`opt-chip ${isSelected ? 'active' : ''}`}
+                                onClick={(e) => handleSelectOption(selectedDayIndex, 'lunch', opt, e)}
+                                title={`Click to choose ${opt}`}
+                              >
+                                {isSelected && <Check size={12} className="opt-check-icon" />}
+                                <span>{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="meal-card-footer">
+                      <button type="button" className="recipe-prep-cta">
+                        <BookOpen size={13} />
+                        <span>View Preparation & Ingredients</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Night Dinner */}
+              {currentMeals.dinner && (
+                <div 
+                  className="meal-card-premium"
+                  onClick={() => handleOpenPreparation(currentMeals.dinner)}
+                  id="meal-slot-dinner"
+                >
+                  <div className="meal-card-img-wrap">
+                    <img 
+                      key={`di_${currentMeals.dinner.title}_${currentMeals.dinner.image}`}
+                      src={currentMeals.dinner.image} 
+                      alt={currentMeals.dinner.title} 
+                      className="meal-card-img" 
+                    />
+                    <span className="meal-time-badge">
+                      <Moon size={13} /> Night • 08:30 PM
+                    </span>
+                    <span className={`slot-diet-indicator ${currentMeals.dinner.dietType}`}></span>
+                  </div>
+
+                  <div className="meal-card-content">
+                    <div className="meal-card-header">
+                      <span className="slot-badge-label">Night Dinner</span>
+                      <div className="card-macros-inline">
+                        <span className="macro-pill"><Clock size={11} /> {currentMeals.dinner.time}m</span>
+                        <span className="macro-pill text-flame"><Flame size={11} /> {currentMeals.dinner.calories} kcal</span>
+                        <span className="macro-pill text-protein"><Dumbbell size={11} /> {currentMeals.dinner.protein}</span>
+                      </div>
+                    </div>
+
+                    <h3 className="meal-card-title">{currentMeals.dinner.title}</h3>
+                    <p className="meal-card-desc">{currentMeals.dinner.description}</p>
+
+                    {/* Multi-recipe choices switcher if multiple recipes are available for night */}
+                    {currentMeals.dinner.options && currentMeals.dinner.options.length > 0 && (
+                      <div className="meal-options-box" onClick={e => e.stopPropagation()}>
+                        <div className="options-header-row">
+                          <span className="options-hint">✨ Available Recipes to Cook:</span>
+                          <span className="options-count-badge">{currentMeals.dinner.options.length} options</span>
+                        </div>
+                        <div className="options-chip-row">
+                          {currentMeals.dinner.options.map((opt) => {
+                            const isSelected = currentMeals.dinner.title === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={`opt-chip ${isSelected ? 'active' : ''}`}
+                                onClick={(e) => handleSelectOption(selectedDayIndex, 'dinner', opt, e)}
+                                title={`Click to choose ${opt}`}
+                              >
+                                {isSelected && <Check size={12} className="opt-check-icon" />}
+                                <span>{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="meal-card-footer">
+                      <button type="button" className="recipe-prep-cta">
+                        <BookOpen size={13} />
+                        <span>View Preparation & Ingredients</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* 7-Day Weekly Grid Overview */
+          <div className="weekly-grid-layout">
+            {activePlanList.map((dayItem, dIdx) => {
+              const dateObj = weekDates[dIdx] || { date: '' };
+              return (
+                <div 
+                  key={dayItem.day} 
+                  className={`weekly-day-card ${selectedDayIndex === dIdx ? 'active-day-col' : ''}`}
+                  onClick={() => { setSelectedDayIndex(dIdx); setViewMode('daily'); }}
+                >
+                  <div className="weekly-card-header">
+                    <div>
+                      <h3>{dayItem.day}</h3>
+                      <span className="weekly-date-badge">{dateObj.date}</span>
+                    </div>
+                    <span className="view-day-link">Open &rarr;</span>
+                  </div>
+
+                  <div className="weekly-day-slots">
+                    {['breakfast', 'lunch', 'dinner'].map(slot => {
                       const m = getMealData(dIdx, slot);
                       return (
-                        <div 
-                          key={slot} 
-                          className="weekly-meal-row"
-                          onClick={() => handleOpenPreparation(m)}
-                        >
-                          <img 
-                            src={m?.image || "/images/diet_salad.jpg"} 
-                            alt={m?.title} 
-                            className="weekly-meal-thumb"
-                          />
-                          <div className="weekly-meal-info">
-                            <span className="slot-tag-small">{slot}</span>
-                            <span className="weekly-meal-title">{m?.title}</span>
-                          </div>
+                        <div key={slot} className="weekly-slot-mini">
+                          <span className="slot-mini-label">{slot === 'breakfast' ? 'Morning' : slot === 'lunch' ? 'Afternoon' : 'Night'}</span>
+                          {m ? (
+                            <div className="slot-mini-info">
+                              <span className="slot-mini-title">{m.title}</span>
+                              <span className="slot-mini-cal">{m.calories} kcal</span>
+                            </div>
+                          ) : (
+                            <span className="slot-mini-empty">Empty</span>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Recipe Preparation Modal */}
-      {activePreparationRecipe && (
-        <div className="diet-modal-overlay" onClick={() => setActivePreparationRecipe(null)}>
-          <div className="diet-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="diet-modal-header">
-              <div>
-                <span className="modal-chip">Chef Preparation Guide</span>
-                <h2 className="diet-modal-title">{activePreparationRecipe.title}</h2>
-              </div>
+        {/* ── RECIPE PREPARATION MODAL (Dataset Guide) ── */}
+        {activePreparationRecipe && (
+          <div className="modal-backdrop" onClick={() => setActivePreparationRecipe(null)}>
+            <div className="prep-modal-card" onClick={e => e.stopPropagation()}>
               <button 
-                className="diet-modal-close"
+                type="button" 
+                className="modal-close-icon"
                 onClick={() => setActivePreparationRecipe(null)}
+                aria-label="Close"
               >
                 <X size={20} />
               </button>
-            </div>
 
-            <div className="diet-modal-body">
-              <div className="modal-macros-row">
-                <div className="modal-macro-box">
-                  <span className="m-val">{activePreparationRecipe.calories} kcal</span>
-                  <span className="m-lbl">Calories</span>
-                </div>
-                <div className="modal-macro-box">
-                  <span className="m-val">{activePreparationRecipe.protein}</span>
-                  <span className="m-lbl">Protein</span>
-                </div>
-                <div className="modal-macro-box">
-                  <span className="m-val">{activePreparationRecipe.carbs}</span>
-                  <span className="m-lbl">Carbs</span>
-                </div>
-                <div className="modal-macro-box">
-                  <span className="m-val">{activePreparationRecipe.time} mins</span>
-                  <span className="m-lbl">Cook Time</span>
+              {/* Modal Hero Banner */}
+              <div className="prep-modal-hero">
+                <img src={activePreparationRecipe.image} alt={activePreparationRecipe.title} className="prep-hero-img" />
+                <div className="prep-hero-overlay">
+                  <div className="prep-meta-tags">
+                    <span className="tag-cuisine">{activePreparationRecipe.cuisine}</span>
+                    <span className="tag-time"><Clock size={12} /> {activePreparationRecipe.time} Mins</span>
+                    <span className={`tag-diet ${activePreparationRecipe.dietType}`}>{activePreparationRecipe.dietType.toUpperCase()}</span>
+                  </div>
+                  <h2 className="prep-modal-title">{activePreparationRecipe.title}</h2>
+                  <p className="prep-modal-subtitle">{activePreparationRecipe.subtitle}</p>
                 </div>
               </div>
 
-              <div className="modal-section">
-                <h3>Ingredients</h3>
-                <ul className="modal-ing-list">
-                  {activePreparationRecipe.ingredients?.map((ing, idx) => (
-                    <li key={idx}>
-                      <span className="ing-name">{ing.name}</span>
-                      <span className="ing-amt">{ing.amount}</span>
-                    </li>
-                  ))}
-                </ul>
+              {/* Dataset Match Badge */}
+              <div className="dataset-status-callout">
+                <div className="status-callout-icon">
+                  <Database size={16} />
+                </div>
+                <div className="status-callout-text">
+                  <strong>Hugging Face Dataset Status:</strong>
+                  <span> {activePreparationRecipe.datasetStatus || "Verified in Food Craft Recipe Intelligence System"}</span>
+                </div>
               </div>
 
-              <div className="modal-section">
-                <h3>Instructions</h3>
-                <ol className="modal-steps-list">
-                  {activePreparationRecipe.instructions?.map((step, idx) => (
-                    <li key={idx}>
-                      <span className="step-num">{idx + 1}</span>
-                      <span className="step-text">{step}</span>
-                    </li>
-                  ))}
-                </ol>
+              {/* Nutrition Highlights Bar */}
+              <div className="prep-nutrition-bar">
+                <div className="prep-macro-item">
+                  <span className="p-macro-label">Energy</span>
+                  <span className="p-macro-val text-flame">{activePreparationRecipe.calories} kcal</span>
+                </div>
+                <div className="prep-macro-item">
+                  <span className="p-macro-label">Protein</span>
+                  <span className="p-macro-val text-protein">{activePreparationRecipe.protein}</span>
+                </div>
+                <div className="prep-macro-item">
+                  <span className="p-macro-label">Carbs</span>
+                  <span className="p-macro-val">{activePreparationRecipe.carbs}</span>
+                </div>
+                <div className="prep-macro-item">
+                  <span className="p-macro-label">Fat</span>
+                  <span className="p-macro-val">{activePreparationRecipe.fat}</span>
+                </div>
+              </div>
+
+              {/* Modal Body: Ingredients & Instructions */}
+              <div className="prep-modal-body">
+                {/* Ingredients List */}
+                <div className="prep-section">
+                  <h3 className="prep-section-heading">
+                    <Layers size={16} /> Required Ingredients
+                  </h3>
+                  <div className="prep-ingredients-grid">
+                    {activePreparationRecipe.ingredients.map((ing, i) => (
+                      <div key={i} className="prep-ingredient-chip">
+                        <span className="ing-bullet">✓</span>
+                        <span className="ing-name">{ing.name}</span>
+                        <span className="ing-amt">{ing.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Step-by-Step Cooking Directions */}
+                <div className="prep-section">
+                  <h3 className="prep-section-heading">
+                    <Sparkles size={16} /> Step-by-Step Preparation Directions
+                  </h3>
+                  <div className="prep-steps-timeline">
+                    {activePreparationRecipe.instructions.map((step, idx) => (
+                      <div key={idx} className="prep-step-item">
+                        <div className="prep-step-num">{idx + 1}</div>
+                        <p className="prep-step-text">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Create New Plan Modal */}
-      {showCreateModal && (
-        <div className="diet-modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="diet-modal-card modal-small" onClick={e => e.stopPropagation()}>
-            <div className="diet-modal-header">
-              <div>
-                <span className="modal-chip">Custom Plan</span>
-                <h2 className="diet-modal-title">Create New Diet Plan</h2>
+        {/* ── DATASET ANALYSIS REPORT MODAL ── */}
+        {showDatasetReport && (
+          <div className="modal-backdrop" onClick={() => setShowDatasetReport(false)}>
+            <div className="dataset-report-modal" onClick={e => e.stopPropagation()}>
+              <div className="report-modal-header">
+                <div className="header-left-title">
+                  <Database size={22} className="text-accent" />
+                  <div>
+                    <h2>Hugging Face Dataset Match Analysis</h2>
+                    <p>Repository: <code>Default-Box/recipe_nlg-trim</code> (248,334 indexed recipes)</p>
+                  </div>
+                </div>
+                <button type="button" className="modal-close-icon" onClick={() => setShowDatasetReport(false)}>
+                  <X size={20} />
+                </button>
               </div>
-              <button className="diet-modal-close" onClick={() => setShowCreateModal(false)}><X size={20} /></button>
+
+              <div className="dataset-report-body">
+                <div className="report-metrics-grid">
+                  <div className="metric-box bg-success-soft">
+                    <span className="metric-num">16 Items</span>
+                    <span className="metric-label">Found in Hugging Face Dataset</span>
+                  </div>
+                  <div className="metric-box bg-warning-soft">
+                    <span className="metric-num">26 Items</span>
+                    <span className="metric-label">Regional Indian Specialties</span>
+                  </div>
+                </div>
+
+                <div className="report-section-title">
+                  <CheckCircle2 size={16} className="text-success" />
+                  <span>Found in Hugging Face RecipeNLG Dataset:</span>
+                </div>
+                <div className="report-items-table-wrap">
+                  <table className="report-table">
+                    <thead>
+                      <tr>
+                        <th>Your Meal Item</th>
+                        <th>Dataset Match Title</th>
+                        <th>Found Recipes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Dosa</strong></td>
+                        <td>Lace Dosai</td>
+                        <td>1 recipe</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Chutney</strong></td>
+                        <td>Mango Chutney / Coconut Chutney</td>
+                        <td>79 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Vada</strong></td>
+                        <td>Vadai</td>
+                        <td>4 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Tomato Rice</strong></td>
+                        <td>Tomato Rice Soup / Spiced Rice</td>
+                        <td>12 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Lemon Rice</strong></td>
+                        <td>Lemon Rice</td>
+                        <td>11 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Chicken Curry</strong></td>
+                        <td>Chicken Curry</td>
+                        <td>57 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Chicken Fry</strong></td>
+                        <td>Herb Chicken Fry</td>
+                        <td>2 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Fish Curry</strong></td>
+                        <td>Vegetable Fish Curry</td>
+                        <td>2 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Mushroom Curry</strong></td>
+                        <td>Mushroom Curry</td>
+                        <td>1 recipe</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Chapati</strong></td>
+                        <td>Chapati (Soft Rolled Flatbread)</td>
+                        <td>3 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Vegetable Curry</strong></td>
+                        <td>Vegetable Curry</td>
+                        <td>2 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Biryani</strong></td>
+                        <td>Masoods' Kheema Biryani</td>
+                        <td>2 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Pulav / Pulao</strong></td>
+                        <td>Rice Pulao</td>
+                        <td>2 recipes</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Curd</strong></td>
+                        <td>Lemon Curd</td>
+                        <td>20 recipes</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="report-section-title" style={{ marginTop: '1.5rem' }}>
+                  <AlertCircle size={16} className="text-warning" />
+                  <span>Regional Indian Items Missing From RecipeNLG (Supplied by Food Craft Engine):</span>
+                </div>
+                <div className="missing-items-tags">
+                  <span className="missing-tag">Upma</span>
+                  <span className="missing-tag">Pongal</span>
+                  <span className="missing-tag">Idli</span>
+                  <span className="missing-tag">Poori</span>
+                  <span className="missing-tag">Uggani</span>
+                  <span className="missing-tag">Bajji (Mirchi Bajji)</span>
+                  <span className="missing-tag">Pesarattu</span>
+                  <span className="missing-tag">Sambar Rice / Sambar</span>
+                  <span className="missing-tag">Full Meals (Rice, Dal, Curd, Rasam, Papadam)</span>
+                  <span className="missing-tag">Bagara Rice</span>
+                  <span className="missing-tag">Mutton Biryani</span>
+                  <span className="missing-tag">Ragi Rice / Ragi Sankati</span>
+                  <span className="missing-tag">Pulagam</span>
+                  <span className="missing-tag">Brinjal Curry (Gutti Vankaya)</span>
+                  <span className="missing-tag">Cluster Beans (Goruchikkudu)</span>
+                  <span className="missing-tag">Sundal Curry</span>
+                  <span className="missing-tag">Egg Roast</span>
+                  <span className="missing-tag">Aloo Fry</span>
+                  <span className="missing-tag">Chole Bhature</span>
+                  <span className="missing-tag">Rajma Chawal</span>
+                  <span className="missing-tag">Dal Makhani</span>
+                  <span className="missing-tag">Paneer Butter Masala</span>
+                </div>
+              </div>
             </div>
-
-            <form onSubmit={handleCreatePlanSubmit} className="diet-modal-form">
-              <div className="form-group">
-                <label>Plan Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Weight Loss Plan, Muscle Gain 2000" 
-                  value={newPlanName}
-                  onChange={(e) => setNewPlanName(e.target.value)}
-                  className="diet-form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Primary Health Goal</label>
-                <select 
-                  value={newPlanGoal}
-                  onChange={(e) => setNewPlanGoal(e.target.value)}
-                  className="diet-form-select"
-                >
-                  <option value="Weight Loss">Weight Loss</option>
-                  <option value="Muscle Gain">Muscle Gain (High Protein)</option>
-                  <option value="Balanced Health">Balanced Health & Wellness</option>
-                  <option value="Heart Healthy">Heart Healthy (Low Sodium)</option>
-                  <option value="Keto / Low-Carb">Keto / Low-Carb</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Daily Calorie Target</label>
-                <select 
-                  value={newPlanCalories}
-                  onChange={(e) => setNewPlanCalories(e.target.value)}
-                  className="diet-form-select"
-                >
-                  <option value="1200 – 1500 kcal/day">1200 – 1500 kcal/day (Weight Loss)</option>
-                  <option value="1500 – 1800 kcal/day">1500 – 1800 kcal/day (Moderate Deficit)</option>
-                  <option value="1800 – 2200 kcal/day">1800 – 2200 kcal/day (Maintenance / Balanced)</option>
-                  <option value="2200 – 2600 kcal/day">2200 – 2600 kcal/day (Active Muscle Building)</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Dietary Style</label>
-                <select 
-                  value={newPlanDiet}
-                  onChange={(e) => setNewPlanDiet(e.target.value)}
-                  className="diet-form-select"
-                >
-                  <option value="Vegetarian">Pure Vegetarian</option>
-                  <option value="Eggetarian">Vegetarian + Eggs</option>
-                  <option value="Non-Vegetarian">Non-Vegetarian (Chicken, Fish, Meat)</option>
-                  <option value="Vegan">100% Plant-Based Vegan</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn-modal-primary">
-                Activate Plan
-              </button>
-            </form>
           </div>
-        </div>
-      )}
-
-      {/* Edit Goal Modal */}
-      {showGoalModal && (
-        <div className="diet-modal-overlay" onClick={() => setShowGoalModal(false)}>
-          <div className="diet-modal-card modal-small" onClick={e => e.stopPropagation()}>
-            <div className="diet-modal-header">
-              <div>
-                <span className="modal-chip">Goal Tracker</span>
-                <h2 className="diet-modal-title">Edit Diet Goal</h2>
-              </div>
-              <button className="diet-modal-close" onClick={() => setShowGoalModal(false)}><X size={20} /></button>
-            </div>
-
-            <form onSubmit={handleGoalSubmit} className="diet-modal-form">
-              <div className="form-group">
-                <label>Select Your Health Focus</label>
-                <select 
-                  value={newPlanGoal}
-                  onChange={(e) => setNewPlanGoal(e.target.value)}
-                  className="diet-form-select"
-                >
-                  <option value="Weight Loss">Weight Loss</option>
-                  <option value="Muscle Gain">Muscle Gain / Gym Performance</option>
-                  <option value="Balanced Health">Balanced Health & Vitality</option>
-                  <option value="Low Sugar / Diabetes Friendly">Low Sugar / Diabetes Friendly</option>
-                  <option value="Cardio Fitness">Cardio & Heart Health</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn-modal-primary">
-                Save Goal
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

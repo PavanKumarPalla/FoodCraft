@@ -67,8 +67,15 @@ export default function Sidebar({ isOpen: propIsOpen, onClose: propOnClose, dock
       id: 'diet-plan',
       label: 'Diet Plan',
       icon: Calendar,
-      path: '/meal-plan',
-      action: () => handleNavClick('/meal-plan')
+      path: '/diet-plan',
+      action: () => handleNavClick('/diet-plan')
+    },
+    {
+      id: 'meal-planner',
+      label: 'Meal Planner',
+      icon: Utensils,
+      path: '/meal-planner',
+      action: () => handleNavClick('/meal-planner')
     },
     {
       id: 'recent-activity',
@@ -125,7 +132,7 @@ export default function Sidebar({ isOpen: propIsOpen, onClose: propOnClose, dock
             const Icon = item.icon;
             const isItemActive = item.path && (
               location.pathname === item.path || 
-              (item.path === '/meal-plan' && location.pathname === '/meal-planner') ||
+              (item.path === '/diet-plan' && location.pathname === '/meal-plan') ||
               (item.path === '/profile' && location.pathname === '/account')
             );
 

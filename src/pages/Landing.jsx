@@ -680,7 +680,7 @@ export default function Landing() {
 
                   <div className="quick-plan-link-row">
                     <span>Need a complete 7-day schedule?</span>
-                    <Link to="/meal-plan" className="inline-link-bold">Open Meal Planner →</Link>
+                    <Link to="/meal-planner" className="inline-link-bold">Open Daily Meal Planner →</Link>
                   </div>
                 </div>
 

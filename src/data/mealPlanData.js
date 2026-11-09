@@ -717,6 +717,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-dosa-chutney",
         title: "Dosa, Chutney",
+        options: ["Dosa, Chutney", "Masala Dosa with Sambar", "Pesarattu Upma"],
         description: "Crispy fermented rice crepe served with freshly ground coconut chutney.",
         image: "/images/meal_planner_images/dosa.jpg",
         time: 20,
@@ -779,6 +780,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-upma",
         title: "Upma",
+        options: ["Upma", "Tomato Upma", "Semiya Upma"],
         description: "Warm roasted semolina upma tempered with mustard seeds, curry leaves, and cashews.",
         image: "/images/meal_planner_images/upma.jpg",
         time: 15,
@@ -791,6 +793,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-sambar-rice",
         title: "Sambar Rice",
+        options: ["Sambar Rice", "Curd Rice with Pomegranate", "Full Meals (Rice, Dal, Curd, Papadam)"],
         description: "Comforting Sambar Sadam cooked with lentils, drumsticks, and ghee, served with papadam.",
         image: "/images/meal_planner_images/sambar_rice.jpg",
         time: 30,
@@ -824,6 +827,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-pongal-vada",
         title: "Pongal, Vada, Chutney",
+        options: ["Pongal, Vada, Chutney", "Rava Pongal", "Ghee Idli with Chutney"],
         description: "Ghee Ven Pongal with black pepper and cashews, accompanied by crispy Medu Vada and Chutney.",
         image: "/images/meal_planner_images/pongal_vada.jpg",
         time: 30,
@@ -836,6 +840,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-tomato-rice",
         title: "Tomato Rice with Lady Finger Fry",
+        options: ["Tomato Rice with Lady Finger Fry", "Bisi Bele Bath with Boondi", "Rice with Egg Curry"],
         description: "Tangy spiced Tomato Rice served with crispy spiced Lady Finger (Bendakaya/Okra) fry and raita.",
         image: "/images/meal_planner_images/tomato_rice.jpg",
         time: 30,
@@ -869,6 +874,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-idli-vada",
         title: "Idli, Vada",
+        options: ["Idli, Vada", "Thatte Idli with Chutney", "Rava Idli with Sambar"],
         description: "Soft steamed fermented rice cakes with crispy Medu Vada, fresh Coconut Chutney, and Sambar.",
         image: "/images/meal_planner_images/idli_vada.jpg",
         time: 25,
@@ -881,6 +887,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-lemon-rice",
         title: "Lemon Rice with Brinjal Curry",
+        options: ["Lemon Rice with Brinjal Curry", "Curd Rice with Tadka", "Rice with Chicken Curry"],
         description: "Zesty Lemon Rice (Chitranna) with roasted peanuts, and spicy Andhra Gutti Vankaya stuffed brinjal curry.",
         image: "/images/meal_planner_images/lemon_rice.jpg",
         time: 30,
@@ -914,6 +921,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-poori-chutney",
         title: "Poori, Chutney",
+        options: ["Poori, Chutney", "Poori with Potato Sagu", "Chapati with Potato Kurma"],
         description: "Fluffy puffed golden Pooris served with coconut chutney and mild potato sagu.",
         image: "/images/meal_planner_images/poori.jpg",
         time: 25,
@@ -926,6 +934,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-bagara-paneer",
         title: "Bagara Rice with Paneer Curry",
+        options: ["Bagara Rice with Paneer Curry", "Veg Pulao with Raita", "Bagara Rice with Chicken Curry"],
         description: "Fragrant Hyderabadi Bagara Rice served with rich, creamy South Indian Paneer curry.",
         image: "/images/meal_planner_images/bagara_rice.jpg",
         time: 35,
@@ -959,6 +968,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-uggani-bajji",
         title: "Uggani, Bajji",
+        options: ["Uggani, Bajji", "Mirchi Bajji with Puffed Rice", "Poha with Sev"],
         description: "Classic Rayalaseema seasoned puffed rice upma served with hot crispy Mirchi Bajji.",
         image: "/images/meal_planner_images/uggani_bajji.jpg",
         time: 25,
@@ -971,6 +981,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-meals-carrot",
         title: "Rice, Dal with Carrot Poriyal",
+        options: ["Rice, Dal with Carrot Poriyal", "Rice with Fish Fry & Rasam", "Tomato Dal with Steamed Rice"],
         description: "Traditional South Indian meal of hot steamed rice, yellow toor dal with ghee, fresh Carrot Poriyal, and curd.",
         image: "/images/meal_planner_images/rice_dal_carrot.jpg",
         time: 30,
@@ -1004,6 +1015,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       breakfast: {
         recipeId: "south-pesarattu-chutney",
         title: "Pesarattu, Chutney",
+        options: ["Pesarattu, Chutney", "Upma Pesarattu", "Rava Dosa with Chutney"],
         description: "Protein-packed whole green moong dal dosa topped with onions and ginger, with spicy Allam Chutney.",
         image: "/images/meal_planner_images/pesarattu.jpg",
         time: 20,
@@ -1016,6 +1028,7 @@ export const SOUTH_INDIAN_7_DAY_PLAN = [
       lunch: {
         recipeId: "south-meals-pulav",
         title: "Veg Pulav",
+        options: ["Veg Pulav", "Chicken Dum Biryani", "Bagara Rice with Mutton Curry"],
         description: "Aromatic South Indian vegetable pulav cooked with whole spices, cashews, and mint, served with raita.",
         image: "/images/meal_planner_images/pulav.jpg",
         time: 35,
@@ -1052,6 +1065,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Aloo Paratha with Curd & Pickle",
+        options: ["Aloo Paratha with Curd & Pickle", "Paneer Paratha", "Poha with Roasted Peanuts"],
         description: "Crispy whole wheat flatbread stuffed with spiced mashed potatoes, served with churned curd.",
         image: "/images/meal_planner_images/paratha.jpg",
         time: 25,
@@ -1063,6 +1077,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Chole Bhature with Pickled Onions",
+        options: ["Chole Bhature with Pickled Onions", "Chicken Tikka with Butter Naan", "Paneer Butter Masala with Jeera Rice", "Dal Makhani with Garlic Naan"],
         description: "Puffed deep-fried leavened sourdough bread with slow-simmered Punjabi chickpea curry.",
         image: "/images/meal_planner_images/chole_bhature.jpg",
         time: 40,
@@ -1074,6 +1089,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Roti with Dal Tadka & Jeera Rice",
+        options: ["Roti with Dal Tadka & Jeera Rice", "Butter Chicken with Roti", "Egg Bhurji with Paratha"],
         description: "Phulka rotis with yellow lentil tempering, cumin rice, and seasonal cucumber salad.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 25,
@@ -1090,6 +1106,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Kanda Poha with Roasted Peanuts",
+        options: ["Kanda Poha with Roasted Peanuts", "Besan Chilla with Mint Chutney", "Upma"],
         description: "Flattened rice sautéed with onions, green chilies, mustard seeds, and crunchy roasted peanuts.",
         image: "/images/meal_planner_images/poha.jpg",
         time: 15,
@@ -1101,6 +1118,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Rajma Chawal with Mint Chutney",
+        options: ["Rajma Chawal with Mint Chutney", "Kadhi Chawal", "Chicken Curry with Steamed Rice"],
         description: "Rich Punjabi red kidney bean curry slow-simmered with aromatic spices, over steamed basmati rice.",
         image: "/images/meal_planner_images/rajma_chawal.jpg",
         time: 35,
@@ -1112,6 +1130,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Phulka with Bhindi Masala",
+        options: ["Phulka with Bhindi Masala", "Aloo Gobi with Phulka", "Tawa Chicken with Roti"],
         description: "Tender spiced okra pan-fried with onions and dry mango powder, served with hot rotis.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 20,
@@ -1128,6 +1147,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Methi Thepla with Plain Yogurt",
+        options: ["Methi Thepla with Plain Yogurt", "Moong Dal Chilla", "Aloo Puri"],
         description: "Spiced Gujarati whole wheat flatbread infused with fresh fenugreek leaves.",
         image: "/images/meal_planner_images/paratha.jpg",
         time: 20,
@@ -1139,6 +1159,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Kadhi Pakora with Steamed Rice",
+        options: ["Kadhi Pakora with Steamed Rice", "Paneer Bhurji with Paratha", "Mutton Rogan Josh with Naan"],
         description: "Crispy onion gram flour fritters dunked in tangy turmeric yogurt curry with basmati rice.",
         image: "/images/meal_planner_images/full_meals.jpg",
         time: 30,
@@ -1150,6 +1171,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Chapati with Aloo Gobi Matar",
+        options: ["Chapati with Aloo Gobi Matar", "Phulka with Mix Veg Sabzi", "Egg Curry with Roti"],
         description: "Classic North Indian stir-fry of potatoes, cauliflower, and green peas with warm chapatis.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 25,
@@ -1166,6 +1188,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Paneer Stuffed Paratha with Butter",
+        options: ["Paneer Stuffed Paratha with Butter", "Aloo Pyaz Paratha", "Poha with Roasted Peanuts"],
         description: "Crisp griddled whole wheat flatbread loaded with spiced grated cottage cheese.",
         image: "/images/meal_planner_images/paratha.jpg",
         time: 20,
@@ -1177,6 +1200,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Dal Makhani with Jeera Rice & Naan",
+        options: ["Dal Makhani with Jeera Rice & Naan", "Butter Chicken with Garlic Naan", "Shahi Paneer with Steamed Basmati Rice", "Chole Chawal"],
         description: "Velvety slow-cooked black lentils simmered with butter and cream, served with cumin rice.",
         image: "/images/meal_planner_images/dal_makhani.jpg",
         time: 40,
@@ -1188,6 +1212,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Roti with Baingan Bharta",
+        options: ["Roti with Baingan Bharta", "Matar Paneer with Phulka", "Egg Curry with Roti"],
         description: "Char-roasted smoky eggplant mashed with onions, tomatoes, green chilies, and garlic.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 25,
@@ -1204,6 +1229,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Suji Upma with Cashews & Peas",
+        options: ["Suji Upma with Cashews & Peas", "Moong Dal Chilla with Green Chutney", "Methi Thepla with Curd"],
         description: "Light roasted semolina breakfast with green peas, ginger, and ghee-roasted cashews.",
         image: "/images/meal_planner_images/upma.jpg",
         time: 15,
@@ -1215,6 +1241,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Paneer Butter Masala with Butter Roti",
+        options: ["Paneer Butter Masala with Butter Roti", "Chicken Tikka Masala with Jeera Rice", "Kadhai Paneer with Laccha Paratha"],
         description: "Succulent paneer cubes simmered in creamy makhani cashew-tomato gravy.",
         image: "/images/meal_planner_images/paneer_curry.jpg",
         time: 35,
@@ -1226,6 +1253,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Moong Dal Khichdi with Papad & Ghee",
+        options: ["Moong Dal Khichdi with Papad & Ghee", "Roti with Dal Tadka", "Egg Bhurji with Phulka"],
         description: "Wholesome, soothing one-pot rice and yellow moong dal tempered with cumin and hing.",
         image: "/images/meal_planner_images/full_meals.jpg",
         time: 20,
@@ -1242,6 +1270,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Gobi Paratha with Fresh Curd",
+        options: ["Gobi Paratha with Fresh Curd", "Besan Chilla with Paneer Filling", "Aloo Paratha"],
         description: "Golden spiced cauliflower stuffed flatbread griddled with butter.",
         image: "/images/meal_planner_images/paratha.jpg",
         time: 20,
@@ -1253,6 +1282,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Shahi Paneer with Matar Pulav",
+        options: ["Shahi Paneer with Matar Pulav", "Chicken Dum Biryani with Raita", "Rajma Chawal with Salad", "Kadhi Pakora with Steamed Rice"],
         description: "Aromatic green pea basmati pulav with royal Mughlai white almond-cashew paneer gravy.",
         image: "/images/meal_planner_images/pulav.jpg",
         time: 35,
@@ -1264,6 +1294,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Phulka with Lauki Chana Dal",
+        options: ["Phulka with Lauki Chana Dal", "Aloo Methi with Phulka", "Chicken Korma with Roti"],
         description: "Bottle gourd and bengal gram dal cooked with ginger, cumin, and mild spices with rotis.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 25,
@@ -1280,6 +1311,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
     meals: {
       breakfast: {
         title: "Bedmi Poori with Aloo Sabzi",
+        options: ["Bedmi Poori with Aloo Sabzi", "Chole Kulche", "Paneer Bhurji with Toast"],
         description: "Crisp urad dal spiced pooris served with tangy Agra-style potato curry.",
         image: "/images/meal_planner_images/poori.jpg",
         time: 30,
@@ -1291,6 +1323,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       lunch: {
         title: "Dum Aloo Kashmiri with Jeera Rice",
+        options: ["Dum Aloo Kashmiri with Jeera Rice", "Mutton Curry with Butter Roti", "Dal Makhani with Tandoori Roti"],
         description: "Baby potatoes deep-fried and simmered in aromatic Kashmiri yogurt and fennel gravy.",
         image: "/images/meal_planner_images/aloo_curry.jpg",
         time: 35,
@@ -1302,6 +1335,7 @@ export const NORTH_INDIAN_7_DAY_PLAN = [
       },
       dinner: {
         title: "Chapati with Dal Fry & Mix Veg",
+        options: ["Chapati with Dal Fry & Mix Veg", "Tawa Chicken with Phulka", "Palak Paneer with Roti"],
         description: "Homestyle yellow dal fry tempered with garlic and onions, fresh mix veg, and soft chapatis.",
         image: "/images/meal_planner_images/chapati.jpg",
         time: 20,

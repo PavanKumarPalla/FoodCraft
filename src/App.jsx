@@ -14,6 +14,7 @@ import ScanIngredients from './pages/ScanIngredients';
 import RecipeResults from './pages/RecipeResults';
 import RecipeDetail from './pages/RecipeDetail';
 import MealPlanner from './pages/MealPlanner';
+import DietPlan from './pages/DietPlan';
 import Explore from './pages/Explore';
 import Favorites from './pages/Favorites';
 import Profile from './pages/Profile';
@@ -39,6 +40,7 @@ function LayoutWrapper() {
     '/favorites', 
     '/recent-activity', 
     '/activity', 
+    '/diet-plan',
     '/meal-plan', 
     '/meal-planner', 
     '/profile',
@@ -74,9 +76,10 @@ function LayoutWrapper() {
             <Route path="/recipes" element={<RecipeResults />} />
             <Route path="/recipe/:id" element={<RecipeDetail />} />
             
-            {/* Diet Plan / Meal Planner */}
-            <Route path="/meal-plan" element={<MealPlanner />} />
-            <Route path="/meal-planner" element={<Navigate to="/meal-plan" replace />} />
+            {/* Diet Plan & Daily Meal Planner are distinct dedicated pages */}
+            <Route path="/diet-plan" element={<DietPlan />} />
+            <Route path="/meal-plan" element={<Navigate to="/diet-plan" replace />} />
+            <Route path="/meal-planner" element={<MealPlanner />} />
             
             {/* Explore */}
             <Route path="/explore" element={<Explore />} />

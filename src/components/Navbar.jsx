@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Heart, Search, ChefHat, Calendar, Camera, LogIn, Menu } from 'lucide-react';
+import { Heart, Search, ChefHat, Calendar, Camera, LogIn, Menu, Utensils } from 'lucide-react';
 import { useFoodCraft } from '../context/FoodCraftContext';
 import './Navbar.css';
 
@@ -64,9 +64,13 @@ export default function Navbar() {
             <span>Scan Fridge</span>
             <span className="pill-pulse">YOLOv8</span>
           </NavLink>
-          <NavLink to="/meal-plan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/diet-plan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Calendar size={16} />
             <span>Diet Plan</span>
+          </NavLink>
+          <NavLink to="/meal-planner" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <Utensils size={16} />
+            <span>Meal Planner</span>
           </NavLink>
         </nav>
 
