@@ -110,18 +110,20 @@ export default function Sidebar({ isOpen: propIsOpen, onClose: propOnClose, dock
       <aside className={`foodcraft-sidebar ${isOpen ? 'open' : ''} ${docked ? 'docked-desktop' : ''}`} id="foodcraft-left-sidebar">
         {/* Top Logo & Branding */}
         <div className="sidebar-header">
-          <Link 
-            to="/" 
-            className="home-logo-link"
-            onClick={() => { if (onClose && window.innerWidth < 1024) onClose(); }}
-            title="FoodCraft Home"
+          <div 
+            className="sidebar-brand-wrapper" 
+            onClick={() => { navigate('/'); if (onClose && window.innerWidth < 1024) onClose(); }}
+            title="Go to Home"
           >
-            <div className="home-logo-badge">
-              <ChefHat size={22} className="logo-chef" />
-              <span className="logo-leaf">🌿</span>
+            <div className="sidebar-logo-icon">
+              <ChefHat size={26} className="chef-icon" />
+              <span className="leaf-accent">🌿</span>
             </div>
-            <span className="home-logo-text">Food<span className="logo-accent">Craft</span></span>
-          </Link>
+            <div className="sidebar-brand-name">
+              <span className="brand-food">Food</span>
+              <span className="brand-craft">Craft</span>
+            </div>
+          </div>
         </div>
 
         {/* Navigation Menu List */}
