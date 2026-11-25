@@ -311,9 +311,10 @@ export default function ScanIngredients() {
             }
           }
 
-          // 2. Whole Kiwi: Earthy fuzzy brown produce (Hue 16-48, moderate brown, R > G + 14, not vivid orange/yellow)
-          if (h >= 16 && h <= 48 && s >= 0.18 && s <= 0.72 && v >= 0.20 && v <= 0.85) {
-            if (arrMeanR >= 75 && arrMeanR <= 215 && arrMeanG >= 45 && arrMeanG <= 155 && (arrMeanR > arrMeanG + 14) && arrMeanB < 120) {
+          // 2. Whole Kiwi: Earthy fuzzy brown produce — VERY strict to avoid pizza/bread/wood false positives
+          // Real whole kiwi: small oval, dense fuzzy brown, Hue 24-40, moderate sat, NOT golden/warm brown
+          if (h >= 24 && h <= 40 && s >= 0.28 && s <= 0.58 && v >= 0.22 && v <= 0.65) {
+            if (arrMeanR >= 85 && arrMeanR <= 165 && arrMeanG >= 55 && arrMeanG <= 120 && (arrMeanR > arrMeanG + 18) && arrMeanB < 85) {
               return { name: 'Kiwi (Whole)', ingredient: 'Kiwi', color: '#10b981', conf: '98%', type: 'kiwi_whole', rawConf: 0.98 };
             }
           }
@@ -709,55 +710,9 @@ export default function ScanIngredients() {
           finalBoxes = finalBoxes.slice(0, 10);
         }
 
-        // Post-filter: Clean and neat contextual resolution for Kiwi photos
-        const hasKiwiDetected = finalBoxes.some(b => b.ingredient === 'Kiwi');
-        if (hasKiwiDetected) {
-          // On a kiwi plate/photo, any other warm/brown fruit box (Corn, Orange, Carrot, Mango, Potato) is the whole kiwi
-          const refinedBoxes = [];
-          for (const box of finalBoxes) {
-            if (box.ingredient === 'Kiwi') {
-              refinedBoxes.push(box);
-            } else {
-              const bcx = box.box.x + (box.box.w / 2);
-              const bcy = box.box.y + (box.box.h / 2);
-              const nearKiwi = finalBoxes.some(k => {
-                if (k.ingredient !== 'Kiwi') return false;
-                const kcx = k.box.x + (k.box.w / 2);
-                const kcy = k.box.y + (k.box.h / 2);
-                return Math.hypot(bcx - kcx, bcy - kcy) < 70;
-              });
-              if (nearKiwi && ['Corn', 'Orange', 'Carrot', 'Mango', 'Potato'].includes(box.ingredient)) {
-                refinedBoxes.push({
-                  ...box,
-                  name: 'Kiwi (Whole)',
-                  ingredient: 'Kiwi',
-                  color: '#10b981',
-                  confidence: '98%'
-                });
-              } else if (!nearKiwi) {
-                refinedBoxes.push(box);
-              }
-            }
-          }
-
-          // Neatly deduplicate to exactly one Whole and one Sliced Kiwi box max
-          const neatKiwiBoxes = [];
-          let hasWhole = false;
-          let hasSliced = false;
-          refinedBoxes.sort((a, b) => (b.box.w * b.box.h) - (a.box.w * a.box.h) || (b.rawConf || 0.8) - (a.rawConf || 0.8));
-          for (const kb of refinedBoxes) {
-            if (kb.name.includes('Sliced') && !hasSliced) {
-              neatKiwiBoxes.push(kb);
-              hasSliced = true;
-            } else if (kb.name.includes('Whole') && !hasWhole) {
-              neatKiwiBoxes.push(kb);
-              hasWhole = true;
-            }
-          }
-          if (neatKiwiBoxes.length > 0) {
-            finalBoxes = neatKiwiBoxes;
-          }
-        }
+        // Post-filter: Contextual Kiwi resolution — DISABLED to prevent false Kiwi cascade
+        // The aggressive Kiwi post-filter was converting pizza/bread/brown items into Kiwi.
+        // If kiwi IS genuinely present, the classifier above will detect it directly.
 
         // Post-filter: In mango images, eliminate small false blush patches (Cherry, Tomato, Carrot, Corn, Orange)
         const hasMangoDetected = finalBoxes.some(b => b.ingredient === 'Mango');

@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { detectIngredients as detectWithNodeOnnx } from '../utils/yoloDetector.js';
 
 const router = express.Router();
 
@@ -261,7 +262,25 @@ router.post('/detect-ingredients', async (req, res) => {
     return res.status(400).json({ success: false, error: 'No image data provided' });
   }
 
-  // 1. Forward to FastAPI YOLOv8 daemon if running
+  // 1. Node.js YOLOv8 ONNX detector (works on Render, no Python needed)
+  let onnxNodeRan = false;
+  try {
+    const onnxNodeResult = await detectWithNodeOnnx(image, confidence);
+    if (onnxNodeResult && onnxNodeResult.success) {
+      onnxNodeRan = true;
+      if (onnxNodeResult.detected_ingredients && onnxNodeResult.detected_ingredients.length > 0) {
+        console.log(`✅ Node.js YOLOv8 ONNX: ${onnxNodeResult.count} ingredients detected`);
+        return res.json(onnxNodeResult);
+      }
+      // Model ran but found nothing — still report the model so frontend
+      // knows AI ran (prevents client-side HSV false positives)
+      console.log('Node.js YOLOv8 ONNX ran but detected 0 ingredients');
+    }
+  } catch (onnxNodeErr) {
+    console.warn('Node.js YOLOv8 ONNX notice:', onnxNodeErr.message);
+  }
+
+  // 2. Forward to FastAPI YOLOv8 daemon if running
   const aiServiceUrl = process.env.AI_SERVICE_URL || (process.env.NODE_ENV !== 'production' ? 'http://localhost:8000' : null);
 
   if (aiServiceUrl) {
@@ -284,7 +303,7 @@ router.post('/detect-ingredients', async (req, res) => {
     }
   }
 
-  // 2. Direct Python CLI execution fallback (uses yolov8_food_ingredients.pt)
+  // 3. Direct Python CLI execution fallback (uses yolov8_food_ingredients.pt)
   try {
     const cliData = await runPythonYoloCLI(image, confidence);
     if (cliData && cliData.success && cliData.detected_ingredients && cliData.detected_ingredients.length > 0) {
@@ -294,7 +313,7 @@ router.post('/detect-ingredients', async (req, res) => {
     console.warn('Python YOLOv8 CLI notice:', cliErr.message);
   }
 
-  // 3. ONNX YOLOv8 detector (lightweight, works on Render without PyTorch)
+  // 4. Python ONNX YOLOv8 detector (lightweight, works on Render without PyTorch)
   try {
     const onnxData = await runOnnxDetector(image, confidence);
     if (onnxData && onnxData.success && onnxData.detected_ingredients && onnxData.detected_ingredients.length > 0) {
@@ -304,7 +323,7 @@ router.post('/detect-ingredients', async (req, res) => {
     console.warn('ONNX YOLOv8 detector notice:', onnxErr.message);
   }
 
-  // 4. Gemini Vision AI — works on Render without Python
+  // 5. Gemini Vision AI — works on Render without Python
   try {
     const geminiData = await detectWithGemini(image);
     if (geminiData && geminiData.success && geminiData.unique_ingredients.length > 0) {
@@ -314,15 +333,18 @@ router.post('/detect-ingredients', async (req, res) => {
     console.warn('Gemini Vision notice:', geminiErr.message);
   }
 
-  // 5. No detection engine available
+  // 6. No detection engine available — but if ONNX ran, report its model name
+  //    so the frontend knows AI actually ran (prevents HSV false-positive fallback)
   return res.json({
     success: true,
     detected_ingredients: [],
     unique_ingredients: [],
     count: 0,
-    model: 'none',
-    backend_status: 'offline',
-    message: 'No AI backend available. Please set GEMINI_API_KEY environment variable or start the Python backend.'
+    model: onnxNodeRan ? 'YOLOv8 Food Ingredients (ONNX)' : 'none',
+    backend_status: onnxNodeRan ? 'online' : 'offline',
+    message: onnxNodeRan
+      ? 'YOLOv8 ran but found no known food ingredients. Try a clearer photo or enter items manually.'
+      : 'No AI backend available. Please set GEMINI_API_KEY environment variable or start the Python backend.'
   });
 });
 
