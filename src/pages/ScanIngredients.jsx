@@ -133,7 +133,7 @@ export default function ScanIngredients() {
   const runYoloDetection = async (base64Image) => {
     setIsScanning(true);
     setBackendError(null);
-    setStatusMessage('Analyzing photo with YOLOv8 neural network vision model...');
+    setStatusMessage('Analyzing photo with AI vision engine (first request may take up to 60s while server wakes up)...');
 
     try {
       // 1. Check if backend (FastAPI YOLOv8 / Express AI proxy) is available
@@ -146,7 +146,7 @@ export default function ScanIngredients() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(35000)
+            signal: AbortSignal.timeout(90000)
           });
         } catch (fetchErr) {
           console.warn('Relative backend fetch notice:', fetchErr);
@@ -160,7 +160,7 @@ export default function ScanIngredients() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(30000)
+                signal: AbortSignal.timeout(60000)
               });
             } catch {}
 
@@ -171,7 +171,7 @@ export default function ScanIngredients() {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload),
-                  signal: AbortSignal.timeout(30000)
+                  signal: AbortSignal.timeout(60000)
                 });
               } catch {}
             }
@@ -218,7 +218,7 @@ export default function ScanIngredients() {
         if (!net) {
           net = await Promise.race([
             window.cocoSsd.load({ base: 'mobilenet_v2' }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timed out')), 8000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timed out')), 30000))
           ]);
           setCachedModel(net);
         }
