@@ -108,6 +108,65 @@ If no food is visible, respond: {"ingredients": []}`;
 }
 
 /**
+ * Execute lightweight ONNX YOLOv8 detector (no PyTorch required).
+ * Uses only onnxruntime + numpy + Pillow — works on Render.
+ */
+function runOnnxDetector(image, confidence = 0.25) {
+  return new Promise((resolve, reject) => {
+    const tempFile = path.join(os.tmpdir(), `fc_onnx_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.txt`);
+    try {
+      fs.writeFileSync(tempFile, image, 'utf8');
+    } catch (writeErr) {
+      return reject(writeErr);
+    }
+
+    const scriptPath = path.join(process.cwd(), 'backend', 'scripts', 'onnx_detect.py');
+    const py = spawn('python3', [scriptPath, tempFile, String(confidence)], {
+      cwd: process.cwd(),
+      timeout: 60000,
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONWARNINGS: 'ignore' }
+    });
+
+    // Also try 'python' if 'python3' fails
+    py.on('error', () => {
+      const py2 = spawn('python', [scriptPath, tempFile, String(confidence)], {
+        cwd: process.cwd(),
+        timeout: 60000,
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONWARNINGS: 'ignore' }
+      });
+
+      let stdout2 = '';
+      py2.stdout.on('data', chunk => { stdout2 += chunk.toString(); });
+      py2.on('error', err => {
+        try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+        reject(err);
+      });
+      py2.on('close', code => {
+        try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+        const jsonMatch = stdout2.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try { return resolve(JSON.parse(jsonMatch[0])); } catch {}
+        }
+        reject(new Error(`ONNX detector exit ${code}`));
+      });
+    });
+
+    let stdout = '';
+    py.stdout.on('data', chunk => { stdout += chunk.toString(); });
+    py.stderr.on('data', () => {});
+
+    py.on('close', code => {
+      try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch {}
+      const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try { return resolve(JSON.parse(jsonMatch[0])); } catch {}
+      }
+      reject(new Error(`ONNX detector exit ${code}`));
+    });
+  });
+}
+
+/**
  * Execute local Python YOLOv8 CLI directly when FastAPI background daemon is offline.
  * Writes image data to a temporary file to prevent Windows CLI arg length overflows.
  */
@@ -235,7 +294,17 @@ router.post('/detect-ingredients', async (req, res) => {
     console.warn('Python YOLOv8 CLI notice:', cliErr.message);
   }
 
-  // 3. Gemini Vision AI — works on Render without Python
+  // 3. ONNX YOLOv8 detector (lightweight, works on Render without PyTorch)
+  try {
+    const onnxData = await runOnnxDetector(image, confidence);
+    if (onnxData && onnxData.success && onnxData.detected_ingredients && onnxData.detected_ingredients.length > 0) {
+      return res.json(onnxData);
+    }
+  } catch (onnxErr) {
+    console.warn('ONNX YOLOv8 detector notice:', onnxErr.message);
+  }
+
+  // 4. Gemini Vision AI — works on Render without Python
   try {
     const geminiData = await detectWithGemini(image);
     if (geminiData && geminiData.success && geminiData.unique_ingredients.length > 0) {
@@ -245,7 +314,7 @@ router.post('/detect-ingredients', async (req, res) => {
     console.warn('Gemini Vision notice:', geminiErr.message);
   }
 
-  // 4. No detection engine available
+  // 5. No detection engine available
   return res.json({
     success: true,
     detected_ingredients: [],

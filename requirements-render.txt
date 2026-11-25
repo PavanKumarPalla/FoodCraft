@@ -1,0 +1,4 @@
+# Python dependencies for Render deployment (lightweight, no PyTorch)
+onnxruntime
+numpy
+Pillow

@@ -37,7 +37,8 @@ backend/data/*
 # Machine Learning Models & Heavy Weights (Downloaded dynamically)
 *.pt
 *.pth
-*.onnx
+# Allow the quantized ONNX model for Render deployment
+!backend/models/yolov8_food_ingredients_q8.onnx
 *.weights
 *.bin
 !backend/models/.gitkeep
