@@ -200,6 +200,18 @@ export default function ScanIngredients() {
         return;
       }
 
+      // Backend returned no results — check if it was online but found nothing
+      // vs. completely offline. If online but empty, tell user to try another photo.
+      if (backendData && backendData.success && backendData.model && backendData.model !== 'none') {
+        // Backend AI ran but found nothing in the image
+        setIsScanning(false);
+        setHasScanned(true);
+        setDetectedBoxes([]);
+        setPhotoIngredients([]);
+        setStatusMessage('No food items detected by AI. Please upload a clear photo of food ingredients or enter items manually.');
+        return;
+      }
+
       // 2. Real Client-Side Object Detection + Computer Vision Feature Fusion
       if (window.cocoSsd) {
         setStatusMessage('Running neural network object detection...');
