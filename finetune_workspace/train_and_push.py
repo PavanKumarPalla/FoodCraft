@@ -11,10 +11,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 import time
 from pathlib import Path
+
+# Prevent Unsloth/bitsandbytes multi-GPU DataParallel crash on Kaggle T4 x2
+if "CUDA_VISIBLE_DEVICES" not in os.environ:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 from huggingface_hub import HfApi, hf_hub_download
 from PIL import Image

@@ -103,7 +103,7 @@ def main() -> None:
 
     run_pip(["install", "--upgrade", "pip"])
 
-    # Step 1: Core Hugging Face & serialization libs first
+    # Step 1: Core Hugging Face, serialization & pure-Python Unsloth helper libs
     run_pip([
         "install",
         "--upgrade",
@@ -119,6 +119,9 @@ def main() -> None:
         "python-dotenv>=1.0.0",
         "fastapi>=0.115.0",
         "uvicorn>=0.34.0",
+        "tyro",
+        "msgspec",
+        "hf_transfer",
     ])
 
     if not env["cuda_available"]:
@@ -126,13 +129,13 @@ def main() -> None:
         verify_imports()
         return
 
-    # Step 2: Install Unsloth & PEFT stack with --no-deps to prevent transformers/trl downgrade loops
+    # Step 2: Install Unsloth & PEFT stack cleanly (Colab & Kaggle compatible)
     in_colab = "google.colab" in sys.modules or bool(importlib.util.find_spec("google.colab"))
     if in_colab:
         run_pip(["install", "--no-deps", "bitsandbytes", "accelerate", "xformers==0.0.29.post3", "peft", "trl==0.15.2", "triton", "cut_cross_entropy", "unsloth_zoo"], allow_fail=True)
         run_pip(["install", "--no-deps", "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"])
     else:
-        run_pip(["install", "--no-deps", "bitsandbytes", "accelerate", "peft", "trl==0.15.2", "cut_cross_entropy", "unsloth_zoo"], allow_fail=True)
+        run_pip(["install", "--no-deps", "bitsandbytes", "accelerate", "xformers", "peft", "trl==0.15.2", "cut_cross_entropy", "unsloth_zoo"], allow_fail=True)
         run_pip(["install", "--no-deps", "unsloth"])
 
     # Re-pin transformers/huggingface_hub cleanly if anything drifted
