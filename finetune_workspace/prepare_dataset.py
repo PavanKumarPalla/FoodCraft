@@ -208,7 +208,15 @@ def stream_cloud_datasets(
                 id_path = hf_hub_download(repo_id, "id2label.json", repo_type="dataset", token=token)
                 id2label = {int(k): v.strip() for k, v in json.loads(Path(id_path).read_text()).items()}
 
-            ds = load_dataset(repo_id, split="train", streaming=True, token=token)
+            try:
+                ds = load_dataset(repo_id, split="train", streaming=True, token=token)
+            except ValueError:
+                from datasets import get_dataset_split_names
+
+                avail = get_dataset_split_names(repo_id, token=token)
+                chosen_split = avail[0] if avail else "train"
+                print(f"  [{key}] 'train' split missing; using '{chosen_split}' instead", flush=True)
+                ds = load_dataset(repo_id, split=chosen_split, streaming=True, token=token)
             # Buffer shuffle window so streamed classes aren't biased toward first shard only
             try:
                 ds = ds.shuffle(seed=cfg.seed, buffer_size=500)
