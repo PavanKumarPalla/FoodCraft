@@ -60,6 +60,11 @@ ENV/
 .huggingface/
 hf_cache/
 
+# Fine-tune workspace model weights & local secrets
+finetune_workspace/outputs/
+finetune_workspace/*.jsonl
+finetune_workspace/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

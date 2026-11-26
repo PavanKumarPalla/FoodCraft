@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     HF_DATASET_FILENAME: str = "train.csv"
     HF_TOKEN: str = ""
 
+    # ── Fine-Tuned Llama-3.2-Vision (Hugging Face) ───────────
+    HF_VISION_MODEL_ID: str = "pavankumarpalla/FoodCraft-Llama-3.2-11B-Vision"
+    HF_VISION_LORA_ID: str = "pavankumarpalla/FoodCraft-Llama-3.2-11B-Vision-LoRA"
+    HF_VISION_INFERENCE_URL: str = ""
+    HF_VISION_USE_ROUTER: bool = False
+    HF_USE_VISION_LLM: bool = True
+
     # ── Index Build Settings ─────────────────────────────────
     INDEX_MAX_RECIPES: int = 50_000  # Recipes to index (set 0 for ALL)
     INDEX_BATCH_SIZE: int = 512

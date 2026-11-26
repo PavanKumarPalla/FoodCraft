@@ -278,6 +278,15 @@ def detect_ingredients(
     4. Smart same-class NMS → remove duplicate boxes only
     """
     from app.core.config import settings
+    from app.services import hf_vision_service
+
+    # ════════════════════════════════════════════════════════════
+    # STAGE 0: Fine-Tuned FoodCraft Llama-3.2-Vision (Hugging Face)
+    # ════════════════════════════════════════════════════════════
+    hf_result = hf_vision_service.detect_with_hf_vision(image_base64)
+    if hf_result and hf_result.get("success") and hf_result.get("unique_ingredients"):
+        logger.info("Using fine-tuned Hugging Face Vision result: %s", hf_result["unique_ingredients"])
+        return hf_result
 
     if confidence_threshold is None or confidence_threshold < 0.15:
         confidence_threshold = 0.20
