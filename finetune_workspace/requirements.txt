@@ -1,14 +1,15 @@
-# Pinned & tested runtime versions for Food Craft Llama-3.2-Vision (Unsloth)
-# Run `python install_deps.py` instead of raw `pip install -r` on GPU boxes so
-# torch/xformers/triton/unsloth install order avoids dependency resolution errors.
+# Verified runtime dependencies for Food Craft Llama-3.2-Vision (Unsloth 2026)
+# Use `python finetune_workspace/install_deps.py` on Kaggle/Colab/GPU servers
+# so install order matches PyTorch/CUDA without breaking wheels.
 
+unsloth>=2026.1.0
+transformers==4.56.2
+trl==0.22.2
 huggingface_hub>=0.34.0
-transformers>=4.49.0,<4.52.0
-trl>=0.15.2,<0.18.0
-peft>=0.14.0
-accelerate>=1.3.0
-bitsandbytes>=0.45.0
 datasets>=3.2.0
+accelerate>=1.3.0
+peft>=0.14.0
+bitsandbytes>=0.45.0
 pyarrow>=15.0.0
 pillow>=10.0.0
 requests>=2.31.0
@@ -18,3 +19,6 @@ python-dotenv>=1.0.0
 safetensors>=0.4.5
 sentencepiece>=0.2.0
 protobuf>=4.25.0
+tyro
+msgspec
+hf_transfer

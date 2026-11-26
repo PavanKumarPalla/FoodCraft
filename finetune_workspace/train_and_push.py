@@ -21,6 +21,10 @@ from pathlib import Path
 if "CUDA_VISIBLE_DEVICES" not in os.environ:
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+# Route HF base-model download cache to /tmp on Linux/Kaggle before importing huggingface_hub
+if Path("/tmp").exists() and os.name != "nt":
+    os.environ.setdefault("HF_HOME", "/tmp/hf_cache")
+
 from huggingface_hub import HfApi, hf_hub_download
 from PIL import Image
 
@@ -78,13 +82,13 @@ def preflight_check(
     save_method: str = "auto",
     skip_hf_check: bool = False,
 ) -> tuple[HfApi | None, dict]:
-    """Verify CUDA GPU, disk space, and HF write permission before burning compute."""
+    """Verify CUDA GPU, HF write permission, and disk space before burning compute."""
     import torch
 
     if not torch.cuda.is_available():
         raise RuntimeError(
             "No NVIDIA CUDA GPU detected. Unsloth Llama-3.2-11B-Vision training requires a CUDA GPU "
-            "(>=15 GB VRAM, e.g. Google Colab T4/L4/A100, Kaggle, or RunPod)."
+            "(>=15 GB VRAM, e.g. Kaggle T4 x2, Google Colab T4/L4/A100, or RunPod)."
         )
 
     gpu_name = torch.cuda.get_device_name(0)
@@ -92,28 +96,46 @@ def preflight_check(
     ram_gb = get_system_ram_gb()
     usage = shutil.disk_usage(cfg.output_dir.parent)
     free_gb = round(usage.free / (1024 ** 3), 2)
+
     resolved_method = save_method
     if save_method == "auto":
-        resolved_method = "merged_16bit" if ram_gb >= 22.0 else "merged_4bit_forced"
-    min_free = 40.0 if (push_merged and resolved_method == "merged_16bit") else 15.0
+        if ram_gb >= 22.0 and free_gb >= 38.0:
+            resolved_method = "merged_16bit"
+        elif free_gb >= 9.0:
+            resolved_method = "merged_4bit_forced"
+        else:
+            resolved_method = "lora_only"
 
-    print(f"GPU: {gpu_name} ({vram_gb} GB VRAM) | Host RAM: {ram_gb} GB | Free disk: {free_gb} GB | Save method: {resolved_method}")
+    min_free = 36.0 if (push_merged and resolved_method == "merged_16bit") else (8.5 if (push_merged and resolved_method == "merged_4bit_forced") else 3.0)
+
+    print(
+        f"GPU: {gpu_name} ({vram_gb} GB VRAM) | Host RAM: {ram_gb} GB | "
+        f"Free disk: {free_gb} GB | Save method: {resolved_method}"
+    )
     if vram_gb < 14.0:
         print(f"WARNING: Only {vram_gb} GB VRAM detected; 4-bit Llama-3.2-11B-Vision typically needs >=14.5 GB.")
-    if push_merged and ram_gb < 22.0 and save_method == "auto":
-        print(f"NOTE: Host RAM ({ram_gb} GB) < 22 GB (typical Colab Free T4); using 'merged_4bit_forced' to avoid RAM OOM during merge.")
-    if free_gb < min_free:
-        raise RuntimeError(f"Insufficient free disk ({free_gb} GB). Need at least {min_free} GB for safe save/push.")
 
+    # Verify HF write access BEFORE checking strict merged disk threshold so 403 errors fail fast
     api = None
     if not skip_hf_check:
         if not token:
             raise RuntimeError("HF_TOKEN is required to push model to Hugging Face Hub.")
         api = HfApi(token=token)
         targets = [cfg.hub_lora_repo]
-        if push_merged:
+        if push_merged and resolved_method != "lora_only":
             targets.append(cfg.hub_model_repo)
         check_write_access(api, targets)
+
+    if push_merged and resolved_method == "merged_4bit_forced" and save_method == "auto":
+        print(
+            f"NOTE: Free disk ({free_gb} GB) / RAM ({ram_gb} GB) fits 'merged_4bit_forced' (~7 GB) "
+            "instead of 'merged_16bit' (~20 GB); switching automatically so Kaggle/Colab won't run out of disk."
+        )
+    elif push_merged and resolved_method == "lora_only":
+        print(f"NOTE: Free disk ({free_gb} GB) is tight; will push LoRA adapter (~250 MB) cleanly without merged weights.")
+
+    if free_gb < min_free:
+        raise RuntimeError(f"Insufficient free disk ({free_gb} GB). Need at least {min_free} GB for safe save/push.")
 
     return api, {"gpu": gpu_name, "vram_gb": vram_gb, "ram_gb": ram_gb, "free_gb": free_gb, "save_method": resolved_method}
 
@@ -275,9 +297,9 @@ def main() -> None:
     parser.add_argument("--push-merged", action="store_true", help="Also merge model locally and upload shards to HF Hub")
     parser.add_argument(
         "--save-method",
-        choices=["auto", "merged_16bit", "merged_4bit_forced"],
+        choices=["auto", "merged_16bit", "merged_4bit_forced", "lora_only"],
         default="auto",
-        help="Merge precision ('auto' picks merged_16bit on >=22GB RAM or merged_4bit_forced on Colab Free 12GB RAM)",
+        help="Merge precision ('auto' checks RAM + free disk so Kaggle 19GB / Colab 12GB never OOM or fill disk)",
     )
     parser.add_argument("--preflight-only", action="store_true", help="Only run GPU/disk/HF write permission checks")
     args = parser.parse_args()
@@ -303,9 +325,11 @@ def main() -> None:
 
     train_dataset = make_lazy_dataset(rows, max_dim=cfg.max_image_dim)
 
-    from trl import SFTConfig, SFTTrainer
+    # Import unsloth BEFORE trl/transformers/peft so its optimizations apply cleanly
+    import unsloth  # noqa: F401
     from unsloth import FastVisionModel, is_bf16_supported
     from unsloth.trainer import UnslothVisionDataCollator
+    from trl import SFTConfig, SFTTrainer
 
     print(f"Loading base model: {cfg.base_model_id} ...")
     model, tokenizer = FastVisionModel.from_pretrained(
@@ -377,7 +401,9 @@ def main() -> None:
     upload_folder_resilient(api, lora_dir, cfg.hub_lora_repo, "FoodCraft Llama-3.2-Vision LoRA")
 
     # 2. Merge locally first, verify processor JSONs, then push shard-by-shard
-    if args.push_merged:
+    if args.push_merged and env_info["save_method"] != "lora_only":
+        # Remove training checkpoints first so Kaggle / Colab has room for merged weights
+        shutil.rmtree(ckpt_dir, ignore_errors=True)
         save_method = env_info["save_method"]
         merged_dir = cfg.output_dir / save_method
         merged_dir.mkdir(parents=True, exist_ok=True)

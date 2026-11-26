@@ -1,18 +1,20 @@
 """
 Food Craft Fine-Tune Workspace — Safe Unsloth & Dependency Installer
 ────────────────────────────────────────────────────────────────────
-Installs Unsloth + Llama-3.2-Vision dependencies in the verified non-conflicting
-order to avoid the most common Colab/Kaggle/Linux pip resolution errors
-(transformers/trl/xformers/bitsandbytes/unsloth_zoo mismatches).
+Installs Unsloth + Llama-3.2-Vision dependencies cleanly on Kaggle, Colab,
+or Linux GPU servers (Python 3.11–3.13, CUDA 12.x/13.0) without forcing
+incompatible xformers source builds that break bitsandbytes/trl installation.
 """
 
 from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
 import platform
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run_pip(args: list[str], allow_fail: bool = False) -> bool:
@@ -31,6 +33,7 @@ def check_environment() -> dict:
     info = {
         "python": sys.version.split()[0],
         "platform": platform.system(),
+        "is_kaggle": bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE") or Path("/kaggle/working").exists()),
         "cuda_available": False,
         "gpu_name": None,
         "vram_gb": 0.0,
@@ -49,7 +52,21 @@ def check_environment() -> dict:
     return info
 
 
-def verify_imports() -> list[str]:
+def verify_imports(check_unsloth: bool = True) -> list[str]:
+    missing: list[str] = []
+    print("\n--- Verifying Installed Packages ---", flush=True)
+
+    # Import unsloth BEFORE transformers/peft so its patches apply cleanly
+    if check_unsloth:
+        try:
+            import unsloth  # noqa: F401
+            from unsloth import FastVisionModel  # noqa: F401
+
+            print(f"  {'unsloth':18s}: {getattr(unsloth, '__version__', 'installed')}")
+        except Exception as exc:
+            missing.append("unsloth")
+            print(f"  {'unsloth':18s}: NOT READY ({exc})")
+
     required = [
         "torch",
         "transformers",
@@ -58,11 +75,10 @@ def verify_imports() -> list[str]:
         "accelerate",
         "bitsandbytes",
         "huggingface_hub",
+        "datasets",
         "PIL",
         "pyarrow",
     ]
-    missing: list[str] = []
-    print("\n--- Verifying Installed Packages ---", flush=True)
     for mod_name in required:
         try:
             mod = importlib.import_module(mod_name)
@@ -72,13 +88,6 @@ def verify_imports() -> list[str]:
             missing.append(mod_name)
             print(f"  {mod_name:18s}: MISSING")
 
-    try:
-        import unsloth  # noqa: F401
-
-        print(f"  {'unsloth':18s}: {getattr(unsloth, '__version__', 'installed')}")
-    except Exception as exc:
-        print(f"  {'unsloth':18s}: NOT READY ({exc})")
-
     return missing
 
 
@@ -86,62 +95,54 @@ def main() -> None:
     env = check_environment()
     print("=" * 64)
     print("Food Craft Llama-3.2-Vision Environment Setup")
-    print(f"Python: {env['python']} | OS: {env['platform']} | CUDA: {env['cuda_available']}")
+    print(
+        f"Python: {env['python']} | OS: {env['platform']} | "
+        f"Kaggle: {env['is_kaggle']} | CUDA: {env['cuda_available']}"
+    )
     if env["cuda_available"]:
         print(f"GPU: {env['gpu_name']} ({env['vram_gb']} GB VRAM)")
         if env["vram_gb"] < 14.0:
             print("WARNING: Llama-3.2-11B-Vision 4-bit LoRA needs >=14-15 GB VRAM (T4/L4/A100).")
     else:
-        print("NOTE: No CUDA GPU detected locally — GPU packages require a CUDA machine (Colab/Kaggle/RunPod).")
+        print("NOTE: No CUDA GPU detected locally — GPU packages require a CUDA machine (Kaggle/Colab/RunPod).")
     print("=" * 64)
 
     if "--check-only" in sys.argv:
-        missing = verify_imports()
+        missing = verify_imports(check_unsloth=env["cuda_available"])
         if missing:
             print(f"\nMissing packages ({len(missing)}): {', '.join(missing)}")
         return
 
     run_pip(["install", "--upgrade", "pip"])
 
-    # Step 1: Core Hugging Face, serialization & pure-Python Unsloth helper libs
+    # Helper libs needed across dataset prep & API server
     run_pip([
         "install",
         "--upgrade",
-        "huggingface_hub>=0.34.0",
-        "transformers>=4.49.0,<4.52.0",
-        "datasets>=3.2.0",
-        "pyarrow>=15.0.0",
-        "pillow>=10.0.0",
-        "requests>=2.31.0",
-        "safetensors>=0.4.5",
-        "sentencepiece>=0.2.0",
-        "protobuf>=4.25.0",
         "python-dotenv>=1.0.0",
         "fastapi>=0.115.0",
         "uvicorn>=0.34.0",
+        "hf_transfer",
         "tyro",
         "msgspec",
-        "hf_transfer",
     ])
 
     if not env["cuda_available"]:
-        print("\nSkipping CUDA-only Unsloth/bitsandbytes/xformers install on CPU-only host.")
-        verify_imports()
+        run_pip(["install", "--upgrade", "huggingface_hub>=0.34.0", "pyarrow>=15.0.0", "pillow>=10.0.0", "requests>=2.31.0"])
+        print("\nSkipping CUDA-only Unsloth/bitsandbytes/trl install on CPU-only host.")
+        verify_imports(check_unsloth=False)
         return
 
-    # Step 2: Install Unsloth & PEFT stack cleanly (Colab & Kaggle compatible)
-    in_colab = "google.colab" in sys.modules or bool(importlib.util.find_spec("google.colab"))
-    if in_colab:
-        run_pip(["install", "--no-deps", "bitsandbytes", "accelerate", "xformers==0.0.29.post3", "peft", "trl==0.15.2", "triton", "cut_cross_entropy", "unsloth_zoo"], allow_fail=True)
-        run_pip(["install", "--no-deps", "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"])
-    else:
-        run_pip(["install", "--no-deps", "bitsandbytes", "accelerate", "xformers", "peft", "trl==0.15.2", "cut_cross_entropy", "unsloth_zoo"], allow_fail=True)
-        run_pip(["install", "--no-deps", "unsloth"])
+    # Verified Kaggle / Colab 2026 install flow (avoids xformers source builds)
+    run_pip(["install", "unsloth", "unsloth_zoo"])
+    run_pip(["install", "transformers==4.56.2"])
+    run_pip(["install", "--no-deps", "trl==0.22.2"])
+    run_pip(["install", "--upgrade", "datasets", "accelerate", "peft", "bitsandbytes"])
 
-    # Re-pin transformers/huggingface_hub cleanly if anything drifted
-    run_pip(["install", "--no-deps", "--upgrade", "unsloth", "unsloth_zoo"], allow_fail=True)
-    verify_imports()
-    print("\nDependency setup completed without conflicts!")
+    missing = verify_imports(check_unsloth=True)
+    if missing:
+        raise RuntimeError(f"Dependency verification failed; missing: {', '.join(missing)}")
+    print("\nDependency setup completed cleanly!")
 
 
 if __name__ == "__main__":
