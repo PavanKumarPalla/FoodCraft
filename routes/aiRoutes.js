@@ -73,22 +73,23 @@ async function detectWithHuggingFaceVision(base64Image) {
     if (cleanUrl.includes('.hf.space')) {
       const spaceData = await callGradioSpaceVision(cleanUrl, base64Image, headers);
       if (spaceData) return spaceData;
-    }
-    try {
-      const resp = await fetch(`${cleanUrl}/api/detect-ingredients`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ image: base64Image }),
-        signal: AbortSignal.timeout(30000),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && data.success && data.unique_ingredients?.length > 0) {
-          return data;
+    } else {
+      try {
+        const resp = await fetch(`${cleanUrl}/api/detect-ingredients`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ image: base64Image }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.success && data.unique_ingredients?.length > 0) {
+            return data;
+          }
         }
+      } catch (err) {
+        console.warn('HF_VISION_INFERENCE_URL notice:', err.message);
       }
-    } catch (err) {
-      console.warn('HF_VISION_INFERENCE_URL notice:', err.message);
     }
   }
 
@@ -402,6 +403,7 @@ router.get('/recipes/health', async (req, res) => {
     gemini_vision: geminiAvailable ? 'available' : 'no_api_key',
     hf_vision: {
       model: hfVisionModel,
+      endpoint: hfEndpointConfigured ? process.env.HF_VISION_INFERENCE_URL : null,
       status: hfEndpointConfigured ? 'endpoint_configured' : (hfRouterEnabled ? 'router_enabled' : 'standby'),
     },
     timestamp: new Date().toISOString()

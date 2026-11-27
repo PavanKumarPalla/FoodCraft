@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import dotenv from 'dotenv';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,8 @@ import aiRoutes from './routes/aiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Load backend/.env without overriding root .env or platform env vars (shares HF_TOKEN / HF_VISION_*)
+dotenv.config({ path: path.join(__dirname, 'backend', '.env'), override: false });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -79,8 +82,8 @@ function autoStartFastApiBackend() {
     .catch(() => {
       console.log('⚡ Starting background FastAPI YOLOv8 AI service on port 8000...');
       try {
-        const py = spawn('python', ['backend/run.py', '--host', '0.0.0.0', '--port', '8000'], {
-          cwd: __dirname,
+        const py = spawn('python', ['run.py', '--host', '0.0.0.0', '--port', '8000'], {
+          cwd: path.join(__dirname, 'backend'),
           detached: true,
           stdio: 'ignore'
         });

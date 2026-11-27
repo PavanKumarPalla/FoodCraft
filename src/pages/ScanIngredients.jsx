@@ -160,7 +160,7 @@ export default function ScanIngredients() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(60000)
+                signal: AbortSignal.timeout(90000)
               });
             } catch {}
 
@@ -171,7 +171,7 @@ export default function ScanIngredients() {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload),
-                  signal: AbortSignal.timeout(60000)
+                  signal: AbortSignal.timeout(90000)
                 });
               } catch {}
             }
@@ -972,7 +972,7 @@ export default function ScanIngredients() {
       <div className="scan-header animate-fade-in">
         <div className="scan-badge">
           <Cpu size={15} />
-          <span>YOLOv8 Vision & SBERT Semantic Search</span>
+          <span>Llama-3.2 Vision & YOLOv8 AI Search</span>
         </div>
         <h1 className="scan-title">Smart Ingredient Recognition</h1>
         <p className="scan-desc">
@@ -1012,7 +1012,7 @@ export default function ScanIngredients() {
           id="scan-tab-image"
         >
           <Camera size={18} />
-          <span>Image Recognition (YOLOv8)</span>
+          <span>Image Recognition (Vision AI)</span>
         </button>
       </div>
 

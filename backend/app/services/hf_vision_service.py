@@ -135,19 +135,20 @@ def _call_remote_endpoint(image_base64: str) -> dict | None:
             gradio_res = _call_gradio_space(base_url, image_base64, headers)
             if gradio_res:
                 return gradio_res
-        try:
-            resp = requests.post(
-                f"{base_url}/api/detect-ingredients",
-                headers=headers,
-                json={"image": image_base64},
-                timeout=60,
-            )
-            if resp.ok:
-                data = resp.json()
-                if data.get("success") and data.get("unique_ingredients"):
-                    return data
-        except Exception as exc:
-            logger.warning("HF_VISION_INFERENCE_URL error: %s", exc)
+        else:
+            try:
+                resp = requests.post(
+                    f"{base_url}/api/detect-ingredients",
+                    headers=headers,
+                    json={"image": image_base64},
+                    timeout=60,
+                )
+                if resp.ok:
+                    data = resp.json()
+                    if data.get("success") and data.get("unique_ingredients"):
+                        return data
+            except Exception as exc:
+                logger.warning("HF_VISION_INFERENCE_URL error: %s", exc)
 
     if settings.HF_VISION_USE_ROUTER and settings.HF_TOKEN and settings.HF_VISION_MODEL_ID:
         img_uri = image_base64 if image_base64.startswith("data:") else f"data:image/jpeg;base64,{image_base64}"
