@@ -287,14 +287,25 @@ def main() -> None:
     parser.add_argument("--hf-token", default=None, help="Hugging Face Write token")
     parser.add_argument("--jsonl", type=Path, default=None, help="Path to train_balanced.jsonl or train_conversations.jsonl")
     parser.add_argument("--max-samples", type=int, default=None, help="Limit samples for fast runs")
-    parser.add_argument("--max-steps", type=int, default=800, help="Training steps (-1 to run full --epochs)")
+    parser.add_argument("--max-steps", type=int, default=150, help="Training steps (-1 to run full --epochs)")
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=2)
-    parser.add_argument("--grad-accum", type=int, default=8)
+    parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--hub-repo", default=None, help="Override merged HF Hub repo (e.g. pavankumarpalla/FoodCraft-Llama-3.2-11B-Vision)")
     parser.add_argument("--lora-repo", default=None, help="Override LoRA HF Hub repo")
     parser.add_argument("--push-merged", action="store_true", help="Also merge model locally and upload shards to HF Hub")
+    parser.add_argument(
+        "--push-checkpoint",
+        type=Path,
+        default=None,
+        help="Directly push an existing saved LoRA checkpoint (e.g. checkpoint-200) to HF Hub without retraining",
+    )
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        default=None,
+        help="Path to checkpoint dir or 'auto' to resume training from latest saved step",
+    )
     parser.add_argument(
         "--save-method",
         choices=["auto", "merged_16bit", "merged_4bit_forced", "lora_only"],
@@ -315,6 +326,41 @@ def main() -> None:
     api, env_info = preflight_check(cfg, token, push_merged=args.push_merged, save_method=args.save_method)
     if args.preflight_only:
         print("Preflight checks passed cleanly.")
+        return
+
+    # Fast recovery mode: push an already-trained checkpoint (e.g. checkpoint-200) directly to HF Hub
+    if args.push_checkpoint:
+        ckpt_path = args.push_checkpoint
+        if not ckpt_path.exists():
+            raise FileNotFoundError(f"Checkpoint directory not found: {ckpt_path}")
+
+        import unsloth  # noqa: F401
+        from unsloth import FastVisionModel
+
+        print(f"Loading fine-tuned checkpoint directly from {ckpt_path} ...", flush=True)
+        model, tokenizer = FastVisionModel.from_pretrained(
+            str(ckpt_path),
+            load_in_4bit=True,
+            token=token,
+        )
+        lora_dir = cfg.output_dir / "lora_adapter"
+        lora_dir.mkdir(parents=True, exist_ok=True)
+        model.save_pretrained(str(lora_dir))
+        tokenizer.save_pretrained(str(lora_dir))
+        ensure_mllama_processor_files(lora_dir, cfg.base_unquantized_id, token)
+        write_model_card(lora_dir, cfg, 0, is_lora=True)
+        assert api is not None
+        upload_folder_resilient(api, lora_dir, cfg.hub_lora_repo, "FoodCraft Llama-3.2-Vision LoRA (recovered checkpoint)")
+
+        if args.push_merged and env_info["save_method"] != "lora_only":
+            save_method = env_info["save_method"]
+            merged_dir = cfg.output_dir / save_method
+            merged_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Merging checkpoint ({save_method}) into {merged_dir} ...", flush=True)
+            model.save_pretrained_merged(str(merged_dir), tokenizer, save_method=save_method)
+            ensure_mllama_processor_files(merged_dir, cfg.base_unquantized_id, token)
+            write_model_card(merged_dir, cfg, 0, is_lora=False)
+            upload_folder_resilient(api, merged_dir, cfg.hub_model_repo, f"FoodCraft Llama-3.2-Vision ({save_method})")
         return
 
     default_balanced = cfg.data_root / "unsloth_foodcraft" / "train_balanced.jsonl"
@@ -370,10 +416,10 @@ def main() -> None:
             learning_rate=args.lr,
             fp16=not is_bf16_supported(),
             bf16=is_bf16_supported(),
-            logging_steps=10,
+            logging_steps=5,
             save_strategy="steps",
-            save_steps=200,
-            save_total_limit=2,
+            save_steps=50,
+            save_total_limit=1,
             optim="adamw_8bit",
             weight_decay=0.01,
             lr_scheduler_type="linear",
@@ -387,8 +433,15 @@ def main() -> None:
         ),
     )
 
+    resume_arg = args.resume_from_checkpoint
+    if resume_arg == "auto":
+        ckpts = sorted(ckpt_dir.glob("checkpoint-*"), key=lambda p: int(p.name.split("-")[-1]) if p.name.split("-")[-1].isdigit() else 0)
+        resume_arg = str(ckpts[-1]) if ckpts else None
+        if resume_arg:
+            print(f"Auto-resuming training from {resume_arg} ...", flush=True)
+
     print("Starting Unsloth Llama-3.2-11B-Vision training ...", flush=True)
-    trainer.train()
+    trainer.train(resume_from_checkpoint=resume_arg)
 
     # 1. Save & push LoRA adapter first (small, fast, reliable backup)
     lora_dir = cfg.output_dir / "lora_adapter"

@@ -13,8 +13,10 @@ from pathlib import Path
 
 WORKSPACE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = WORKSPACE_DIR.parent
-DEFAULT_DATA_DIR = REPO_ROOT / "data"
-DEFAULT_OUTPUT_DIR = WORKSPACE_DIR / "outputs"
+IS_KAGGLE = bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE") or Path("/kaggle/working").exists())
+# On Kaggle, keep bulky streamed JPEGs & model outputs in /tmp so /kaggle/working stays small for Draft saves
+DEFAULT_DATA_DIR = Path("/tmp/foodcraft_data") if IS_KAGGLE else (REPO_ROOT / "data")
+DEFAULT_OUTPUT_DIR = Path("/tmp/foodcraft_outputs") if IS_KAGGLE else (WORKSPACE_DIR / "outputs")
 
 
 def resolve_hf_token(explicit_token: str | None = None) -> str | None:
@@ -101,12 +103,12 @@ class FineTuneConfig:
     output_dir: Path = DEFAULT_OUTPUT_DIR
     lora_rank: int = 16
     lora_alpha: int = 16
-    max_seq_length: int = 2048
-    max_image_dim: int = 896
+    max_seq_length: int = 1024
+    max_image_dim: int = 560
     learning_rate: float = 2e-4
     per_device_batch_size: int = 2
-    gradient_accumulation_steps: int = 8
-    warmup_steps: int = 25
-    max_steps: int = 1000
+    gradient_accumulation_steps: int = 4
+    warmup_steps: int = 15
+    max_steps: int = 150
     num_train_epochs: int = 1
     seed: int = 3407

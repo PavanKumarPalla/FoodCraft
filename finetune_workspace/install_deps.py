@@ -133,11 +133,11 @@ def main() -> None:
         verify_imports(check_unsloth=False)
         return
 
-    # Verified Kaggle / Colab 2026 install flow (keeps transformers/datasets inside Unsloth bounds)
     run_pip(["install", "unsloth", "unsloth_zoo"])
     run_pip(["install", "--upgrade", "--no-deps", "accelerate", "peft", "bitsandbytes"])
     run_pip(["install", "datasets>=3.4.1,<5.0.0", "transformers==4.56.2"])
     run_pip(["install", "--no-deps", "trl==0.22.2"])
+    run_pip(["cache", "purge"], allow_fail=True)
 
     missing = verify_imports(check_unsloth=True)
     if missing:

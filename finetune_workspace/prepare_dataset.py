@@ -256,7 +256,7 @@ def stream_cloud_datasets(
                     is_multi = False
 
                 dest_img = img_root / key / f"{key}_{saved:05d}.jpg"
-                if not save_pil_rgb(img, dest_img, max_dim=768):
+                if not save_pil_rgb(img, dest_img, max_dim=560):
                     continue
 
                 records.append({
