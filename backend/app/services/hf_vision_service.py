@@ -85,14 +85,56 @@ def _format_detection_response(names: list[str], model_label: str) -> dict:
     }
 
 
+def _call_gradio_space(base_url: str, image_base64: str, headers: dict) -> dict | None:
+    """Invoke a Hugging Face Gradio 5 ZeroGPU Space via /gradio_api/call/detect_b64."""
+    try:
+        submit = requests.post(
+            f"{base_url}/gradio_api/call/detect_b64",
+            headers=headers,
+            json={"data": [image_base64]},
+            timeout=30,
+        )
+        if not submit.ok:
+            return None
+        event_id = submit.json().get("event_id")
+        if not event_id:
+            return None
+
+        stream = requests.get(
+            f"{base_url}/gradio_api/call/detect_b64/{event_id}",
+            headers=headers,
+            timeout=90,
+        )
+        if not stream.ok:
+            return None
+
+        current_event = None
+        for line in stream.text.splitlines():
+            if line.startswith("event:"):
+                current_event = line.split(":", 1)[1].strip()
+            elif line.startswith("data:") and current_event == "complete":
+                parsed_list = json.loads(line[5:].strip())
+                if isinstance(parsed_list, list) and parsed_list and isinstance(parsed_list[0], dict):
+                    result = parsed_list[0]
+                    if result.get("success") and result.get("unique_ingredients"):
+                        return result
+    except Exception as exc:
+        logger.warning("Gradio Space vision error: %s", exc)
+    return None
+
+
 def _call_remote_endpoint(image_base64: str) -> dict | None:
-    """Call hosted inference_server.py URL or HF Inference Router with HF_TOKEN."""
+    """Call hosted inference_server.py URL, Gradio HF Space, or HF Inference Router."""
     headers = {"Content-Type": "application/json"}
     if settings.HF_TOKEN:
         headers["Authorization"] = f"Bearer {settings.HF_TOKEN}"
 
     if settings.HF_VISION_INFERENCE_URL:
         base_url = settings.HF_VISION_INFERENCE_URL.rstrip("/")
+        if ".hf.space" in base_url:
+            gradio_res = _call_gradio_space(base_url, image_base64, headers)
+            if gradio_res:
+                return gradio_res
         try:
             resp = requests.post(
                 f"{base_url}/api/detect-ingredients",

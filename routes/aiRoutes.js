@@ -13,6 +13,43 @@ const HF_VISION_COLORS = [
   '#6366f1', '#16a34a',
 ];
 
+async function callGradioSpaceVision(cleanUrl, base64Image, headers) {
+  try {
+    const submit = await fetch(`${cleanUrl}/gradio_api/call/detect_b64`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ data: [base64Image] }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!submit.ok) return null;
+    const { event_id: eventId } = await submit.json();
+    if (!eventId) return null;
+
+    const stream = await fetch(`${cleanUrl}/gradio_api/call/detect_b64/${eventId}`, {
+      headers,
+      signal: AbortSignal.timeout(90000),
+    });
+    if (!stream.ok) return null;
+
+    const body = await stream.text();
+    let currentEvent = null;
+    for (const line of body.split(/\r?\n/)) {
+      if (line.startsWith('event:')) {
+        currentEvent = line.slice(6).trim();
+      } else if (line.startsWith('data:') && currentEvent === 'complete') {
+        const parsed = JSON.parse(line.slice(5).trim());
+        const result = Array.isArray(parsed) ? parsed[0] : null;
+        if (result?.success && result?.unique_ingredients?.length > 0) {
+          return result;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Gradio Space vision notice:', err.message);
+  }
+  return null;
+}
+
 /**
  * Call hosted fine-tuned Hugging Face Llama-3.2-Vision model (`pavankumarpalla/FoodCraft-Llama-3.2-11B-Vision`)
  * via HF_VISION_INFERENCE_URL (HF Space / Inference Endpoint / inference_server.py)
@@ -32,8 +69,12 @@ async function detectWithHuggingFaceVision(base64Image) {
   if (hfToken) headers.Authorization = `Bearer ${hfToken}`;
 
   if (endpointUrl) {
+    const cleanUrl = endpointUrl.replace(/\/+$/, '');
+    if (cleanUrl.includes('.hf.space')) {
+      const spaceData = await callGradioSpaceVision(cleanUrl, base64Image, headers);
+      if (spaceData) return spaceData;
+    }
     try {
-      const cleanUrl = endpointUrl.replace(/\/+$/, '');
       const resp = await fetch(`${cleanUrl}/api/detect-ingredients`, {
         method: 'POST',
         headers,

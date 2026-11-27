@@ -6,8 +6,12 @@ All values can be overridden via environment variables or a .env file.
 """
 
 from pathlib import Path
+import os
+
+_HAS_PYDANTIC_SETTINGS = False
 try:
     from pydantic_settings import BaseSettings
+    _HAS_PYDANTIC_SETTINGS = True
 except ImportError:
     try:
         from pydantic import BaseModel as BaseSettings
@@ -78,5 +82,36 @@ class Settings(BaseSettings):
     }
 
 
+def _fallback_env_kwargs() -> dict:
+    """Load BASE_DIR/.env + os.environ overrides when pydantic-settings is absent."""
+    merged: dict[str, str] = {}
+    env_path = BASE_DIR / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            s = line.strip()
+            if not s or s.startswith("#") or "=" not in s:
+                continue
+            k, v = s.split("=", 1)
+            merged[k.strip()] = v.strip().strip('"').strip("'")
+    for field_name in getattr(Settings, "__annotations__", {}):
+        if field_name in os.environ:
+            merged[field_name] = os.environ[field_name]
+    annotations = getattr(Settings, "__annotations__", {})
+    kwargs: dict = {}
+    for k, raw in merged.items():
+        if k not in annotations:
+            continue
+        ann = annotations[k]
+        if ann is bool or ann == "bool":
+            kwargs[k] = raw.lower() in ("1", "true", "yes", "on")
+        elif ann is int or ann == "int":
+            kwargs[k] = int(raw)
+        elif ann is float or ann == "float":
+            kwargs[k] = float(raw)
+        else:
+            kwargs[k] = raw
+    return kwargs
+
+
 # ── Singleton instance ───────────────────────────────────────
-settings = Settings()
+settings = Settings() if _HAS_PYDANTIC_SETTINGS else Settings(**_fallback_env_kwargs())
