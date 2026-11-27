@@ -10,6 +10,7 @@ merged 16-bit weights shard-by-shard with retries to avoid push failures.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import shutil
@@ -159,7 +160,7 @@ def load_rows(jsonl_path: Path, max_samples: int | None = None) -> list[dict]:
     return rows
 
 
-def make_lazy_dataset(rows: list[dict], max_dim: int = 896):
+def make_lazy_dataset(rows: list[dict], max_dim: int = 560):
     """Create a torch Dataset loading PIL RGB images lazily batch-by-batch."""
     from torch.utils.data import Dataset
 
@@ -282,6 +283,25 @@ def upload_folder_resilient(api: HfApi, local_dir: Path, repo_id: str, commit_pr
     print(f"Successfully pushed model to https://huggingface.co/{repo_id}")
 
 
+def export_and_push_lora(
+    api: HfApi,
+    model,
+    tokenizer,
+    cfg: FineTuneConfig,
+    token: str | None,
+    export_dir: Path,
+    sample_count: int,
+    commit_prefix: str,
+) -> None:
+    """Save LoRA adapter locally, patch Mllama processor files, and push to HF Hub."""
+    export_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(str(export_dir))
+    tokenizer.save_pretrained(str(export_dir))
+    ensure_mllama_processor_files(export_dir, cfg.base_unquantized_id, token)
+    write_model_card(export_dir, cfg, sample_count, is_lora=True)
+    upload_folder_resilient(api, export_dir, cfg.hub_lora_repo, commit_prefix)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train Food Craft Llama-3.2-Vision and push cleanly to Hugging Face")
     parser.add_argument("--hf-token", default=None, help="Hugging Face Write token")
@@ -289,7 +309,7 @@ def main() -> None:
     parser.add_argument("--max-samples", type=int, default=None, help="Limit samples for fast runs")
     parser.add_argument("--max-steps", type=int, default=150, help="Training steps (-1 to run full --epochs)")
     parser.add_argument("--epochs", type=int, default=1)
-    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--hub-repo", default=None, help="Override merged HF Hub repo (e.g. pavankumarpalla/FoodCraft-Llama-3.2-11B-Vision)")
@@ -343,14 +363,17 @@ def main() -> None:
             load_in_4bit=True,
             token=token,
         )
-        lora_dir = cfg.output_dir / "lora_adapter"
-        lora_dir.mkdir(parents=True, exist_ok=True)
-        model.save_pretrained(str(lora_dir))
-        tokenizer.save_pretrained(str(lora_dir))
-        ensure_mllama_processor_files(lora_dir, cfg.base_unquantized_id, token)
-        write_model_card(lora_dir, cfg, 0, is_lora=True)
         assert api is not None
-        upload_folder_resilient(api, lora_dir, cfg.hub_lora_repo, "FoodCraft Llama-3.2-Vision LoRA (recovered checkpoint)")
+        export_and_push_lora(
+            api,
+            model,
+            tokenizer,
+            cfg,
+            token,
+            cfg.output_dir / "lora_adapter",
+            0,
+            "FoodCraft Llama-3.2-Vision LoRA (recovered checkpoint)",
+        )
 
         if args.push_merged and env_info["save_method"] != "lora_only":
             save_method = env_info["save_method"]
@@ -375,6 +398,7 @@ def main() -> None:
     import unsloth  # noqa: F401
     from unsloth import FastVisionModel, is_bf16_supported
     from unsloth.trainer import UnslothVisionDataCollator
+    from transformers import TrainerCallback
     from trl import SFTConfig, SFTTrainer
 
     print(f"Loading base model: {cfg.base_model_id} ...")
@@ -401,12 +425,37 @@ def main() -> None:
 
     FastVisionModel.for_training(model)
 
+    assert api is not None
+
+    class HubCheckpointCallback(TrainerCallback):
+        """Auto-backup LoRA weights to Hugging Face Hub every save step (non-fatal on transient errors)."""
+
+        def on_save(self, train_args, state, control, **kwargs):
+            backup_dir = cfg.output_dir / "lora_backup"
+            try:
+                export_and_push_lora(
+                    api,
+                    model,
+                    tokenizer,
+                    cfg,
+                    token,
+                    backup_dir,
+                    len(rows),
+                    f"FoodCraft Llama-3.2-Vision LoRA (step {state.global_step})",
+                )
+            except Exception as exc:
+                print(f"Note: non-fatal step {state.global_step} HF backup skipped ({exc})", flush=True)
+            finally:
+                shutil.rmtree(backup_dir, ignore_errors=True)
+                gc.collect()
+
     ckpt_dir = cfg.output_dir / "checkpoints"
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         data_collator=UnslothVisionDataCollator(model, tokenizer),
+        callbacks=[HubCheckpointCallback()],
         args=SFTConfig(
             per_device_train_batch_size=args.batch_size,
             gradient_accumulation_steps=args.grad_accum,
@@ -418,8 +467,9 @@ def main() -> None:
             bf16=is_bf16_supported(),
             logging_steps=5,
             save_strategy="steps",
-            save_steps=50,
+            save_steps=25,
             save_total_limit=1,
+            dataloader_num_workers=0,
             optim="adamw_8bit",
             weight_decay=0.01,
             lr_scheduler_type="linear",
@@ -444,14 +494,16 @@ def main() -> None:
     trainer.train(resume_from_checkpoint=resume_arg)
 
     # 1. Save & push LoRA adapter first (small, fast, reliable backup)
-    lora_dir = cfg.output_dir / "lora_adapter"
-    lora_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(str(lora_dir))
-    tokenizer.save_pretrained(str(lora_dir))
-    ensure_mllama_processor_files(lora_dir, cfg.base_unquantized_id, token)
-    write_model_card(lora_dir, cfg, len(rows), is_lora=True)
-    assert api is not None
-    upload_folder_resilient(api, lora_dir, cfg.hub_lora_repo, "FoodCraft Llama-3.2-Vision LoRA")
+    export_and_push_lora(
+        api,
+        model,
+        tokenizer,
+        cfg,
+        token,
+        cfg.output_dir / "lora_adapter",
+        len(rows),
+        "FoodCraft Llama-3.2-Vision LoRA",
+    )
 
     # 2. Merge locally first, verify processor JSONs, then push shard-by-shard
     if args.push_merged and env_info["save_method"] != "lora_only":

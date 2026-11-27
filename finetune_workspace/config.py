@@ -106,7 +106,7 @@ class FineTuneConfig:
     max_seq_length: int = 1024
     max_image_dim: int = 560
     learning_rate: float = 2e-4
-    per_device_batch_size: int = 2
+    per_device_batch_size: int = 1
     gradient_accumulation_steps: int = 4
     warmup_steps: int = 15
     max_steps: int = 150
