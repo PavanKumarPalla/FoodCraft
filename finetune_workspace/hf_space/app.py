@@ -332,10 +332,7 @@ def _run_mllama_inference(image: Image.Image) -> dict:
     # Stage 1: Non-food gate
     is_food, subject_desc = _check_is_food(orig_rgb)
     if not is_food:
-        msg = (
-            f"This looks like {subject_desc}, not food. "
-            "Food Craft is food-based — please upload a photo of food dishes, fruits, vegetables, or cooking ingredients."
-        )
+        msg = "No food items detected. Please upload a photo of food, dishes, or cooking ingredients."
         return {
             "success": True,
             "is_food": False,
@@ -380,10 +377,7 @@ def _run_mllama_inference(image: Image.Image) -> dict:
             "count": 0,
             "raw_text": raw_text,
             "model": f"FoodCraft Llama-3.2 Vision ({MODEL_ID})",
-            "message": (
-                f"Detected {non_food_desc} instead of food. "
-                "Food Craft is food-based — please upload a photo of food dishes, fruits, vegetables, or cooking ingredients."
-            ),
+            "message": "No food items detected. Please upload a photo of food, dishes, or cooking ingredients.",
         }
 
     detected_boxes = _ground_boxes(orig_rgb, food_names) if food_names else []

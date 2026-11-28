@@ -196,11 +196,11 @@ export default function ScanIngredients() {
         setHasScanned(true);
         setDetectedBoxes([]);
         setPhotoIngredients([]);
-        const warnMsg =
+        setStatusMessage('');
+        setBackendError(
           backendData.message ||
-          'This does not appear to be a food photo. Food Craft is food-based — please upload a photo of food, dishes, or cooking ingredients.';
-        setBackendError(warnMsg);
-        setStatusMessage(warnMsg);
+            'No food items detected. Please upload a photo of food, dishes, or cooking ingredients.'
+        );
         return;
       }
 
@@ -224,11 +224,11 @@ export default function ScanIngredients() {
         setHasScanned(true);
         setDetectedBoxes([]);
         setPhotoIngredients([]);
-        const noFoodMsg =
+        setStatusMessage('');
+        setBackendError(
           backendData.message ||
-          'No food items detected by AI. Please upload a clear photo of food ingredients or enter items manually.';
-        setBackendError(noFoodMsg);
-        setStatusMessage(noFoodMsg);
+            'No food items detected. Please upload a photo of food, dishes, or cooking ingredients.'
+        );
         return;
       }
 
@@ -783,12 +783,13 @@ export default function ScanIngredients() {
         } else if (nonFoodClasses.length > 0) {
           setDetectedBoxes([]);
           setPhotoIngredients([]);
-          const uniqueNonFood = [...new Set(nonFoodClasses)].join(', ');
-          setStatusMessage(`No food items detected. (Found: ${uniqueNonFood}). Please upload a photo of food ingredients.`);
+          setStatusMessage('');
+          setBackendError('No food items detected. Please upload a photo of food, dishes, or cooking ingredients.');
         } else {
           setDetectedBoxes([]);
           setPhotoIngredients([]);
-          setStatusMessage('No food ingredients recognized in this photo. Please try a clearer angle or enter items manually.');
+          setStatusMessage('');
+          setBackendError('No food items detected. Please upload a clear photo or enter items manually.');
         }
         return;
       }
