@@ -182,7 +182,7 @@ export default function ScanIngredients() {
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
             const data = await res.json();
-            if (data && data.success && data.unique_ingredients && data.unique_ingredients.length > 0) {
+            if (data && data.success) {
               backendData = data;
             }
           }
@@ -191,12 +191,28 @@ export default function ScanIngredients() {
         console.warn('Backend detection call notice:', err);
       }
 
+      if (backendData && backendData.is_food === false) {
+        setIsScanning(false);
+        setHasScanned(true);
+        setDetectedBoxes([]);
+        setPhotoIngredients([]);
+        const warnMsg =
+          backendData.message ||
+          'This does not appear to be a food photo. Food Craft is food-based — please upload a photo of food, dishes, or cooking ingredients.';
+        setBackendError(warnMsg);
+        setStatusMessage(warnMsg);
+        return;
+      }
+
       if (backendData && backendData.unique_ingredients && backendData.unique_ingredients.length > 0) {
         setIsScanning(false);
         setHasScanned(true);
-        setDetectedBoxes(backendData.detected_ingredients || []);
+        const validBoxes = (backendData.detected_ingredients || []).filter(
+          item => item?.box && Number(item.box.w) > 0 && Number(item.box.h) > 0
+        );
+        setDetectedBoxes(validBoxes);
         setPhotoIngredients(backendData.unique_ingredients);
-        setStatusMessage(`Recognized ${backendData.count} ingredient${backendData.count > 1 ? 's' : ''} with ${backendData.model || 'AI Vision Engine'}`);
+        setStatusMessage(`Recognized ${backendData.count} food item${backendData.count > 1 ? 's' : ''} with ${backendData.model || 'AI Vision Engine'}`);
         return;
       }
 
@@ -208,7 +224,11 @@ export default function ScanIngredients() {
         setHasScanned(true);
         setDetectedBoxes([]);
         setPhotoIngredients([]);
-        setStatusMessage('No food items detected by AI. Please upload a clear photo of food ingredients or enter items manually.');
+        const noFoodMsg =
+          backendData.message ||
+          'No food items detected by AI. Please upload a clear photo of food ingredients or enter items manually.';
+        setBackendError(noFoodMsg);
+        setStatusMessage(noFoodMsg);
         return;
       }
 
@@ -1131,37 +1151,44 @@ export default function ScanIngredients() {
                       </div>
                     )}
 
-                    {/* Real YOLOv8 Detected Bounding Boxes */}
-                    {hasScanned && !isScanning && detectedBoxes.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="yolo-bounding-box"
-                        style={{
-                          left: `${item.box.x}%`,
-                          top: `${item.box.y}%`,
-                          width: `${item.box.w}%`,
-                          height: `${item.box.h}%`,
-                          borderColor: item.color || '#10b981',
-                          '--box-color': item.color || '#10b981'
-                        }}
-                      >
-                        <span 
-                          className="yolo-box-label"
-                          style={{ 
+                    {/* Real Vision AI / YOLOv8 Detected Bounding Boxes */}
+                    {hasScanned && !isScanning && detectedBoxes.filter(item => item?.box && item.box.w > 0 && item.box.h > 0).map((item, idx) => {
+                      const nearTop = Number(item.box.y) < 11;
+                      const nearRight = Number(item.box.x) > 65;
+                      return (
+                        <div
+                          key={idx}
+                          className="yolo-bounding-box"
+                          style={{
+                            left: `${item.box.x}%`,
+                            top: `${item.box.y}%`,
+                            width: `${item.box.w}%`,
+                            height: `${item.box.h}%`,
+                            borderColor: item.color || '#10b981',
                             '--box-color': item.color || '#10b981'
                           }}
                         >
-                          <span style={{
-                            display: 'inline-block',
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            backgroundColor: item.color || '#10b981'
-                          }}></span>
-                          {item.name} ({item.confidence})
-                        </span>
-                      </div>
-                    ))}
+                          <span 
+                            className="yolo-box-label"
+                            style={{ 
+                              '--box-color': item.color || '#10b981',
+                              top: nearTop ? '4px' : '-28px',
+                              left: nearRight ? 'auto' : '-2px',
+                              right: nearRight ? '-2px' : 'auto',
+                            }}
+                          >
+                            <span style={{
+                              display: 'inline-block',
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              backgroundColor: item.color || '#10b981'
+                            }}></span>
+                            {item.name} ({item.confidence})
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

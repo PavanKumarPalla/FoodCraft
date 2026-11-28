@@ -54,6 +54,8 @@ class DetectionItem(BaseModel):
 
 class DetectResponse(BaseModel):
     success: bool
+    is_food: bool = True
+    detected_subject: str | None = None
     detected_ingredients: list[DetectionItem]
     unique_ingredients: list[str]
     count: int

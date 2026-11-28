@@ -14,38 +14,58 @@ const HF_VISION_COLORS = [
 ];
 
 async function callGradioSpaceVision(cleanUrl, base64Image, headers) {
-  try {
-    const submit = await fetch(`${cleanUrl}/gradio_api/call/detect_b64`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ data: [base64Image] }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!submit.ok) return null;
-    const { event_id: eventId } = await submit.json();
-    if (!eventId) return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const submit = await fetch(`${cleanUrl}/gradio_api/call/detect_b64`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ data: [base64Image] }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!submit.ok) return null;
+      const { event_id: eventId } = await submit.json();
+      if (!eventId) return null;
 
-    const stream = await fetch(`${cleanUrl}/gradio_api/call/detect_b64/${eventId}`, {
-      headers,
-      signal: AbortSignal.timeout(90000),
-    });
-    if (!stream.ok) return null;
+      const stream = await fetch(`${cleanUrl}/gradio_api/call/detect_b64/${eventId}`, {
+        headers,
+        signal: AbortSignal.timeout(90000),
+      });
+      if (!stream.ok || !stream.body) return null;
 
-    const body = await stream.text();
-    let currentEvent = null;
-    for (const line of body.split(/\r?\n/)) {
-      if (line.startsWith('event:')) {
-        currentEvent = line.slice(6).trim();
-      } else if (line.startsWith('data:') && currentEvent === 'complete') {
-        const parsed = JSON.parse(line.slice(5).trim());
-        const result = Array.isArray(parsed) ? parsed[0] : null;
-        if (result?.success && result?.unique_ingredients?.length > 0) {
-          return result;
+      const reader = stream.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentEvent = null;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            currentEvent = line.slice(6).trim();
+            if (currentEvent === 'error') {
+              await reader.cancel().catch(() => {});
+              return null;
+            }
+          } else if (line.startsWith('data:') && currentEvent === 'complete') {
+            const parsed = JSON.parse(line.slice(5).trim());
+            const result = Array.isArray(parsed) ? parsed[0] : null;
+            if (result?.success && (result?.is_food === false || result?.unique_ingredients?.length > 0)) {
+              await reader.cancel().catch(() => {});
+              return result;
+            }
+          }
         }
       }
+      return null;
+    } catch (err) {
+      console.warn(`Gradio Space vision attempt ${attempt + 1} notice:`, err.message);
+      if (attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 900));
+      }
     }
-  } catch (err) {
-    console.warn('Gradio Space vision notice:', err.message);
   }
   return null;
 }
@@ -83,7 +103,7 @@ async function detectWithHuggingFaceVision(base64Image) {
         });
         if (resp.ok) {
           const data = await resp.json();
-          if (data && data.success && data.unique_ingredients?.length > 0) {
+          if (data && data.success && (data.is_food === false || data.unique_ingredients?.length > 0)) {
             return data;
           }
         }
@@ -270,7 +290,8 @@ function runOnnxDetector(image, confidence = 0.25) {
     }
 
     const scriptPath = path.join(process.cwd(), 'backend', 'scripts', 'onnx_detect.py');
-    const py = spawn('python3', [scriptPath, tempFile, String(confidence)], {
+    const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+    const py = spawn(pyCmd, [scriptPath, tempFile, String(confidence)], {
       cwd: process.cwd(),
       timeout: 60000,
       env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONWARNINGS: 'ignore' }
@@ -421,15 +442,44 @@ router.post('/detect-ingredients', async (req, res) => {
   // 0. Fine-tuned FoodCraft Llama-3.2-Vision on Hugging Face (when endpoint/router configured)
   try {
     const hfVisionResult = await detectWithHuggingFaceVision(image);
-    if (hfVisionResult && hfVisionResult.success && hfVisionResult.detected_ingredients?.length > 0) {
-      console.log(`🦙 Hugging Face Vision (${hfVisionResult.model}): ${hfVisionResult.count} items detected`);
-      return res.json(hfVisionResult);
+    if (hfVisionResult && hfVisionResult.success) {
+      if (hfVisionResult.is_food === false) {
+        console.log(`🚫 Non-food image rejected by ${hfVisionResult.model}: ${hfVisionResult.detected_subject || hfVisionResult.message}`);
+        return res.json(hfVisionResult);
+      }
+      if (hfVisionResult.unique_ingredients?.length > 0) {
+        console.log(`🦙 Hugging Face Vision (${hfVisionResult.model}): ${hfVisionResult.count} items detected`);
+        return res.json(hfVisionResult);
+      }
     }
   } catch (hfErr) {
     console.warn('HF Vision notice:', hfErr.message);
   }
 
-  // 1. Node.js YOLOv8 ONNX detector (works on Render, no Python needed)
+  // 1. Forward to FastAPI YOLOv8 + CLIP daemon if running locally
+  const aiServiceUrl = process.env.AI_SERVICE_URL || (process.env.NODE_ENV !== 'production' ? 'http://localhost:8000' : null);
+
+  if (aiServiceUrl) {
+    try {
+      const pyRes = await fetch(`${aiServiceUrl}/api/detect-ingredients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, confidence }),
+        signal: AbortSignal.timeout(35000)
+      });
+
+      if (pyRes.ok) {
+        const pyData = await pyRes.json();
+        if (pyData && pyData.success && (pyData.is_food === false || (pyData.detected_ingredients && pyData.detected_ingredients.length > 0))) {
+          return res.json(pyData);
+        }
+      }
+    } catch {
+      // Backend daemon not responding
+    }
+  }
+
+  // 2. Node.js YOLOv8 ONNX detector (works on Render, no Python needed)
   let onnxNodeRan = false;
   try {
     const onnxNodeResult = await detectWithNodeOnnx(image, confidence);
@@ -445,29 +495,6 @@ router.post('/detect-ingredients', async (req, res) => {
     }
   } catch (onnxNodeErr) {
     console.warn('Node.js YOLOv8 ONNX notice:', onnxNodeErr.message);
-  }
-
-  // 2. Forward to FastAPI YOLOv8 daemon if running
-  const aiServiceUrl = process.env.AI_SERVICE_URL || (process.env.NODE_ENV !== 'production' ? 'http://localhost:8000' : null);
-
-  if (aiServiceUrl) {
-    try {
-      const pyRes = await fetch(`${aiServiceUrl}/api/detect-ingredients`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image, confidence }),
-        signal: AbortSignal.timeout(35000)
-      });
-
-      if (pyRes.ok) {
-        const pyData = await pyRes.json();
-        if (pyData && pyData.success && pyData.detected_ingredients && pyData.detected_ingredients.length > 0) {
-          return res.json(pyData);
-        }
-      }
-    } catch {
-      // Backend daemon not responding
-    }
   }
 
   // 3. Direct Python CLI execution fallback (uses yolov8_food_ingredients.pt)

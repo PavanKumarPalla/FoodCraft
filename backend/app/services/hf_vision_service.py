@@ -103,21 +103,30 @@ def _call_gradio_space(base_url: str, image_base64: str, headers: dict) -> dict 
         stream = requests.get(
             f"{base_url}/gradio_api/call/detect_b64/{event_id}",
             headers=headers,
+            stream=True,
             timeout=90,
         )
         if not stream.ok:
             return None
 
         current_event = None
-        for line in stream.text.splitlines():
-            if line.startswith("event:"):
-                current_event = line.split(":", 1)[1].strip()
-            elif line.startswith("data:") and current_event == "complete":
-                parsed_list = json.loads(line[5:].strip())
-                if isinstance(parsed_list, list) and parsed_list and isinstance(parsed_list[0], dict):
-                    result = parsed_list[0]
-                    if result.get("success") and result.get("unique_ingredients"):
-                        return result
+        try:
+            for line in stream.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                if line.startswith("event:"):
+                    current_event = line.split(":", 1)[1].strip()
+                    if current_event == "error":
+                        break
+                elif line.startswith("data:") and current_event == "complete":
+                    parsed_list = json.loads(line[5:].strip())
+                    if isinstance(parsed_list, list) and parsed_list and isinstance(parsed_list[0], dict):
+                        result = parsed_list[0]
+                        if result.get("success") and (result.get("is_food") is False or result.get("unique_ingredients")):
+                            return result
+                    break
+        finally:
+            stream.close()
     except Exception as exc:
         logger.warning("Gradio Space vision error: %s", exc)
     return None
@@ -145,7 +154,7 @@ def _call_remote_endpoint(image_base64: str) -> dict | None:
                 )
                 if resp.ok:
                     data = resp.json()
-                    if data.get("success") and data.get("unique_ingredients"):
+                    if data.get("success") and (data.get("is_food") is False or data.get("unique_ingredients")):
                         return data
             except Exception as exc:
                 logger.warning("HF_VISION_INFERENCE_URL error: %s", exc)
